@@ -2,9 +2,9 @@
 
 **Proyecto:** Royal Prestige — Plataforma de Gestión de Ventas  
 **Documento:** Reglas de negocio  
-**Estado:** En definición  
-**Versión:** 0.2  
-**Última actualización:** 01/09/2026
+**Estado:** En consolidación  
+**Versión:** 0.6  
+**Última actualización:** 03/09/2026
 
 ---
 
@@ -74,9 +74,10 @@ La posición del empleado influye en la información y las funcionalidades que p
 
 ### REG-002 — Un empleado puede realizar ventas independientemente de su nivel
 
-> **Estado:** ⚠️ ASUMIDA
+> **Estado:** 🚧 DECISIÓN DE DISEÑO
 
-Alcanzar un nivel superior no elimina necesariamente la capacidad del empleado para realizar ventas.
+Todos los niveles comerciales pueden realizar ventas. Alcanzar un nivel superior
+no elimina la capacidad del empleado para realizar ventas.
 
 Esto es especialmente relevante para los empleados que además de supervisar equipos continúan desarrollando actividad comercial propia.
 
@@ -164,11 +165,13 @@ El ascenso entre niveles depende de criterios de negocio que incluyen, como mín
 
 No se conocen todavía las reglas exactas ni si existen otros factores.
 
-### REG-010 — Las reglas exactas de los Niveles 4–7 están pendientes
+### REG-010 — Las reglas oficiales exactas de los Niveles 4–7 están pendientes
 
 > **Estado:** ❓ PENDIENTE
 
-No se deben asumir responsabilidades, permisos o comportamientos específicos para los Niveles 4, 5, 6 y 7 hasta contar con información suficiente.
+Las responsabilidades oficiales y los permisos definitivos de los Niveles 4–7
+requieren validación. La versión consolidada puede utilizar la escalera de
+diseño documentada más adelante, sin presentarla como confirmación del cliente.
 
 Para la versión de referencia podrán definirse reglas provisionales claramente identificadas como ASUMIDAS.
 
@@ -198,11 +201,13 @@ Estos nombres podrán modificarse sin afectar la estructura interna del sistema.
 
 ## 5. Reglas relacionadas con jerarquía
 
-### REG-012 — Un empleado puede tener un supervisor directo
+### REG-012 — Un empleado puede tener como máximo un supervisor directo activo
 
-> **Estado:** ⚠️ ASUMIDA
+> **Estado:** 🚧 DECISIÓN DE DISEÑO
 
-Para la versión de referencia se asumirá que un empleado puede tener un único supervisor directo.
+Cada empleado tendrá como máximo un supervisor directo activo. El cambio de
+supervisor será una operación explícita y deberá conservar el historial
+organizacional correspondiente.
 
 ```
 Empleado A
@@ -307,7 +312,7 @@ Un usuario de Nivel 3 debe poder crear una cuenta para un nuevo vendedor que se 
 
 ### REG-021 — La creación de una cuenta no implica necesariamente la creación manual de toda la estructura organizacional
 
-> **Estado:** ⚠️ ASUMIDA
+> **Estado:** 🚧 DECISIÓN DE DISEÑO
 
 El proceso de incorporación deberá poder asignar al nuevo empleado:
 
@@ -315,11 +320,13 @@ El proceso de incorporación deberá poder asignar al nuevo empleado:
 - Supervisor.
 - Equipo, si corresponde.
 
-La forma exacta en que se realizará esa asignación deberá definirse posteriormente.
+En el reclutamiento normal, el nivel inicial se asignará según la escalera
+correspondiente al nivel del reclutador y no será arbitrariamente seleccionable.
+La carga inicial conservará el nivel real actual del empleado.
 
 ### REG-022 — La creación de cuentas debe respetar las reglas de autorización
 
-> **Estado:** ⚠️ ASUMIDA
+> **Estado:** 🚧 DECISIÓN DE DISEÑO
 
 Aunque un usuario tenga acceso a la funcionalidad de creación de cuentas, solamente podrá crear empleados dentro del alcance permitido por sus permisos.
 
@@ -335,11 +342,13 @@ asignarlo a su propia estructura
 
 La regla definitiva dependerá de la matriz de permisos.
 
-### REG-023 — Una cuenta de usuario puede quedar inactiva
+### REG-023 — Una cuenta asociada a un empleado inactivo no puede autenticarse
 
-> **Estado:** ⚠️ ASUMIDA
+> **Estado:** 🚧 DECISIÓN DE DISEÑO
 
-El sistema deberá poder representar cuentas que ya no tienen acceso a la aplicación.
+El sistema deberá poder representar cuentas que ya no tienen acceso a la
+aplicación. Cuando el empleado quede inactivo, su cuenta asociada no podrá
+autenticarse.
 
 La inactivación debe preservar la información histórica necesaria.
 
@@ -349,13 +358,13 @@ La inactivación debe preservar la información histórica necesaria.
 
 ### REG-024 — Las ventas deben estar asociadas a un vendedor
 
-> **Estado:** ⚠️ ASUMIDA
+> **Estado:** 🚧 DECISIÓN DE DISEÑO
 
 Cada registro de venta debe poder asociarse a un empleado responsable de ella.
 
 ### REG-025 — Una venta debe conservar su fecha
 
-> **Estado:** ⚠️ ASUMIDA
+> **Estado:** 🚧 DECISIÓN DE DISEÑO
 
 Cada venta deberá disponer de información temporal suficiente para realizar:
 
@@ -365,30 +374,22 @@ Cada venta deberá disponer de información temporal suficiente para realizar:
 - Reportes.
 - Cálculos relacionados con la antigüedad del vendedor.
 
-### REG-026 — Las reglas de modificación de una venta deben definirse explícitamente
+### REG-026 — Las modificaciones de una venta deben ser controladas y auditables
 
-> **Estado:** ❓ PENDIENTE
+> **Estado:** 🚧 DECISIÓN DE DISEÑO
 
-Todavía debe determinarse:
+Las modificaciones relevantes deben realizarse mediante operaciones controladas
+y auditables. El supervisor no debe sobrescribir silenciosamente la información
+cargada por el vendedor. Los detalles de permisos y circunstancias concretas
+deben derivarse de la matriz funcional.
 
-- Si una venta puede modificarse.
-- Quién puede modificarla.
-- En qué circunstancias.
-- Si las modificaciones deben quedar auditadas.
+### REG-027 — La primera versión carga ventas internamente
 
-### REG-027 — El origen de las ventas debe determinarse antes del modelo definitivo
+> **Estado:** 🚧 DECISIÓN DE DISEÑO
 
-> **Estado:** ❓ PENDIENTE
-
-El sistema puede obtener las ventas de diferentes fuentes:
-
-- Registro manual.
-- Importación.
-- API externa.
-- Sincronización con otro sistema.
-- Otra fuente de datos.
-
-La arquitectura final deberá adaptarse al origen real.
+El vendedor cargará su propia venta utilizando la documentación oficial de la
+empresa. La primera versión no depende de sistemas externos ni de sincronización.
+Las futuras integraciones deberán mantenerse detrás de adapters/ports.
 
 ---
 
@@ -516,11 +517,12 @@ Los detalles exactos de esta regla todavía deben validarse.
 
 ## 12. Reglas relacionadas con comisiones
 
-### REG-040 — Los vendedores de Nivel 1 poseen una estructura de comisión progresiva asociada a su antigüedad
+### REG-040 — La observación inicial de comisión fue reemplazada por una regla de diseño versionada
 
-> **Estado:** 🔎 OBSERVADA
+> **Estado:** 🔄 REEMPLAZADA por REG-065 (regla inicial de diseño vigente: **N1 → 15 %**).
 
-Durante el relevamiento inicial se observó una estructura de comisión progresiva para vendedores nuevos de Nivel 1.
+Durante el relevamiento inicial se observó una progresión para vendedores nuevos
+de Nivel 1. Esa observación no se utilizará como regla operativa vigente.
 
 **La información disponible actualmente indica:**
 
@@ -531,9 +533,11 @@ Durante el relevamiento inicial se observó una estructura de comisión progresi
 | Mes 3       | 30 %                   |
 | Mes 4       | Pendiente              |
 | Mes 5       | Pendiente              |
-| Mes 6 a 12  | Entre 45 % y 60 %     |
+| Mes 6 a 12  | Entre 45 % y 60 %      |
 
-Estos valores deben considerarse provisionales hasta ser validados formalmente.
+Los valores anteriores son OBSERVADOS y constituyen únicamente antecedente
+histórico; no rigen como regla vigente. La regla vigente se documenta en
+REG-065.
 
 ### REG-041 — Las reglas de comisión deben permitir una progresión temporal
 
@@ -553,7 +557,7 @@ Deberán poder modificarse de manera controlada sin requerir cambios generalizad
 
 ### REG-043 — El cálculo de comisión debe conservar el contexto temporal correspondiente
 
-> **Estado:** ⚠️ ASUMIDA
+> **Estado:** 🚧 DECISIÓN DE DISEÑO
 
 Cuando una comisión dependa de la antigüedad del vendedor, el cálculo deberá considerar la antigüedad correspondiente al momento de la venta y no únicamente la situación actual del empleado.
 
@@ -576,6 +580,21 @@ Esto será especialmente importante si posteriormente se permite modificar regla
 - Tratamiento de anulaciones y devoluciones.
 - Fuente del cálculo.
 
+### REG-065 — Regla inicial de comisión vigente: N1 → 15 %
+
+> **Estado:** 🚧 DECISIÓN DE DISEÑO (CERRADA)
+
+Un vendedor Nivel 1 (N1) comienza con una comisión del 15 %. Esta regla se
+define como dato configurable y versionado del sistema de comisiones; no queda
+hardcodeada y podrá ser reemplazada por nuevas reglas sin alterar cálculos
+históricos.
+
+La anterior regla de diseño del 50 % queda 🔄 REEMPLAZADA y se conserva
+únicamente como antecedente histórico.
+
+**Continúan pendientes:** reglas para N2–N7, base de cálculo y condiciones para
+escenarios no especificados. No se definen valores alternativos.
+
 ---
 
 ## 13. Reglas relacionadas con capacitación
@@ -585,6 +604,9 @@ Esto será especialmente importante si posteriormente se permite modificar regla
 > **Estado:** 🔎 OBSERVADA
 
 Los vendedores nuevos de Nivel 1 deberán disponer de una sección específica de capacitación dentro de la aplicación.
+
+El acceso no será exclusivo de Nivel 1; otros niveles podrán acceder a contenido
+correspondiente.
 
 ### REG-046 — La capacitación debe formar parte de la navegación de la aplicación
 
@@ -610,7 +632,7 @@ La ubicación final dentro de la navegación será una decisión de producto y d
 
 La sección de capacitación deberá permitir acceder a materiales de formación en formato PDF.
 
-La posibilidad de visualizar, descargar o ambas opciones deberá definirse posteriormente.
+Los PDFs deberán poder visualizarse y descargarse.
 
 ### REG-048 — La capacitación debe soportar videos
 
@@ -620,30 +642,30 @@ La sección de capacitación deberá permitir acceder a videos utilizados como m
 
 La estrategia para alojar o integrar los videos deberá definirse posteriormente.
 
-### REG-049 — El contenido de capacitación debe poder ampliarse
+### REG-049 — La capacitación debe soportar una estructura jerárquica de contenidos
 
 > **Estado:** ⚠️ ASUMIDA
 
-El sistema deberá permitir incorporar posteriormente otros tipos de materiales o estructuras educativas, como:
+El sistema deberá poder representar una estructura de capacitación compuesta por:
 
+- Categorías.
 - Cursos.
 - Módulos.
-- Lecciones.
-- Evaluaciones.
-- Material complementario.
-- Seguimiento de progreso.
+- Materiales.
+- Materiales organizados por categoría, curso y módulo.
 
-Estas funcionalidades no forman parte de los requisitos actualmente confirmados.
+No se implementará seguimiento individual de aprendizaje, progreso, completitud,
+historial de progreso ni assessments en el alcance actual.
 
 ---
 
 ## 14. Reglas relacionadas con historial
 
-### REG-050 — Los cambios importantes de la estructura pueden requerir historial
+### REG-050 — Los cambios importantes de la estructura deben conservar historial
 
-> **Estado:** ❓ PENDIENTE
+> **Estado:** 🚧 DECISIÓN DE DISEÑO
 
-Se deberá determinar si el sistema debe conservar el historial de:
+El sistema debe conservar historial de:
 
 - Cambios de nivel.
 - Cambios de supervisor.
@@ -652,9 +674,13 @@ Se deberá determinar si el sistema debe conservar el historial de:
 - Bajas.
 - Reincorporaciones.
 
+Como mínimo, el registro debe poder identificar empleado, supervisor, nivel,
+inicio y fin de vigencia, motivo y actor del cambio. El nombre físico de la
+estructura queda para el modelado posterior.
+
 ### REG-051 — Los datos históricos no deben quedar inutilizables por cambios posteriores
 
-> **Estado:** ⚠️ ASUMIDA
+> **Estado:** 🚧 DECISIÓN DE DISEÑO
 
 Los cambios actuales de la estructura organizacional no deberían invalidar automáticamente la interpretación de datos históricos.
 
@@ -666,7 +692,7 @@ Por ejemplo, cambiar de supervisor no debería modificar retroactivamente la inf
 
 ### REG-052 — Las operaciones críticas deberían poder rastrearse
 
-> **Estado:** ⚠️ ASUMIDA
+> **Estado:** 🚧 DECISIÓN DE DISEÑO
 
 El sistema debería permitir identificar, cuando corresponda:
 
@@ -682,15 +708,18 @@ El sistema debería permitir identificar, cuando corresponda:
 
 Cuando un usuario cree una cuenta para otro empleado, debería poder determinarse quién realizó la acción y cuándo.
 
-### REG-054 — Los cambios administrativos importantes deberían poder auditarse
+### REG-054 — Las operaciones sensibles deben poder auditarse
 
-> **Estado:** ❓ PENDIENTE
+> **Estado:** 🚧 DECISIÓN DE DISEÑO
 
-Debe determinarse qué modificaciones requieren registro de auditoría obligatorio.
+Como mínimo, deben auditarse las operaciones sensibles de empleados, cuentas,
+niveles, supervisores, ventas, comisiones, productos, capacitación,
+autenticación, credenciales y permisos. La estructura, retención e inmutabilidad
+del registro permanecen pendientes.
 
 ---
 
-## 16. Reglas provisionales para la versión de referencia
+## 16. Reglas consolidadas y provisionales para la versión de referencia
 
 Las siguientes reglas permiten construir una versión completamente operativa del proyecto aunque Royal Prestige no continúe con la implementación.
 
@@ -698,11 +727,11 @@ Estas reglas no deben interpretarse como reglas confirmadas del cliente.
 
 ### REG-055 — Cada empleado posee un nivel entre 1 y 7
 
-> **Estado:** ⚠️ ASUMIDA
+> **Estado:** 🔄 REEMPLAZADA por REG-005
 
 ### REG-056 — Cada empleado posee como máximo un supervisor directo
 
-> **Estado:** ⚠️ ASUMIDA
+> **Estado:** 🔄 REEMPLAZADA por REG-012
 
 ### REG-057 — Un supervisor puede tener múltiples subordinados
 
@@ -753,13 +782,73 @@ La implementación deberá permitir modificar porcentajes, períodos y condicion
 En ausencia de requisitos adicionales del cliente, la versión de referencia podrá incluir:
 
 - Categorías.
+- Cursos.
+- Módulos.
 - Materiales.
 - Documentos PDF.
 - Videos.
 - Descripciones.
 - Estado de publicación.
 
-El seguimiento de progreso será opcional y deberá tratarse como una funcionalidad independiente.
+El seguimiento individual de aprendizaje, el progreso, la completitud, su
+historial y los assessments/quizzes quedan fuera del alcance actual.
+
+### 16.1. Consolidación de decisiones de negocio y diseño
+
+Las siguientes definiciones reflejan decisiones adoptadas durante la
+consolidación. No deben interpretarse como confirmaciones adicionales de Royal
+Prestige cuando su estado no sea CONFIRMADO:
+
+- Los siete niveles comerciales son N1 Vendedor, N2 Vendedor Junior, N3
+  Distribuidor, N4 Blue, N5 Royal, N6 Premier y N7 Max.
+- Todos los niveles pueden realizar ventas.
+- N1 y N2 no tienen equipo propio ni capacidad normal de reclutamiento.
+- La escalera normal de reclutamiento es N3 → N1, N4 → N3, N5 → N4, N6 → N5 y
+  N7 → N6. El reclutador no selecciona arbitrariamente el nivel inicial.
+- La carga inicial conserva el nivel real actual de cada empleado y no lo fuerza
+  a comenzar en N1.
+- Las promociones y demociones no son automáticas. El sistema puede calcular
+  indicadores o sugerir candidatos, pero una persona con autoridad toma la
+  decisión final.
+- `ADMIN` es un rol independiente de los siete niveles y no constituye un N8.
+  Puede ejecutar operaciones administrativas sobre cualquier nivel cuando
+  corresponda.
+- Una venta se carga inicialmente por el vendedor a partir de la documentación
+  oficial de la empresa y pasa por `DRAFT`, `PENDING_REVIEW`, `APPROVED` o
+  `REJECTED`. Una venta aprobada puede pasar a `CANCELLED` cuando corresponda.
+- Una venta aprobada no se elimina físicamente. Cancelaciones, devoluciones y
+  ajustes no deben reescribir silenciosamente el historial.
+- Cada venta tiene inicialmente un único vendedor responsable. Quien carga y
+  quien aprueba pueden ser personas distintas.
+- Las ventas pendientes o rechazadas no alimentan estadísticas definitivas ni
+  cálculos definitivos de comisión. Las aprobadas sí los alimentan.
+- El catálogo interno es pequeño, no es un ecommerce y permite seleccionar
+  productos, consultar estadísticas y administrar productos, categorías, precios
+  y estado.
+- La regla inicial de comisión vigente es **N1 → 15 %** (REG-065), definida
+  como dato configurable y versionado; no queda hardcodeada y podrá ser
+  reemplazada por nuevas reglas sin alterar cálculos históricos. La anterior
+  regla de diseño del 50 % queda 🔄 REEMPLAZADA como antecedente. No se
+  definen todavía reglas para N2–N7.
+- La comisión se genera conceptualmente cuando una venta pasa a `APPROVED`.
+  Una cancelación posterior genera un ajuste o reversión asociado, sin eliminar
+  la comisión original.
+- La autenticación inicial utiliza email + contraseña, sin emails corporativos
+  obligatorios ni OAuth inicial. Las cuentas de empleados inactivos no pueden
+  autenticarse.
+- Las cuentas nuevas se crean con una contraseña temporal, almacenada
+  únicamente como hash, con cambio obligatorio en el primer inicio de sesión
+  (`must_change_password = true` hasta completar el cambio; luego `false`).
+  No se definen expiración de contraseñas, historial de contraseñas ni bloqueo
+  por intentos: no forman parte de las decisiones vigentes.
+- La capacitación incluye categorías, cursos, módulos y materiales; admite PDFs
+  visualizables y descargables, videos mediante una abstracción de contenido y
+  acceso para niveles correspondientes, no exclusivamente N1.
+- Los contenidos utilizan `DRAFT`, `PUBLISHED` y `ARCHIVED`. `ADMIN` los crea,
+  modifica, publica y archiva; los supervisores no los administran inicialmente.
+
+Estas decisiones deben mantenerse alineadas con `organizational-model.md`,
+`requirements.md`, `permissions-matrix.md` y `open-questions.md`.
 
 ---
 
@@ -769,30 +858,24 @@ Las siguientes áreas todavía pueden modificar sustancialmente el comportamient
 
 - Criterios exactos de ascenso.
 - Criterios de descenso.
-- Responsabilidades de los Niveles 4–7.
-- Permisos específicos de cada nivel.
+- Validación oficial de responsabilidades y permisos de los Niveles 4–7.
 - Existencia y funcionamiento de equipos como entidades independientes.
 - Posibilidad de múltiples supervisores.
 - Posibilidad de pertenecer a múltiples equipos.
 - Reglas definitivas de comisión.
-- Porcentajes de comisión para los meses 4 y 5.
-- Progresión exacta entre los meses 6 y 12.
-- Comisión posterior al mes 12.
 - Base del cálculo de comisión.
+- Reglas de comisión para N2–N7 y condiciones futuras que puedan reemplazar la
+  regla vigente N1 → 15 %.
 - Objetivos individuales.
 - Objetivos de equipo.
-- Reglas de modificación de ventas.
-- Cancelaciones y devoluciones.
-- Origen de los datos de ventas.
+- Detalles de permisos para modificar ventas.
+- Casos particulares de cancelaciones, devoluciones y ajustes.
 - Integraciones externas.
-- Requisitos de auditoría.
-- Conservación del historial organizacional.
-- Alcance de la capacitación.
-- Administración de materiales.
+- Detalles físicos y retención de auditoría.
+- Reglas adicionales de reconstrucción histórica.
 - Almacenamiento de archivos.
 - Alojamiento de videos.
-- Seguimiento de progreso.
-- Capacitaciones obligatorias.
+- Requisitos adicionales de capacitación.
 
 ---
 
@@ -805,10 +888,11 @@ Las reglas definidas aquí deberán mantenerse alineadas con:
 - `docs/domain/organizational-model.md`
 - `docs/product/permissions-matrix.md`
 
-Posteriormente servirán como base para:
+Sirven como base para:
 
 - `docs/architecture/authorization.md`
 - `docs/architecture/architecture-decisions.md`
+- `docs/architecture/data-architecture.md`
 
 Y para la definición de:
 
@@ -894,3 +978,8 @@ Las reglas OBSERVADAS deberán pasar a CONFIRMADAS, ASUMIDAS o DESCARTADAS una v
 |------------|---------|-------------------------------------------------------------------------------------|
 | 01/09/2026 | 0.1     | Creación inicial del documento de reglas de negocio.                                |
 | 01/09/2026 | 0.2     | Incorporación de nomenclatura observada, antigüedad, comisiones y capacitación.     |
+| 03/09/2026 | 0.3     | Consolidación de reclutamiento, ventas, auditoría, autenticación y capacitación.    |
+| 03/09/2026 | 0.4     | Sincronización del alcance de capacitación y del estado de las reglas pendientes. |
+| 03/09/2026 | 0.5     | Consolidación de comisión inicial y simplificación del seguimiento de capacitación. |
+| 03/09/2026 | 0.4     | Consolidación documental global de reglas y pendientes. |
+| 03/09/2026 | 0.6     | REG-065: comisión inicial vigente N1 → 15 % (la regla de diseño del 50 % queda REEMPLAZADA como antecedente). Cierre de contraseña temporal y cambio obligatorio en primer inicio. |

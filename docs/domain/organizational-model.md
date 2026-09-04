@@ -2,9 +2,9 @@
 
 **Proyecto:** Royal Prestige — Plataforma de Gestión de Ventas  
 **Documento:** Modelo organizacional  
-**Estado:** En definición  
-**Versión:** 0.2  
-**Última actualización:** 01/09/2026
+**Estado:** En consolidación  
+**Versión:** 0.4  
+**Última actualización:** 03/09/2026
 
 ---
 
@@ -154,14 +154,16 @@ Si el nombre comercial cambia en el futuro, la identidad interna del nivel no de
 - Capacidad de supervisión.
 - Acceso a determinadas funcionalidades.
 
-La definición exacta de cada nivel todavía no está completa.
+La definición funcional oficial todavía requiere validación, pero para la versión
+consolidada se adopta una escalera organizacional de diseño que distingue
+responsabilidad, alcance y capacidad comercial sin equiparar nivel y rol técnico.
 
 > **Estado:**
 >
 > - 7 niveles → ✅ CONFIRMADO.
 > - Nombres comerciales observados → 🔎 OBSERVADO.
-> - Responsabilidades exactas → ❓ PENDIENTE.
-> - Permisos exactos → ❓ PENDIENTE.
+> - Responsabilidades de diseño para la versión consolidada → 🚧 DECISIÓN DE DISEÑO.
+> - Permisos funcionales definitivos → ❓ PENDIENTE.
 
 ### 2.4. Antigüedad del empleado
 
@@ -220,13 +222,15 @@ Empleado A
 - Empleado B = supervisor
 - Empleado A = subordinado
 
-Para la versión de referencia se asumirá que cada empleado tiene un único supervisor directo.
+Para la versión consolidada se establece que cada empleado puede tener como
+máximo un supervisor directo activo. La relación actual puede cambiar mediante
+una operación explícita.
 
 Esto no implica que un supervisor tenga un único subordinado.
 
 Un supervisor puede tener múltiples empleados a su cargo.
 
-> **Estado:** ⚠️ SUPUESTO.
+> **Estado:** 🚧 DECISIÓN DE DISEÑO.
 
 ### 2.6. Equipo
 
@@ -491,9 +495,13 @@ Si las estadísticas históricas dependen de la estructura organizacional, puede
 
 La misma consideración puede aplicarse al cálculo de comisiones si estas dependen de la antigüedad, nivel o reglas vigentes en el momento de una venta.
 
-Por este motivo, el historial organizacional será considerado una necesidad potencial de primer nivel.
+Por este motivo, la versión consolidada deberá conservar un historial
+organizacional capaz de registrar, como mínimo, empleado, supervisor, nivel,
+inicio de vigencia, fin de vigencia, motivo y actor del cambio. El nombre físico
+definitivo de esta estructura queda para el modelado posterior.
 
-> **Estado:** ❓ PENDIENTE DE VALIDACIÓN.
+> **Estado:** 🚧 DECISIÓN DE DISEÑO; los detalles físicos y las reglas históricas
+> adicionales permanecen pendientes.
 
 ---
 
@@ -597,17 +605,21 @@ Los siguientes supuestos permitirán continuar con el desarrollo si Royal Presti
 
 | ID      | Supuesto                                                                                          | Estado    |
 |---------|---------------------------------------------------------------------------------------------------|-----------|
-| SUP-001 | Cada empleado tiene un único supervisor directo.                                                  | Activo    |
+| SUP-001 | Cada empleado tiene un único supervisor directo.                                                  | Reemplazado |
 | SUP-002 | Un supervisor puede tener múltiples subordinados.                                                 | Activo    |
 | SUP-003 | La jerarquía puede tener profundidad variable.                                                    | Activo    |
-| SUP-004 | Un empleado puede vender independientemente de su nivel.                                          | Activo    |
-| SUP-005 | Empleado y cuenta de usuario son conceptos independientes.                                        | Activo    |
-| SUP-006 | Un empleado puede permanecer en el sistema aunque su cuenta esté inactiva.                        | Activo    |
+| SUP-004 | Un empleado puede vender independientemente de su nivel.                                          | Reemplazado |
+| SUP-005 | Empleado y cuenta de usuario son conceptos independientes.                                        | Reemplazado |
+| SUP-006 | Un empleado puede permanecer en el sistema aunque su cuenta esté inactiva.                        | Reemplazado |
 | SUP-007 | Los equipos pueden ser implícitos o explícitos dependiendo de las reglas de negocio.              | Pendiente |
-| SUP-008 | Los cambios de supervisor pueden requerir historial.                                              | Pendiente |
-| SUP-009 | Los cambios de nivel pueden requerir historial.                                                   | Pendiente |
+| SUP-008 | Los cambios de supervisor pueden requerir historial.                                              | Reemplazado |
+| SUP-009 | Los cambios de nivel pueden requerir historial.                                                   | Reemplazado |
 | SUP-010 | La antigüedad del empleado se conserva como dato independiente del nivel.                         | Activo    |
 | SUP-011 | Los nombres comerciales de los niveles pueden cambiar sin modificar la identidad interna del nivel.| Activo    |
+
+Los supuestos marcados como REEMPLAZADO fueron sustituidos por las decisiones
+consolidadas de la sección 12.8 y no deben interpretarse como definiciones
+vigentes independientes.
 
 ---
 
@@ -615,23 +627,16 @@ Los siguientes supuestos permitirán continuar con el desarrollo si Royal Presti
 
 Las siguientes cuestiones todavía pueden modificar el modelo:
 
-- ¿Un empleado puede tener más de un supervisor?
 - ¿Un empleado puede pertenecer a múltiples equipos?
 - ¿El equipo es una entidad independiente?
 - ¿Un supervisor puede administrar empleados de diferentes niveles?
-- ¿Los niveles determinan necesariamente la posición jerárquica?
 - ¿Un empleado puede supervisar a otro empleado del mismo nivel?
 - ¿Un empleado puede cambiar de supervisor sin cambiar de equipo?
-- ¿La estructura organizacional debe conservarse históricamente?
-- ¿La información histórica debe respetar la estructura organizacional existente en el momento de cada venta?
-- ¿Los cambios de nivel deben conservar fecha efectiva?
+- ¿Qué excepciones existen a la escalera normal de reclutamiento?
 - ¿La antigüedad se calcula desde el primer ingreso histórico o desde el inicio del período laboral actual?
 - ¿Cómo se tratan las reincorporaciones?
 - ¿La antigüedad influye únicamente en las comisiones o también en los ascensos?
-- ¿Los Niveles 4–7 administran equipos, supervisores o estructuras mayores?
-- ¿Todos los niveles superiores pueden consultar la totalidad de su rama?
 - ¿Existen excepciones a la jerarquía normal?
-- ¿Un empleado puede tener equipo sin que su nivel sea el Nivel 3?
 - ¿Un empleado de Nivel 3 puede no tener ningún subordinado?
 
 > Estas preguntas deben mantenerse sincronizadas con `docs/product/open-questions.md`.
@@ -678,6 +683,39 @@ Las reglas organizacionales deben estar implementadas de manera que puedan utili
 
 Las reglas actualmente desconocidas deben poder incorporarse posteriormente sin tener que reconstruir la arquitectura completa.
 
+### 12.8. Decisiones consolidadas para la versión actual
+
+Para la versión consolidada del sistema se establecen las siguientes decisiones
+de diseño, sin presentarlas como confirmaciones adicionales de Royal Prestige:
+
+- La organización utiliza siete niveles comerciales con la nomenclatura
+  observada N1 Vendedor, N2 Vendedor Junior, N3 Distribuidor, N4 Blue, N5 Royal,
+  N6 Premier y N7 Max.
+- Todos los niveles pueden realizar ventas.
+- N1 y N2 no tienen equipo propio ni capacidad normal de reclutamiento.
+- La escalera normal de reclutamiento es N3 → N1, N4 → N3, N5 → N4, N6 → N5 y
+  N7 → N6.
+- La carga inicial conserva el nivel real actual de cada empleado y no lo fuerza
+  a comenzar en N1.
+- Las promociones y demociones no son automáticas; una persona con autoridad
+  debe tomar la decisión final.
+- `ADMIN` es un rol administrativo independiente y no constituye un Nivel 8.
+- Cada empleado tiene como máximo un supervisor directo activo. Los cambios de
+  supervisor y las reorganizaciones son explícitos.
+- Si un supervisor deja la organización, sus subordinados no se reasignan
+  automáticamente.
+- El empleado se desactiva cuando deja de trabajar y no se elimina físicamente.
+  Una cuenta asociada a un empleado inactivo no puede autenticarse.
+- El equipo se deriva inicialmente de los subordinados directos y la rama de
+  los descendientes. La existencia futura de una entidad Team permanece
+  pendiente.
+- Debe conservarse historial organizacional con empleado, supervisor, nivel,
+  vigencia, motivo y actor del cambio. El nombre físico de la estructura queda
+  para el modelado posterior.
+
+Estas definiciones deberán mantenerse alineadas con los documentos de producto,
+reglas de negocio, autorización y arquitectura de datos.
+
 ---
 
 ## 13. Relación con otros documentos
@@ -689,7 +727,7 @@ Este documento deberá mantenerse sincronizado con:
 - `docs/domain/business-rules.md`
 - `docs/product/permissions-matrix.md`
 
-Posteriormente deberá utilizarse como referencia para elaborar:
+También debe mantenerse coordinado con:
 
 - `docs/architecture/authorization.md`
 - `docs/architecture/data-architecture.md`
@@ -704,11 +742,15 @@ Y finalmente:
 
 ## 14. Estado del documento
 
-Este modelo es provisional.
+Este modelo combina conceptos confirmados, información observada y decisiones
+de diseño adoptadas para la consolidación actual. Las decisiones funcionales
+oficiales de Royal Prestige que todavía requieran validación no deben confundirse
+con estas decisiones de diseño.
 
 El objetivo actual no es representar con certeza la estructura interna de Royal Prestige, sino establecer una abstracción suficientemente sólida para continuar con el diseño del sistema.
 
-Cuando se obtenga información adicional, cada supuesto deberá convertirse en uno de los siguientes estados:
+Cuando se obtenga información adicional, cada supuesto o decisión provisional
+deberá convertirse en uno de los siguientes estados:
 
 - ✅ CONFIRMADO
 - 🔎 OBSERVADO
@@ -726,3 +768,5 @@ No se deberán modificar silenciosamente los supuestos existentes sin registrar 
 |------------|---------|-------------------------------------------------------------------------------------|
 | 01/09/2026 | 0.1     | Creación inicial del modelo organizacional.                                         |
 | 01/09/2026 | 0.2     | Incorporación de nomenclatura observada, antigüedad y nuevas consideraciones sobre niveles y jerarquía. |
+| 03/09/2026 | 0.3     | Consolidación de niveles, reclutamiento, estados, supervisión e historial organizacional. |
+| 03/09/2026 | 0.4     | Ajuste del estado de supuestos y sincronización de decisiones consolidadas. |

@@ -2,15 +2,20 @@
 
 **Proyecto:** Royal Prestige — Plataforma de Gestión de Ventas  
 **Documento:** Matriz de permisos  
-**Estado:** En definición  
-**Versión:** 0.2  
-**Última actualización:** 01/09/2026
+**Estado:** En definición / consolidación  
+**Versión:** 0.5  
+**Última actualización:** 03/09/2026
 
 ---
 
 Este documento define las capacidades y el alcance de acceso de los diferentes niveles y roles del sistema.
 
 Las capacidades marcadas como confirmadas provienen de la información disponible del cliente. Las capacidades marcadas como observadas provienen de información obtenida durante el relevamiento pero todavía pendiente de validación formal. Las capacidades marcadas como asumidas forman parte del diseño provisional de la versión de referencia.
+
+Las capacidades de diseño consolidadas que todavía requieren validación funcional
+se mantienen con el símbolo `🔸`, junto con los supuestos de referencia. El texto
+de cada sección distingue ambos casos y evita presentarlos como confirmaciones del
+cliente.
 
 ---
 
@@ -242,6 +247,11 @@ A continuación se definen los permisos conceptuales que se utilizarán como bas
 >
 > Si las ventas se importan automáticamente desde otro sistema, por ejemplo, `sale.create` podría no estar disponible para usuarios internos.
 
+Para la versión consolidada, la venta es cargada por el vendedor responsable,
+queda pendiente de revisión y luego es aprobada o rechazada por el supervisor.
+La carga y la aprobación son responsabilidades separadas; los permisos exactos
+de cada transición deberán mantenerse alineados con la matriz aprobada.
+
 ### 4.5. Estadísticas y reporting
 
 | Permiso                      | Descripción                          |
@@ -313,8 +323,8 @@ A continuación se definen los permisos conceptuales que se utilizarán como bas
 | `training.update`          | Modificar materiales                 |
 | `training.delete`          | Eliminar materiales                  |
 | `training.publish`         | Publicar u ocultar materiales        |
-| `training.viewProgress`    | Consultar progreso                   |
-| `training.updateProgress`  | Registrar progreso                   |
+| `training.viewProgress`    | Consultar progreso (fuera del alcance actual) |
+| `training.updateProgress`  | Registrar progreso (fuera del alcance actual) |
 | `training.manageCourses`   | Administrar cursos/módulos           |
 
 > El acceso a capacitación para Nivel 1 está basado en información observada durante el relevamiento.
@@ -358,7 +368,7 @@ Los permisos de los Niveles 4–7 son provisionales y deberán revisarse cuando 
 | Consultar reglas de comisión aplicables      | Propio     | 🔸 Asumido          |
 | Acceder a capacitación                       | Propio     | 🔎 Observado        |
 | Descargar materiales de capacitación         | Propio     | 🔎 Observado        |
-| Consultar progreso de capacitación           | Propio     | ⚠️ Pendiente        |
+| Consultar progreso de capacitación           | —          | ❌ Fuera del alcance actual |
 | Gestionar capacitación                       | —          | ❌                  |
 | Gestionar niveles                            | —          | ❌                  |
 
@@ -379,7 +389,7 @@ Los permisos de los Niveles 4–7 son provisionales y deberán revisarse cuando 
 | Consultar estadísticas de equipo             | —          | ❌                  |
 | Consultar estadísticas de rama               | —          | ❌                  |
 | Consultar comisiones propias                 | Propio     | 🔸 Asumido          |
-| Acceder a capacitación                       | Propio     | ⚠️                  |
+| Acceder a capacitación                       | Propio     | 🔸 Asumido / diseño consolidado |
 | Gestionar capacitación                       | —          | ❌                  |
 | Gestionar niveles                            | —          | ❌                  |
 
@@ -405,15 +415,17 @@ Los permisos de los Niveles 4–7 son provisionales y deberán revisarse cuando 
 | Ver estadísticas históricas                  | Equipo         | 🔸 Asumido          |
 | Consultar comisiones propias                 | Propio         | 🔸 Asumido          |
 | Consultar comisiones del equipo              | Equipo         | ⚠️ Pendiente        |
-| Acceder a capacitación                       | Propio         | ⚠️                  |
+| Acceder a capacitación                       | Propio         | 🔸 Asumido / diseño consolidado |
 | Gestionar capacitación                       | —              | ❌                  |
 | Gestionar reglas de comisión                 | —              | ❌                  |
 
 ---
 
-## 6. Propuesta para Niveles 4–7
+## 6. Diseño consolidado para Niveles 4–7
 
-Debido a que todavía no conocemos las responsabilidades reales de estos niveles, se propone una estructura progresiva para la versión de referencia.
+Las responsabilidades oficiales de estos niveles todavía requieren validación.
+Para la versión de referencia se adopta una estructura progresiva de diseño,
+sin presentarla como confirmación funcional de Royal Prestige.
 
 El objetivo es que cada nivel superior tenga un alcance organizacional mayor, sin introducir nombres específicos de estructuras que todavía no están confirmados.
 
@@ -421,7 +433,8 @@ El objetivo es que cada nivel superior tenga un alcance organizacional mayor, si
 
 > **Nombre comercial observado:** Blue
 >
-> **Hipótesis:** Responsable de múltiples equipos o supervisores de Nivel 3.
+> **Decisión de diseño:** puede reclutar/integrar empleados de Nivel 3 y operar
+> sobre su estructura autorizada.
 
 | Capacidad                                | Alcance        | Estado              |
 |------------------------------------------|----------------|---------------------|
@@ -432,20 +445,21 @@ El objetivo es que cada nivel superior tenga un alcance organizacional mayor, si
 | Ventas subordinadas                      | Rama           | 🔸 Asumido          |
 | Consultar empleados                      | Rama           | 🔸 Asumido          |
 | Consultar equipos                        | Rama           | 🔸 Asumido          |
-| Crear empleados                          | Rama           | ⚠️ Pendiente        |
+| Crear empleados                          | Estructura propia | 🔸 Asumido / diseño consolidado |
 | Gestionar equipos                        | Rama           | ⚠️ Pendiente        |
 | Ver rankings                             | Rama           | 🔸 Asumido          |
 | Reportes                                 | Rama           | 🔸 Asumido          |
 | Consultar comisiones propias             | Propio         | 🔸 Asumido          |
 | Consultar comisiones de la rama          | Rama           | 🔸 Asumido          |
-| Acceder a capacitación                   | Propio         | ⚠️ Pendiente        |
+| Acceder a capacitación                   | Propio         | 🔸 Asumido / diseño consolidado |
 | Gestionar capacitación                   | Rama           | ⚠️ Pendiente        |
 
 ### 6.2. Nivel 5 — Royal
 
 > **Nombre comercial observado:** Royal
 >
-> **Hipótesis:** Responsable de una estructura mayor compuesta por múltiples equipos o supervisores.
+> **Decisión de diseño:** puede reclutar/integrar empleados de Nivel 4 y operar
+> sobre su estructura autorizada.
 
 | Capacidad                                | Alcance        | Estado              |
 |------------------------------------------|----------------|---------------------|
@@ -457,21 +471,22 @@ El objetivo es que cada nivel superior tenga un alcance organizacional mayor, si
 | Ventas subordinadas                      | Rama           | 🔸 Asumido          |
 | Consultar empleados                      | Rama           | 🔸 Asumido          |
 | Consultar equipos                        | Rama           | 🔸 Asumido          |
-| Crear empleados                          | Rama           | ⚠️ Pendiente        |
+| Crear empleados                          | Estructura propia | 🔸 Asumido / diseño consolidado |
 | Gestionar equipos                        | Rama           | 🔸 Asumido          |
 | Ver rankings                             | Rama           | 🔸 Asumido          |
 | Reportes                                 | Rama           | 🔸 Asumido          |
 | Exportar reportes                        | Rama           | 🔸 Asumido          |
 | Consultar comisiones propias             | Propio         | 🔸 Asumido          |
 | Consultar comisiones de la rama          | Rama           | 🔸 Asumido          |
-| Acceder a capacitación                   | Propio         | ⚠️ Pendiente        |
+| Acceder a capacitación                   | Propio         | 🔸 Asumido / diseño consolidado |
 | Gestionar capacitación                   | Rama           | ⚠️ Pendiente        |
 
 ### 6.3. Nivel 6 — Premier
 
 > **Nombre comercial observado:** Premier
 >
-> **Hipótesis:** Responsable de una estructura organizacional amplia.
+> **Decisión de diseño:** puede reclutar/integrar empleados de Nivel 5 y operar
+> sobre su estructura autorizada.
 
 | Capacidad                                | Alcance        | Estado              |
 |------------------------------------------|----------------|---------------------|
@@ -489,16 +504,18 @@ El objetivo es que cada nivel superior tenga un alcance organizacional mayor, si
 | Exportar reportes                        | Rama           | 🔸 Asumido          |
 | Consultar comisiones propias             | Propio         | 🔸 Asumido          |
 | Consultar comisiones de la rama          | Rama           | 🔸 Asumido          |
-| Acceder a capacitación                   | Propio         | ⚠️ Pendiente        |
+| Acceder a capacitación                   | Propio         | 🔸 Asumido / diseño consolidado |
 | Gestionar capacitación                   | Rama           | ⚠️ Pendiente        |
 
 ### 6.4. Nivel 7 — Max
 
 > **Nombre comercial observado:** Max
 >
-> **Hipótesis:** Máximo nivel dentro de la jerarquía comercial.
+> **Decisión de diseño:** puede reclutar/integrar empleados de Nivel 6 y operar
+> sobre la estructura comercial global de referencia.
 
-Para la versión de referencia se asumirá que el Nivel 7 dispone de visibilidad sobre toda la organización comercial.
+Para la versión de referencia se utilizará visibilidad global para el Nivel 7.
+Esto continúa siendo una decisión de diseño y no una confirmación funcional.
 
 | Capacidad                                | Alcance    | Estado              |
 |------------------------------------------|------------|---------------------|
@@ -510,7 +527,7 @@ Para la versión de referencia se asumirá que el Nivel 7 dispone de visibilidad
 | Ventas globales                          | Global     | 🔸 Asumido          |
 | Consultar empleados                      | Global     | 🔸 Asumido          |
 | Consultar equipos                        | Global     | 🔸 Asumido          |
-| Gestionar equipos                        | Global     | ⚠️ Pendiente        |
+| Gestionar equipos                        | Global     | 🔸 Asumido / diseño consolidado |
 | Rankings                                 | Global     | 🔸 Asumido          |
 | Reportes avanzados                       | Global     | 🔸 Asumido          |
 | Exportar reportes                        | Global     | 🔸 Asumido          |
@@ -518,14 +535,15 @@ Para la versión de referencia se asumirá que el Nivel 7 dispone de visibilidad
 | Consultar comisiones globales            | Global     | 🔸 Asumido          |
 | Consultar reglas de comisión             | Global     | ⚠️ Pendiente        |
 | Gestionar reglas de comisión             | Global     | ⚠️ Pendiente        |
-| Acceder a capacitación                   | Global     | ⚠️ Pendiente        |
+| Acceder a capacitación                   | Global     | 🔸 Asumido / diseño consolidado |
 | Gestionar capacitación                   | Global     | ⚠️ Pendiente        |
 
 ---
 
 ## 7. Rol administrativo
 
-Además de los siete niveles comerciales, se propone contemplar un rol administrativo independiente de la jerarquía comercial.
+Además de los siete niveles comerciales, se contempla un rol administrativo
+independiente de la jerarquía comercial como decisión de diseño.
 
 **Rol:** `ADMIN`
 
@@ -549,9 +567,10 @@ Su finalidad es permitir gestionar aspectos estructurales del sistema.
 | Gestionar capacitación               | Global  | 🔸 Asumido |
 | Gestionar objetivos                  | Global  | ⚠️ Pendiente |
 
-> La existencia y alcance de este rol todavía no fueron confirmados por el cliente.
+> La existencia y alcance funcional de este rol todavía requieren validación con
+> el cliente.
 >
-> **Estado:** ⚠️ ASUMIDO PARA LA VERSIÓN DE REFERENCIA.
+> **Estado:** 🚧 DECISIÓN DE DISEÑO PARA LA VERSIÓN DE REFERENCIA.
 
 ---
 
@@ -692,7 +711,8 @@ training.delete
 training.publish
 ```
 
-El seguimiento del progreso deberá considerarse una capacidad independiente cuando se confirme su necesidad.
+El seguimiento individual del progreso queda fuera del alcance actual y no se
+asignará como capacidad funcional en esta versión.
 
 ---
 
@@ -889,3 +909,6 @@ que resulte afectado.
 |------------|---------|-------------------------------------------------------------------------------------------------|
 | 01/09/2026 | 0.1     | Creación inicial de la matriz de permisos.                                                      |
 | 01/09/2026 | 0.2     | Incorporación de capacitación, comisiones, nomenclatura observada y separación explícita entre permisos y alcance. |
+| 03/09/2026 | 0.3     | Consolidación de capacidades de niveles, rol administrativo, capacitación y flujo inicial de ventas. |
+| 03/09/2026 | 0.4     | Sincronización global de estados y decisiones de la matriz. |
+| 03/09/2026 | 0.5     | Exclusión del seguimiento individual de capacitación del alcance actual. |

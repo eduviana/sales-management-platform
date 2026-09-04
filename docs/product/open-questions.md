@@ -2,9 +2,9 @@
 
 **Proyecto:** Royal Prestige — Plataforma de Gestión de Ventas  
 **Documento:** Preguntas abiertas  
-**Estado:** En relevamiento  
-**Versión:** 0.2  
-**Última actualización:** 01/09/2026
+**Estado:** En consolidación  
+**Versión:** 0.5  
+**Última actualización:** 03/09/2026
 
 ---
 
@@ -87,7 +87,14 @@ Las preguntas mantienen una numeración permanente para facilitar la trazabilida
 
 **26.** ¿El nuevo empleado recibe una contraseña temporal?
 
+> **Estado:** ✅ RESPONDIDA — Sí. Las cuentas nuevas se crean con una contraseña
+> temporal, almacenada únicamente como hash, con cambio obligatorio en el primer
+> inicio de sesión.
+
 **27.** ¿El empleado debe cambiar la contraseña en el primer inicio de sesión?
+
+> **Estado:** ✅ RESPONDIDA — Sí. Hasta completar el cambio no puede continuar
+> con el uso normal de la aplicación.
 
 **28.** ¿Un usuario de Nivel 3 puede desactivar a un empleado?
 
@@ -233,7 +240,7 @@ Esta es una de las áreas más importantes que todavía no está definida.
 | Mes 3       | 30 %                 |
 | Mes 4       | Pendiente            |
 | Mes 5       | Pendiente            |
-| Mes 6–12    | 45 %–60 %            |
+| Regla inicial (anterior, 🔄 REEMPLAZADA) | 50 %                 |
 
 **76.** ¿Qué porcentaje corresponde exactamente al mes 4?
 
@@ -393,22 +400,20 @@ Esta es una de las áreas más importantes que todavía no está definida.
 
 Las siguientes decisiones dependen de las respuestas obtenidas durante el relevamiento funcional:
 
-- Proveedor de autenticación.
-- Plataforma de despliegue.
-- Alojamiento de la base de datos.
-- Modelo exacto de autorización.
-- Estrategia de incorporación de datos de ventas.
+- Proveedor de autenticación y correo.
+- Detalles operativos de sesiones, recuperación y 2FA.
+- PostgreSQL remoto/cloud y sus restricciones.
+- Detalles físicos del modelo de autorización.
 - Arquitectura de reporting.
 - Sistema de notificaciones.
 - Requisitos de almacenamiento de archivos y documentos.
 - Estrategia de almacenamiento de videos.
 - Implementación del sistema de auditoría.
 - Necesidad de procesos en segundo plano o colas.
-- Integraciones externas.
-- Estrategia de cálculo de comisiones.
-- Modelo de reglas de comisión.
-- Estrategia de gestión de contenidos de capacitación.
-- Seguimiento del progreso de capacitación.
+- Diseño de futuras integraciones externas.
+- Fórmula y base definitiva del cálculo de comisiones.
+- Casos particulares de reglas de comisión.
+- Detalles operativos de gestión de contenidos de capacitación.
 
 ---
 
@@ -425,7 +430,7 @@ La numeración de las preguntas es permanente para facilitar la trazabilidad.
 - **VALIDAR** — Existe una respuesta, pero requiere confirmación.
 - **DESCARTADA** — Se determinó que no aplica.
 
-### 16.2. Registro
+### 16.2. Registro inicial (REEMPLAZADO)
 
 | Nº    | Estado    | Respuesta   | Fecha   | Fuente   |
 |-------|-----------|-------------|---------|----------|
@@ -439,7 +444,157 @@ La numeración de las preguntas es permanente para facilitar la trazabilidad.
 | ...   | ...       | ...         | ...     | ...      |
 | 136   | PENDIENTE | —           | —       | —        |
 
-El registro deberá actualizarse a medida que avance el relevamiento.
+Este registro conserva el estado inicial de las preguntas y queda reemplazado
+por el registro consolidado de la sección 16.3.
+
+### 16.3. Registro consolidado de resolución
+
+La siguiente tabla conserva la numeración permanente y distingue respuestas
+confirmadas de decisiones de diseño, validaciones pendientes y cuestiones aún no
+resueltas. `RESPONDIDA` no significa necesariamente confirmación de Royal
+Prestige: la fuente indicada identifica el tipo de resolución.
+
+| Nº | Estado | Resolución / fuente |
+|---:|---|---|
+| 01 | VALIDAR | Nombres observados adoptados como referencia de diseño; falta validación oficial. |
+| 02 | RESPONDIDA | Responsabilidades consolidadas como diseño; validación oficial pendiente. |
+| 03 | PENDIENTE | Criterios exactos de promoción. |
+| 04 | PENDIENTE | Factores exactos de promoción. |
+| 05 | RESPONDIDA | Se contemplan promociones y demociones explícitas, no automáticas. |
+| 06 | RESPONDIDA | La decisión final de cambio de nivel la toma una persona con autoridad. |
+| 07 | RESPONDIDA | Se conserva historial de nivel y organizacional. |
+| 08 | PENDIENTE | No se definió la política futura de cambio de nombres comerciales. |
+| 09 | RESPONDIDA | El nombre comercial se mantiene separado del identificador interno. |
+| 10 | RESPONDIDA | Como máximo un supervisor directo activo por empleado. |
+| 11 | RESPONDIDA | No se permiten múltiples supervisores en la versión consolidada. |
+| 12 | RESPONDIDA | Los cambios de estructura/equipo son explícitos. |
+| 13 | RESPONDIDA | El cambio de supervisor conserva historial; no hay reasignación implícita. |
+| 14 | RESPONDIDA | Los subordinados no se reasignan automáticamente al salir un supervisor. |
+| 15 | RESPONDIDA | Escalera normal: N3→N1, N4→N3, N5→N4, N6→N5, N7→N6. |
+| 16 | VALIDAR | Se utiliza una jerarquía comercial normal; las excepciones requieren definición. |
+| 17 | RESPONDIDA | La visibilidad de rama depende de autorización y scope. |
+| 18 | PENDIENTE | Uso simultáneo de múltiples equipos por niveles superiores. |
+| 19 | VALIDAR | Resolución inicial derivada de jerarquía; identidad funcional de Team pendiente. |
+| 20 | RESPONDIDA | N3 y ADMIN pueden crear/integrar cuentas según su alcance de diseño. |
+| 21 | RESPONDIDA | N3 puede reclutar/integrar N1 en su estructura. |
+| 22 | RESPONDIDA | N3 recluta dentro de su propia estructura autorizada. |
+| 23 | PENDIENTE | Campos obligatorios de alta. |
+| 24 | RESPONDIDA | La carga inicial conserva nivel real; reclutamiento usa la escalera definida. |
+| 25 | VALIDAR | La asignación debe ser explícita y respetar el alcance; responsable operativo pendiente. |
+| 26 | RESPONDIDA | Contraseña temporal en primer inicio de sesión (hash, cambio obligatorio). |
+| 27 | RESPONDIDA | Cambio obligatorio de contraseña en primer inicio; sin expiración, historial ni bloqueo. |
+| 28 | RESPONDIDA | ADMIN puede desactivar; la capacidad de N3 requiere validación específica. |
+| 29 | PENDIENTE | Alcance de modificación posterior por cada rol. |
+| 30 | RESPONDIDA | La salida desactiva empleado/cuenta sin eliminación física. |
+| 31 | RESPONDIDA | Los empleados inactivos conservan visibilidad histórica autorizada. |
+| 32 | RESPONDIDA | Venta basada en documentación oficial y flujo de revisión. |
+| 33 | RESPONDIDA | Registro manual inicial por el vendedor. |
+| 34 | RESPONDIDA | No hay importación en la primera versión; puede existir a futuro. |
+| 35 | PENDIENTE | La primera versión no depende de un sistema externo; la existencia de uno en la empresa no está confirmada. |
+| 36 | VALIDAR | El comprador se conserva como referencia contextual de la venta; los datos mínimos definitivos siguen pendientes. |
+| 37 | RESPONDIDA | Modificaciones relevantes controladas y auditables. |
+| 38 | RESPONDIDA | Una venta aprobada puede cancelarse cuando corresponda. |
+| 39 | RESPONDIDA | Devoluciones/anulaciones generan ajustes, no reescritura silenciosa. |
+| 40 | RESPONDIDA | Cada venta tiene inicialmente un único vendedor responsable. |
+| 41 | RESPONDIDA | No hay co-vendedores inicialmente. |
+| 42 | PENDIENTE | Relación exacta entre ventas y promoción. |
+| 43 | RESPONDIDA | Catálogo interno pequeño, no ecommerce. |
+| 44 | RESPONDIDA | Productos y precios se administran dentro de la aplicación. |
+| 45 | RESPONDIDA | Productos sirven para registrar ventas y reporting. |
+| 46 | VALIDAR | Categorías previstas si resultan necesarias para el catálogo. |
+| 47 | RESPONDIDA | Estadísticas por producto/categoría previstas. |
+| 48 | PENDIENTE | Métricas individuales exactas. |
+| 49 | PENDIENTE | Métricas exactas de supervisión. |
+| 50 | PENDIENTE | Períodos disponibles. |
+| 51 | PENDIENTE | Comparación de períodos. |
+| 52 | PENDIENTE | Comparación de empleados. |
+| 53 | PENDIENTE | Rankings. |
+| 54 | PENDIENTE | Identificación de bajo rendimiento. |
+| 55 | PENDIENTE | Existencia de objetivos oficiales. |
+| 56 | PENDIENTE | Objetivos individuales/equipo. |
+| 57 | PENDIENTE | Diferenciación de objetivos por nivel. |
+| 58 | PENDIENTE | Cálculo de cumplimiento. |
+| 59 | RESPONDIDA | N4–N7 siguen la escalera comercial consolidada de diseño. |
+| 60 | RESPONDIDA | Los niveles superiores operan sobre estructuras mayores según diseño. |
+| 61 | RESPONDIDA | La visibilidad de subordinados depende de permisos y scope. |
+| 62 | RESPONDIDA | N4→N3, N5→N4, N6→N5 y N7→N6 para reclutamiento normal. |
+| 63 | PENDIENTE | Capacidad de modificar estructura fuera del reclutamiento normal. |
+| 64 | PENDIENTE | Estadísticas exactas por nivel. |
+| 65 | VALIDAR | Se prevén agregaciones de ramas; alcance funcional exacto pendiente. |
+| 66 | PENDIENTE | Drill-down desde agregados. |
+| 67 | PENDIENTE | Métricas exclusivas de niveles superiores. |
+| 68 | RESPONDIDA | La primera versión podrá calcular comisiones internamente. |
+| 69 | RESPONDIDA | Antigüedad puede ser factor de comisión. |
+| 70 | PENDIENTE | Dependencia exacta del volumen. |
+| 71 | RESPONDIDA | El nivel puede ser factor de comisión. |
+| 72 | PENDIENTE | Comisiones sobre equipos. |
+| 73 | PENDIENTE | Base exacta de cálculo. |
+| 74 | RESPONDIDA | Reglas configurables y versionadas. |
+| 75 | DESCARTADA | La progresión observada no se utilizará como regla vigente; la regla inicial de diseño es N1 → 15 %. |
+| 76 | DESCARTADA | El porcentaje mensual observado dejó de ser la base de diseño inicial. |
+| 77 | DESCARTADA | El porcentaje mensual observado dejó de ser la base de diseño inicial. |
+| 78 | DESCARTADA | La regla inicial no utiliza una progresión mensual observada. |
+| 79 | PENDIENTE | Porcentaje y reglas posteriores a la configuración inicial. |
+| 80 | RESPONDIDA | Se conserva la fecha de ingreso original para antigüedad, sujeto a casos especiales. |
+| 81 | PENDIENTE | Comisión después de promoción. |
+| 82 | PENDIENTE | Cambios de regla por ascenso. |
+| 83 | PENDIENTE | Condiciones adicionales. |
+| 84 | RESPONDIDA | Cancelaciones/devoluciones producen ajustes. |
+| 85 | RESPONDIDA | Los cálculos históricos no se reescriben al cambiar reglas. |
+| 86 | RESPONDIDA | La primera versión no depende de fuente externa; detalles del cálculo pendiente. |
+| 87 | RESPONDIDA | `ADMIN` existe como rol independiente de diseño. |
+| 88 | RESPONDIDA | ADMIN gestiona aspectos fuera de la jerarquía comercial. |
+| 89 | RESPONDIDA | ADMIN puede ejecutar cambios de nivel. |
+| 90 | RESPONDIDA | ADMIN puede ejecutar cambios de supervisor. |
+| 91 | RESPONDIDA | ADMIN puede desactivar cuentas. |
+| 92 | RESPONDIDA | ADMIN puede consultar globalmente según permisos de diseño. |
+| 93 | RESPONDIDA | Se contempla panel administrativo. |
+| 94 | RESPONDIDA | ADMIN puede buscar empleados globalmente según diseño. |
+| 95 | RESPONDIDA | Se definió un conjunto mínimo de acciones sensibles auditables. |
+| 96 | RESPONDIDA | Debe registrarse quién creó una cuenta. |
+| 97 | RESPONDIDA | Debe registrarse quién cambió el nivel. |
+| 98 | RESPONDIDA | Debe existir historial organizacional. |
+| 99 | RESPONDIDA | Los reportes deben poder reconstruir la estructura consultada. |
+| 100 | RESPONDIDA | Email + contraseña inicialmente. |
+| 101 | RESPONDIDA | No se utilizarán emails corporativos obligatorios. |
+| 102 | RESPONDIDA | Google/Microsoft OAuth no se utilizará inicialmente. |
+| 103 | VALIDAR | 2FA para ADMIN como diseño de seguridad; no universal. |
+| 104 | RESPONDIDA | Recuperación por email y token temporal de un solo uso. |
+| 105 | PENDIENTE | Políticas de seguridad corporativas externas. |
+| 106 | RESPONDIDA | Se permiten sesiones simultáneas inicialmente. |
+| 107 | RESPONDIDA | Vercel Free para la aplicación inicialmente. |
+| 108 | PENDIENTE | Existencia y uso de infraestructura propia de la empresa; el despliegue inicial no depende de ella. |
+| 109 | RESPONDIDA | PostgreSQL local mediante Docker en desarrollo; cloud después. |
+| 110 | PENDIENTE | Autorización corporativa de proveedores cloud. |
+| 111 | VALIDAR | Backups periódicos y restauración son necesarios; parámetros pendientes. |
+| 112 | PENDIENTE | Retención de datos. |
+| 113 | RESPONDIDA | Se separan development, staging y production. |
+| 114 | PENDIENTE | La primera versión no depende de sistemas existentes; su existencia en la empresa no está confirmada. |
+| 115 | PENDIENTE | No hay integración inicial; la necesidad futura debe determinarse. |
+| 116 | PENDIENTE | No se requieren APIs externas inicialmente; la disponibilidad futura no está confirmada. |
+| 117 | RESPONDIDA | No hay sincronización inicial. |
+| 118 | PENDIENTE | Frecuencia de futuras sincronizaciones. |
+| 119 | RESPONDIDA | Capacitación no exclusiva de N1. |
+| 120 | RESPONDIDA | Otros niveles pueden acceder a contenidos correspondientes. |
+| 121 | RESPONDIDA | Categoría → curso → módulo → material. |
+| 122 | RESPONDIDA | PDFs visualizables y descargables. |
+| 123 | RESPONDIDA | Videos mediante abstracción de contenido/almacenamiento. |
+| 124 | PENDIENTE | Plataforma de video. |
+| 125 | RESPONDIDA | Categorías, niveles, cursos, módulos y tags previstos. |
+| 126 | RESPONDIDA | Estados `DRAFT`, `PUBLISHED`, `ARCHIVED`. |
+| 127 | RESPONDIDA | ADMIN crea materiales. |
+| 128 | RESPONDIDA | ADMIN modifica y archiva materiales. |
+| 129 | RESPONDIDA | Supervisores no administran materiales inicialmente. |
+| 130 | DESCARTADA | No se implementará seguimiento individual de materiales en el alcance actual. |
+| 131 | DESCARTADA | No se implementará progreso individual en el alcance actual. |
+| 132 | DESCARTADA | No se implementará completitud individual en el alcance actual. |
+| 133 | RESPONDIDA | Existe capacitación obligatoria, especialmente para nuevos N1. |
+| 134 | DESCARTADA | Assessments/quizzes quedan fuera del alcance actual. |
+| 135 | RESPONDIDA | El contenido puede dirigirse por nivel, con acceso acumulativo. |
+| 136 | DESCARTADA | No se conservará historial individual de progreso en el alcance actual. |
+
+La tabla anterior reemplaza el carácter vigente del registro inicial de la
+sección 16.2, que se conserva únicamente como trazabilidad del estado previo.
 
 ---
 
@@ -477,7 +632,7 @@ Durante la reunión se observó una representación de los niveles con la siguie
 
 Los nombres anteriores se consideran observados y todavía deben ser validados formalmente.
 
-También se observó una estructura de comisiones para vendedores nuevos de Nivel 1:
+Posteriormente se adoptó una regla inicial de diseño para comisiones:
 
 | Antigüedad  | Comisión observada |
 |-------------|--------------------|
@@ -486,11 +641,14 @@ También se observó una estructura de comisiones para vendedores nuevos de Nive
 | Mes 3       | 30 %               |
 | Mes 4       | Pendiente          |
 | Mes 5       | Pendiente          |
-| Mes 6–12    | 45 %–60 %          |
+| Regla inicial (anterior, 🔄 REEMPLAZADA) | 50 %               |
 
-Los porcentajes anteriores todavía deben validarse y completarse.
+Las observaciones históricas previas de progresión mensual quedan reemplazadas
+como base de la regla operativa inicial. La regla de diseño vigente es
+**N1 → 15 %** (configurable y versionada); la anterior regla del 50 % queda
+🔄 REEMPLAZADA como antecedente. Las condiciones futuras continúan pendientes.
 
-**⚠️ Aún sin definir:**
+**⚠️ Aún sin definir en la reunión inicial:**
 
 - Responsabilidades exactas de los Niveles 4–7.
 - Matriz exacta de permisos.
@@ -509,6 +667,10 @@ Los porcentajes anteriores todavía deben validarse y completarse.
 - Estrategia de alojamiento de videos.
 - Seguimiento del progreso de capacitación.
 
+Las decisiones adoptadas posteriormente durante la consolidación se registran en
+la sección 16.3 y no deben reinterpretarse como confirmaciones de aquella
+reunión.
+
 ---
 
 ## 18. Historial de cambios
@@ -517,3 +679,6 @@ Los porcentajes anteriores todavía deben validarse y completarse.
 |------------|---------|-------------------------------------------------------------------------------------|
 | 01/09/2026 | 0.1     | Creación inicial del documento a partir del relevamiento informal.                  |
 | 01/09/2026 | 0.2     | Incorporación de nomenclatura observada, comisiones y requisitos de capacitación.   |
+| 03/09/2026 | 0.3     | Registro de resolución y clasificación de Q01–Q136 según decisiones consolidadas.  |
+| 03/09/2026 | 0.4     | Consolidación de comisión inicial y descarte del seguimiento individual de capacitación. |
+| 03/09/2026 | 0.5     | Comisión inicial vigente N1 → 15 % (50 % queda REEMPLAZADO como antecedente). Cierre de Q26/Q27: contraseña temporal y cambio obligatorio en primer inicio. |

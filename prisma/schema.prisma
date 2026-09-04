@@ -1,0 +1,456 @@
+// Royal Prestige — Plataforma de Gestión de Ventas
+// Schema Prisma derivado del modelo físico aprobado.
+// Fuente de verdad: docs/database/data-model.md v0.6
+// PostgreSQL como base de datos relacional principal (ADR-008).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// =============================================================================
+// Enums
+// =============================================================================
+
+enum EmployeeStatus {
+  ACTIVE
+  INACTIVE
+
+  @@map("employee_status")
+}
+
+enum AccountStatus {
+  ACTIVE
+  SUSPENDED
+  LOCKED
+
+  @@map("account_status")
+}
+
+enum SaleStatus {
+  DRAFT
+  PENDING_REVIEW
+  APPROVED
+  REJECTED
+  CANCELLED
+
+  @@map("sale_status")
+}
+
+enum CommissionType {
+  EARNED
+  REVERSAL
+  ADJUSTMENT
+
+  @@map("commission_type")
+}
+
+enum AuditResult {
+  SUCCESS
+  FAILURE
+  DENIED
+
+  @@map("audit_result")
+}
+
+enum ContentType {
+  PDF
+  VIDEO
+  DOCUMENT
+  LINK
+
+  @@map("content_type")
+}
+
+enum ContentStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+
+  @@map("content_status")
+}
+
+// =============================================================================
+// Level
+// =============================================================================
+
+model Level {
+  id   Int    @id @default(autoincrement())
+  code String @unique @db.VarChar(20)
+  rank Int    @unique
+  name String @db.VarChar(100)
+
+  employees                  Employee[]
+  employeeLevelHistory       EmployeeLevelHistory[]
+  commissionRules            CommissionRule[]
+  trainingMaterials          TrainingMaterial[]
+
+  @@map("level")
+}
+
+// =============================================================================
+// Employee
+// =============================================================================
+
+model Employee {
+  id              String         @id @default(uuid()) @db.Uuid
+  firstName       String         @db.VarChar(100)
+  lastName        String         @db.VarChar(100)
+  joinedAt        DateTime       @db.Date
+  currentLevelId  Int?
+  supervisorId    String?        @db.Uuid
+  status          EmployeeStatus @default(ACTIVE)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  // Relaciones
+  currentLevel              Level?                    @relation(fields: [currentLevelId], references: [id])
+  supervisor                Employee?                 @relation("SupervisorHierarchy", fields: [supervisorId], references: [id])
+  subordinates              Employee[]                @relation("SupervisorHierarchy")
+  userAccount               UserAccount?
+  employeeLevelHistory      EmployeeLevelHistory[]
+  employeeSupervisorHistory EmployeeSupervisorHistory[]
+  supervisorHistoryRecords  EmployeeSupervisorHistory[] @relation("SupervisorHistoryTarget")
+  sales                     Sale[]
+  commissionEntries         CommissionEntry[]
+
+  @@index([currentLevelId])
+  @@index([supervisorId])
+  @@index([status])
+  @@map("employee")
+}
+
+// =============================================================================
+// EmployeeLevelHistory
+// =============================================================================
+
+model EmployeeLevelHistory {
+  id         String   @id @default(uuid()) @db.Uuid
+  employeeId String   @db.Uuid
+  levelId    Int
+  startedAt  DateTime
+  endedAt    DateTime?
+  reason     String?  @db.Text
+  createdAt  DateTime @default(now())
+
+  employee Employee @relation(fields: [employeeId], references: [id])
+  level    Level    @relation(fields: [levelId], references: [id])
+
+  @@index([employeeId])
+  @@index([levelId])
+  @@index([startedAt])
+  @@map("employee_level_history")
+}
+
+// =============================================================================
+// EmployeeSupervisorHistory
+// =============================================================================
+
+model EmployeeSupervisorHistory {
+  id              String    @id @default(uuid()) @db.Uuid
+  employeeId      String    @db.Uuid
+  supervisorId    String?   @db.Uuid
+  startedAt       DateTime
+  endedAt         DateTime?
+  reason          String?   @db.Text
+  createdAt       DateTime  @default(now())
+
+  employee   Employee  @relation(fields: [employeeId], references: [id])
+  supervisor Employee? @relation("SupervisorHistoryTarget", fields: [supervisorId], references: [id])
+
+  @@index([employeeId])
+  @@index([supervisorId])
+  @@index([startedAt])
+  @@map("employee_supervisor_history")
+}
+
+// =============================================================================
+// UserAccount
+// =============================================================================
+
+model UserAccount {
+  id                 String        @id @default(uuid()) @db.Uuid
+  employeeId         String        @unique @db.Uuid
+  email              String        @unique @db.VarChar(255)
+  passwordHash       String        @db.VarChar(255)
+  status             AccountStatus @default(ACTIVE)
+  mustChangePassword Boolean       @default(true)
+  lastLoginAt        DateTime?
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+
+  employee           Employee       @relation(fields: [employeeId], references: [id])
+  passwordResetTokens PasswordResetToken[]
+  auditEvents        AuditEvent[]
+
+  @@map("user_account")
+}
+
+// =============================================================================
+// PasswordResetToken
+// =============================================================================
+
+model PasswordResetToken {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @db.Uuid
+  tokenHash String    @db.VarChar(255)
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user UserAccount @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([tokenHash])
+  @@map("password_reset_token")
+}
+
+// =============================================================================
+// ProductCategory
+// =============================================================================
+
+model ProductCategory {
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String   @db.VarChar(150)
+  description String?  @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  products Product[]
+
+  @@map("product_category")
+}
+
+// =============================================================================
+// Product
+// =============================================================================
+
+model Product {
+  id          String        @id @default(uuid()) @db.Uuid
+  code        String        @unique @db.VarChar(50)
+  name        String        @db.VarChar(200)
+  description String?       @db.Text
+  price       Decimal       @db.Decimal(12, 2)
+  categoryId  String        @db.Uuid
+  isActive    Boolean       @default(true)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  category  ProductCategory @relation(fields: [categoryId], references: [id])
+  saleItems SaleItem[]
+
+  @@index([categoryId])
+  @@index([isActive])
+  @@map("product")
+}
+
+// =============================================================================
+// Sale
+// =============================================================================
+
+model Sale {
+  id          String    @id @default(uuid()) @db.Uuid
+  employeeId  String    @db.Uuid
+  saleDate    DateTime  @db.Date
+  status      SaleStatus @default(DRAFT)
+  totalAmount Decimal   @db.Decimal(14, 2)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  employee   Employee       @relation(fields: [employeeId], references: [id])
+  items      SaleItem[]
+  commissionEntries CommissionEntry[]
+
+  @@index([employeeId])
+  @@index([status])
+  @@index([saleDate])
+  @@map("sale")
+}
+
+// =============================================================================
+// SaleItem
+// =============================================================================
+
+model SaleItem {
+  id        String   @id @default(uuid()) @db.Uuid
+  saleId    String   @db.Uuid
+  productId String   @db.Uuid
+  quantity  Int
+  unitPrice Decimal  @db.Decimal(12, 2)
+  subtotal  Decimal  @db.Decimal(14, 2)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  sale    Sale    @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id])
+
+  @@index([saleId])
+  @@index([productId])
+  @@map("sale_item")
+}
+
+// =============================================================================
+// CommissionRule
+// =============================================================================
+
+model CommissionRule {
+  id            String    @id @default(uuid()) @db.Uuid
+  levelId       Int
+  percentage    Decimal   @db.Decimal(5, 2)
+  effectiveFrom DateTime
+  effectiveTo   DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  level   Level            @relation(fields: [levelId], references: [id])
+  entries CommissionEntry[]
+
+  @@unique([levelId, effectiveFrom])
+  @@index([levelId])
+  @@index([effectiveFrom, effectiveTo])
+  @@map("commission_rule")
+}
+
+// =============================================================================
+// CommissionEntry
+// =============================================================================
+
+model CommissionEntry {
+  id          String        @id @default(uuid()) @db.Uuid
+  saleId      String        @db.Uuid
+  employeeId  String        @db.Uuid
+  ruleId      String        @db.Uuid
+  parentId    String?       @db.Uuid
+  type        CommissionType
+  percentage  Decimal       @db.Decimal(5, 2)
+  amount      Decimal       @db.Decimal(14, 2)
+  saleDate    DateTime      @db.Date
+  calculatedAt DateTime     @default(now())
+  createdAt   DateTime      @default(now())
+
+  sale     Sale             @relation(fields: [saleId], references: [id], onDelete: Restrict)
+  employee Employee         @relation(fields: [employeeId], references: [id])
+  rule     CommissionRule   @relation(fields: [ruleId], references: [id])
+  parent   CommissionEntry? @relation("CommissionEntryParent", fields: [parentId], references: [id])
+  children CommissionEntry[] @relation("CommissionEntryParent")
+
+  @@index([saleId])
+  @@index([employeeId])
+  @@index([ruleId])
+  @@index([parentId])
+  @@index([type])
+  @@index([calculatedAt])
+  @@map("commission_entry")
+}
+
+// =============================================================================
+// AuditEvent
+// =============================================================================
+
+model AuditEvent {
+  id            String      @id @default(uuid()) @db.Uuid
+  actorId       String?     @db.Uuid
+  action        String      @db.VarChar(100)
+  resource      String      @db.VarChar(100)
+  resourceId    String?     @db.Uuid
+  result        AuditResult
+  correlationId String?     @db.Uuid
+  details       Json?
+  createdAt     DateTime    @default(now())
+
+  actor UserAccount? @relation(fields: [actorId], references: [id])
+  // audit_event es append-only conceptual; la restricción de UPDATE/DELETE
+  // se implementa en Application/Infrastructure, no en el schema Prisma.
+
+  @@index([actorId])
+  @@index([resource])
+  @@index([correlationId])
+  @@index([createdAt])
+  @@map("audit_event")
+}
+
+// =============================================================================
+// TrainingCategory
+// =============================================================================
+
+model TrainingCategory {
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String   @db.VarChar(150)
+  description String?  @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  courses TrainingCourse[]
+
+  @@map("training_category")
+}
+
+// =============================================================================
+// TrainingCourse
+// =============================================================================
+
+model TrainingCourse {
+  id          String      @id @default(uuid()) @db.Uuid
+  categoryId  String      @db.Uuid
+  name        String      @db.VarChar(200)
+  description String?     @db.Text
+  status      ContentStatus @default(DRAFT)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  category TrainingCategory @relation(fields: [categoryId], references: [id])
+  modules  TrainingModule[]
+
+  @@index([categoryId])
+  @@index([status])
+  @@map("training_course")
+}
+
+// =============================================================================
+// TrainingModule
+// =============================================================================
+
+model TrainingModule {
+  id          String   @id @default(uuid()) @db.Uuid
+  courseId     String   @db.Uuid
+  name        String   @db.VarChar(200)
+  description String?  @db.Text
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  course    TrainingCourse    @relation(fields: [courseId], references: [id])
+  materials TrainingMaterial[]
+
+  @@index([courseId])
+  @@map("training_module")
+}
+
+// =============================================================================
+// TrainingMaterial
+// =============================================================================
+
+model TrainingMaterial {
+  id          String      @id @default(uuid()) @db.Uuid
+  moduleId    String      @db.Uuid
+  name        String      @db.VarChar(200)
+  description String?     @db.Text
+  type        ContentType
+  url         String?     @db.VarChar(500)
+  levelId     Int?
+  status      ContentStatus @default(DRAFT)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  module TrainingModule @relation(fields: [moduleId], references: [id])
+  level  Level?         @relation(fields: [levelId], references: [id])
+
+  @@index([moduleId])
+  @@index([levelId])
+  @@index([status])
+  @@map("training_material")
+}

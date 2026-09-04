@@ -1,8 +1,8 @@
 # Modelo de datos
 
 **Estado:** 🚧 DECISIÓN DE DISEÑO  
-**Versión:** 0.1  
-**Última actualización:** 2026-09-01
+**Versión:** 0.6
+**Última actualización:** 2026-09-03
 
 ---
 
@@ -58,8 +58,7 @@ Comisiones
 └── CommissionRule
 
 Formación
-├── TrainingContent
-└── TrainingProgress
+└── TrainingContent
 ```
 
 No todas las entidades anteriores están confirmadas funcionalmente todavía. Las entidades pendientes se mantienen como modelo conceptual para evitar mezclar decisiones de arquitectura con requisitos no confirmados.
@@ -228,6 +227,11 @@ endedAt = null
 
 Ese registro representa su nivel actual.
 
+Además del historial de nivel, el modelo conceptual debe contemplar un historial
+organizacional capaz de conservar, como mínimo, empleado, supervisor, nivel,
+inicio y fin de vigencia, motivo y actor del cambio. La estructura física y sus
+relaciones definitivas quedan para el modelo relacional posterior.
+
 ---
 
 ## 7. Jerarquía organizacional
@@ -272,7 +276,10 @@ La estrategia inicial para representar la jerarquía será **Adjacency List**.
 
 La razón principal es mantener simples las modificaciones de la estructura jerárquica mientras todavía no se conocen con precisión la frecuencia ni las reglas de reorganización.
 
-Las consultas sobre ramas completas podrán resolverse posteriormente mediante consultas recursivas de PostgreSQL y una capa de dominio específica.
+Las reglas y políticas jerárquicas pertenecen al dominio. Las consultas concretas
+para resolver ramas completas podrán implementarse posteriormente mediante
+consultas recursivas de PostgreSQL u otros mecanismos de persistencia encapsulados
+en `Infrastructure`, y serán consumidas mediante contratos apropiados.
 
 La implementación no debería permitir que cada parte de la aplicación construya manualmente consultas jerárquicas.
 
@@ -425,16 +432,28 @@ totalAmount
 
 La venta pertenece al empleado que la realizó.
 
-**Todavía está ❓ PENDIENTE determinar:**
+La información básica del comprador pertenece al contexto de la venta. En el
+alcance actual no se modela un agregado `Customer` independiente ni un módulo
+CRM; no habrá estadísticas, segmentación ni historial comercial centrado en el
+comprador.
 
-- Quién registra la venta.
-- Si se registra manualmente.
-- Si se importa desde otro sistema.
-- Si existe una integración externa.
-- Qué estados puede tener.
-- Qué información comercial debe conservarse.
-- Cuándo una venta se considera válida para estadísticas.
-- Cuándo una venta genera comisión.
+Se utilizará inicialmente el siguiente flujo conceptual:
+
+```text
+DRAFT → PENDING_REVIEW → APPROVED / REJECTED
+                         ↓
+                      CANCELLED
+```
+
+El vendedor carga su propia venta a partir de la documentación oficial y el
+supervisor la revisa. Una venta aprobada puede cancelarse o ajustarse cuando
+corresponda, sin eliminación física ni reescritura silenciosa del historial.
+Cada venta tiene inicialmente un único vendedor responsable. Las ventas
+pendientes o rechazadas no alimentan estadísticas definitivas ni cálculos
+definitivos de comisión.
+
+Permanece ❓ PENDIENTE el detalle definitivo de la información comercial, las
+reglas de cada transición y los criterios exactos de validez y comisión.
 
 ---
 
@@ -467,7 +486,8 @@ subtotal
 
 Esto permite mantener el detalle de los productos involucrados en una operación.
 
-El modelo exacto dependerá de cómo Royal Prestige gestione actualmente su catálogo y sus operaciones comerciales.
+El modelo exacto de detalle dependerá de las reglas comerciales que todavía
+deben precisarse, aunque el catálogo inicial será interno y pequeño.
 
 ---
 
@@ -486,17 +506,18 @@ name
 ...
 ```
 
-**Todavía está ❓ PENDIENTE determinar si el sistema tendrá:**
+El sistema tendrá inicialmente un catálogo interno pequeño, no un ecommerce,
+para seleccionar productos al registrar ventas, realizar reporting y administrar
+información comercial, categorías cuando correspondan, precios y estado
+activo/inactivo. Los datos históricos de una venta deberán permanecer coherentes
+aunque cambien los datos actuales del producto.
 
-- Catálogo completo.
-- Catálogo reducido.
-- Precios históricos.
-- Productos descontinuados.
-- Variantes.
-- Categorías.
-- Importación desde otro sistema.
+No se debe diseñar todavía un catálogo excesivamente complejo ni incluir
+importaciones externas en la primera versión.
 
-Por lo tanto, no se debe diseñar todavía un catálogo excesivamente complejo.
+Cada línea de venta debe conservar conceptualmente el precio aplicado en el
+momento de la operación. El precio actual del catálogo no debe reconstruir ni
+alterar el valor histórico de una venta.
 
 ---
 
@@ -513,9 +534,12 @@ La información disponible actualmente indica una progresión observada para ven
 | Mes 3       | 30 %                 |
 | Mes 4       | Pendiente            |
 | Mes 5       | Pendiente            |
-| Mes 6–12    | 40 %–60 %            |
+| Regla inicial (anterior, 🔄 REEMPLAZADA) | 50 %                 |
 
-Estos valores requieren validación.
+La regla inicial de diseño vigente es **N1 → 15 %**, configurable y versionada.
+La anterior regla de diseño del 50 % queda 🔄 REEMPLAZADA y se conserva solo
+como antecedente histórico. La fórmula y las condiciones definitivas continúan
+pendientes.
 
 ---
 
@@ -568,6 +592,10 @@ Nivel 1 / Mes 1 → 12 %
 
 El historial de vigencia permite evitar que modificar una regla actual altere retroactivamente cálculos históricos.
 
+Conceptualmente, la aplicación debe poder distinguir entre la regla vigente, el
+cálculo realizado y la comisión generada. Un ajuste o reversión posterior debe
+relacionarse con la operación original sin eliminar el resultado histórico.
+
 ---
 
 ## 16. Comisión y nivel
@@ -592,7 +620,8 @@ La fórmula definitiva para calcular una comisión queda ❓ PENDIENTE.
 
 ## 17. Formación
 
-Se conoce que los nuevos vendedores de nivel 1 deberán disponer de material de capacitación.
+Los vendedores nuevos de nivel 1 deberán disponer de material de capacitación y
+otros niveles podrán acceder a contenidos correspondientes.
 
 El dominio de formación podría comenzar conceptualmente con:
 
@@ -610,21 +639,12 @@ createdAt
 updatedAt
 ```
 
-Y posteriormente incorporar:
+La estructura consolidada es categoría → curso → módulo → material. Los
+materiales podrán ser PDFs visualizables/descargables y videos mediante una
+abstracción de contenido. No se modelará seguimiento individual de aprendizaje,
+progreso, completitud, historial de progreso ni assessments en el alcance actual.
 
-```
-TrainingProgress
-----------------
-id
-employeeId
-trainingContentId
-completedAt
-progress
-```
-
-Sin embargo, todavía no está confirmado si el sistema tendrá cursos, módulos, progreso, evaluaciones u otro mecanismo.
-
-Por esta razón, formación se mantiene como modelo conceptual pendiente de definición funcional.
+El esquema físico de formación continúa pendiente.
 
 ---
 
@@ -692,12 +712,12 @@ Employee
 | Supervisor hierarchy     | ✅ CONFIRMADO / 🔎 OBSERVADO    | Existe estructura jerárquica         |
 | Adjacency List           | 🚧 DECISIÓN DE DISEÑO           | Estrategia inicial                   |
 | UserAccount              | ✅ CONFIRMADO                   | Se separa de Employee                |
-| Sale                     | ❓ PENDIENTE                    | Falta conocer origen y proceso       |
-| SaleItem                 | ❓ PENDIENTE                    | Depende del modelo comercial         |
-| Product                  | ❓ PENDIENTE                    | Falta conocer catálogo               |
+| Sale                     | ❓ PENDIENTE                    | Detalles físicos y reglas de transición pendientes |
+| SaleItem                 | ❓ PENDIENTE                    | Detalle físico depende del modelo comercial       |
+| Product                  | 🔎 OBSERVADO / 🚧 DECISIÓN DE DISEÑO | Catálogo interno inicial; detalles pendientes |
 | CommissionRule           | 🚧 DECISIÓN DE DISEÑO           | Reglas configurables y temporales    |
 | Formación                | ✅ CONFIRMADO                   | Debe existir para nivel 1            |
-| TrainingProgress         | ❓ PENDIENTE                    | Funcionalidad todavía desconocida    |
+| TrainingProgress         | 🔄 REEMPLAZADO                  | Seguimiento individual fuera del alcance actual  |
 
 ---
 
@@ -712,9 +732,8 @@ Hasta recibir confirmación de la empresa, no deben establecerse como restriccio
 - Obligación de que determinados niveles tengan equipo.
 - Porcentaje definitivo de comisión por antigüedad.
 - Fórmula final para calcular comisiones.
-- Origen de las ventas.
-- Estructura definitiva del catálogo.
-- Funcionamiento exacto de la capacitación.
+- Detalles de futuras integraciones de ventas.
+- Extensiones futuras del catálogo y de la capacitación.
 
 El modelo debe permitir representar estos escenarios posteriormente sin requerir una reestructuración completa de la base.
 
@@ -735,4 +754,18 @@ El siguiente nivel de detalle será transformar este modelo conceptual en un mod
 - Estrategia de auditoría.
 - Entidades definitivas del esquema Prisma.
 
+Esta transformación deberá respetar la estrategia arquitectónica definida en
+`docs/architecture/data-architecture.md`.
+
 Antes de llegar a ese punto deberá reducirse la cantidad de incógnitas de `open-questions.md`, especialmente en ventas, promociones, niveles 4–7 y comisiones.
+
+---
+
+## 22. Historial de cambios
+
+| Fecha      | Versión | Cambio |
+|------------|---------|--------|
+| 03/09/2026 | 0.3     | Sincronización de la separación entre políticas jerárquicas y consultas concretas de persistencia. |
+| 03/09/2026 | 0.4     | Incorporación del concepto de historial organizacional y consolidación de ventas, catálogo y capacitación. |
+| 03/09/2026 | 0.5     | Consolidación del comprador contextual, comisión inicial y alcance simplificado de capacitación. |
+| 03/09/2026 | 0.6     | Comisión inicial vigente N1 → 15 % (la regla de 50 % queda REEMPLAZADA como antecedente). |

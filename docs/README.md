@@ -2,19 +2,36 @@
 
 **Proyecto:** Royal Prestige — Plataforma de Gestión de Ventas  
 **Estado:** En desarrollo  
-**Última actualización:** 01/09/2026
+**Última actualización:** 03/09/2026
 
 ---
 
-Este directorio contiene la documentación funcional, de dominio, arquitectura y datos del proyecto.
+## 1. Fuentes de verdad
+
+Cada documento tiene una responsabilidad específica y constituye la fuente principal para un tipo determinado de información.
+
+| Documento                      | Responsabilidad                                    |
+|--------------------------------|----------------------------------------------------|
+| `requirements.md`              | Qué necesita el sistema                            |
+| `open-questions.md`            | Qué todavía no está definido                       |
+| `organizational-model.md`      | Qué conceptos existen en la organización           |
+| `business-rules.md`            | Qué reglas rigen el comportamiento                 |
+| `permissions-matrix.md`        | Quién puede hacer qué y con qué alcance            |
+| `architecture-decisions.md`    | Por qué se tomó una decisión técnica               |
+| `system-architecture.md`       | Cómo está estructurado el sistema                  |
+| `authorization.md`             | Cómo se implementa técnicamente el control de acceso |
+| `data-architecture.md`         | Cómo se organiza técnicamente el acceso a datos    |
+| `data-model.md`                | Cómo se representan los datos                      |
+
+Un documento puede referenciar información perteneciente a otro, pero no debe convertirse innecesariamente en una segunda fuente de verdad.
+
+---
+
+## 2. Propósito
+
+Este directorio centraliza y organiza la documentación utilizada durante el análisis, diseño, implementación y evolución del sistema.
 
 La documentación se considera parte integral del diseño del sistema y debe mantenerse alineada con la implementación.
-
----
-
-## 1. Propósito
-
-El objetivo de este directorio es centralizar y organizar la documentación utilizada durante el análisis, diseño, implementación y evolución del sistema.
 
 **La documentación debe permitir responder rápidamente:**
 
@@ -28,7 +45,7 @@ El objetivo de este directorio es centralizar y organizar la documentación util
 
 ---
 
-## 2. Organización
+## 3. Organización
 
 La documentación se divide por responsabilidad:
 
@@ -37,27 +54,33 @@ docs/
 ├── README.md
 │
 ├── product/
+│   ├── requirements.md
+│   ├── open-questions.md
+│   └── permissions-matrix.md
 │
 ├── domain/
+│   ├── organizational-model.md
+│   └── business-rules.md
 │
 ├── architecture/
+│   ├── architecture-decisions.md
+│   ├── system-architecture.md
+│   ├── authorization.md
+│   └── data-architecture.md
 │
 └── database/
+    └── data-model.md
 ```
 
-Cada directorio contiene documentos relacionados con una etapa o responsabilidad específica del proyecto.
+Cada directorio contiene documentos relacionados con una responsabilidad específica del proyecto.
 
 No se debe crear un documento nuevo únicamente para almacenar información que puede pertenecer claramente a un documento existente.
 
 ---
 
-## 3. Documentación existente
+## 4. Documentación del producto
 
-Esta sección contiene los documentos que actualmente forman parte del proyecto.
-
-### 3.1. Producto
-
-#### `product/requirements.md`
+### 4.1. `product/requirements.md`
 
 Define los requisitos funcionales y no funcionales conocidos del sistema.
 
@@ -77,7 +100,7 @@ Define los requisitos funcionales y no funcionales conocidos del sistema.
 
 > **Fuente principal para:** Requisitos del sistema.
 
-#### `product/open-questions.md`
+### 4.2. `product/open-questions.md`
 
 Centraliza las preguntas e incertidumbres que todavía deben resolverse.
 
@@ -102,7 +125,7 @@ Las preguntas poseen numeración permanente para facilitar la trazabilidad entre
 
 > **Fuente principal para:** Información pendiente de definición.
 
-#### `product/permissions-matrix.md`
+### 4.3. `product/permissions-matrix.md`
 
 Define las capacidades disponibles para cada nivel y rol, junto con su alcance.
 
@@ -118,9 +141,11 @@ Define las capacidades disponibles para cada nivel y rol, junto con su alcance.
 
 > **Fuente principal para:** Permisos funcionales y alcance de acceso.
 
-### 3.2. Dominio
+---
 
-#### `domain/organizational-model.md`
+## 5. Documentación del dominio
+
+### 5.1. `domain/organizational-model.md`
 
 Define los conceptos y relaciones que forman la estructura organizacional.
 
@@ -138,7 +163,7 @@ Define los conceptos y relaciones que forman la estructura organizacional.
 
 > **Fuente principal para:** Modelo conceptual de la organización.
 
-#### `domain/business-rules.md`
+### 5.2. `domain/business-rules.md`
 
 Define las reglas que determinan el comportamiento del negocio.
 
@@ -163,29 +188,13 @@ Las reglas utilizan identificadores `REG-xxx`.
 
 ---
 
-## 4. Documentación prevista
+## 6. Documentación de arquitectura
 
-Los siguientes documentos todavía no existen o no contienen contenido definitivo.
+### 6.1. `architecture/architecture-decisions.md`
 
-Se crearán únicamente cuando exista suficiente información para justificar su incorporación.
+Registra las decisiones arquitectónicas relevantes y el motivo por el que fueron adoptadas.
 
-### 4.1. Arquitectura
-
-**Directorio previsto:**
-
-```
-architecture/
-├── architecture-decisions.md
-├── system-architecture.md
-├── authorization.md
-└── data-architecture.md
-```
-
-#### `architecture/architecture-decisions.md`
-
-Registrará decisiones arquitectónicas relevantes y el motivo por el que fueron adoptadas.
-
-Utilizará identificadores:
+Utiliza identificadores:
 
 ```
 ADR-001
@@ -194,17 +203,17 @@ ADR-003
 ...
 ```
 
-> **Estado:** Previsto.
+> **Fuente principal para:** Decisiones arquitectónicas y sus justificaciones.
 
-#### `architecture/system-architecture.md`
+### 6.2. `architecture/system-architecture.md`
 
-Describirá la arquitectura general de la aplicación y la interacción entre sus principales componentes.
+Define la arquitectura general de la aplicación y la interacción entre sus principales componentes.
 
-> **Estado:** Previsto.
+> **Estado:** 🚧 DECISIÓN DE DISEÑO.
 
-#### `architecture/authorization.md`
+### 6.3. `architecture/authorization.md`
 
-Describirá cómo se implementarán técnicamente:
+Define cómo se implementan técnicamente:
 
 - Autenticación.
 - Autorización.
@@ -212,11 +221,11 @@ Describirá cómo se implementarán técnicamente:
 - Alcance jerárquico.
 - Protección de recursos.
 
-> **Estado:** Previsto.
+> **Estado:** 🚧 DECISIÓN DE DISEÑO.
 
-#### `architecture/data-architecture.md`
+### 6.4. `architecture/data-architecture.md`
 
-Describirá las decisiones relacionadas con:
+Define la estrategia arquitectónica de datos, incluyendo:
 
 - Persistencia.
 - Acceso a datos.
@@ -225,37 +234,35 @@ Describirá las decisiones relacionadas con:
 - Estrategias de rendimiento.
 - Datos históricos.
 
-> **Estado:** Previsto.
+> **Estado:** 🚧 DECISIÓN DE DISEÑO.
 
-### 4.2. Base de datos
+---
 
-**Directorio previsto:**
+## 7. Documentación de base de datos
 
-```
-database/
-└── data-model.md
-```
+### 7.1. `database/data-model.md`
 
-#### `database/data-model.md`
+Define el modelo de datos conceptual y las decisiones relacionadas con su representación.
 
-Describirá:
+**Incluye:**
 
 - Entidades.
 - Relaciones.
 - Cardinalidades.
 - Restricciones.
 - Integridad.
-- Índices.
 - Datos históricos.
 - Estrategias de consulta.
 
 Será utilizado como referencia para diseñar posteriormente el esquema de Prisma y PostgreSQL.
 
-> **Estado:** Próximo documento previsto.
+> **Fuente principal para:** Modelo de datos.
+
+Los índices y decisiones específicas de implementación podrán detallarse posteriormente cuando el modelo relacional y la estrategia de persistencia hayan sido definidos.
 
 ---
 
-## 5. Flujo documental
+## 8. Flujo documental
 
 La documentación sigue aproximadamente el siguiente flujo:
 
@@ -287,30 +294,9 @@ Una modificación en un documento puede requerir revisar otros documentos relaci
 
 ---
 
-## 6. Fuentes de verdad
+## 9. Convenciones documentales
 
-Cada documento tiene una responsabilidad específica.
-
-| Documento                      | Responsabilidad                                    |
-|--------------------------------|----------------------------------------------------|
-| `requirements.md`              | Qué necesita el sistema                            |
-| `open-questions.md`            | Qué todavía no está definido                       |
-| `organizational-model.md`      | Qué conceptos existen en la organización           |
-| `business-rules.md`            | Qué reglas rigen el comportamiento                 |
-| `permissions-matrix.md`        | Quién puede hacer qué y con qué alcance            |
-| `architecture-decisions.md`    | Por qué se tomó una decisión técnica               |
-| `system-architecture.md`       | Cómo está estructurado el sistema                  |
-| `authorization.md`             | Cómo se implementa técnicamente el control de acceso |
-| `data-architecture.md`         | Cómo se organiza técnicamente el acceso a datos    |
-| `data-model.md`                | Cómo se representan los datos                      |
-
-Un documento puede referenciar información perteneciente a otro, pero no debe convertirse innecesariamente en una segunda fuente de verdad.
-
----
-
-## 7. Convenciones documentales
-
-### 7.1. Nombres de archivos
+### 9.1. Nombres de archivos
 
 Los nombres de archivos se escriben en inglés.
 
@@ -322,7 +308,7 @@ Los nombres de archivos se escriben en inglés.
 - `organizational-model.md`
 - `permissions-matrix.md`
 
-### 7.2. Contenido
+### 9.2. Contenido
 
 El contenido de la documentación se escribe en español.
 
@@ -337,7 +323,7 @@ Los nombres de tecnologías, patrones, APIs y conceptos técnicos pueden mantene
 - RBAC
 - Server Actions
 
-### 7.3. Identificadores
+### 9.3. Identificadores
 
 Se utilizan las siguientes convenciones:
 
@@ -353,7 +339,7 @@ TEST-xxx    Prueba
 
 Los identificadores existentes no deben reutilizarse para otros conceptos.
 
-### 7.4. Estados
+### 9.4. Estados
 
 - ✅ CONFIRMADO
 - 🔎 OBSERVADO
@@ -364,7 +350,7 @@ Los identificadores existentes no deben reutilizarse para otros conceptos.
 
 ---
 
-## 8. Trazabilidad
+## 10. Trazabilidad
 
 Cuando aporte valor, los elementos de la documentación deberán poder relacionarse entre sí.
 
@@ -402,7 +388,7 @@ Debe implementarse cuando permita comprender mejor el impacto de una decisión o
 
 ---
 
-## 9. Mantenimiento
+## 11. Mantenimiento
 
 La documentación deberá actualizarse cuando cambien:
 
@@ -424,7 +410,7 @@ AGENTS.md
 
 ---
 
-## 10. Mantenimiento mediante agentes
+## 12. Mantenimiento mediante agentes
 
 Los agentes pueden utilizar esta documentación para comprender la estructura del proyecto y realizar cambios consistentes.
 
@@ -443,7 +429,7 @@ Los cambios generados por agentes deberán revisarse mediante Git antes de consi
 
 ---
 
-## 11. Relación con el código
+## 13. Relación con el código
 
 La documentación describe las decisiones y reglas que deben respaldar la implementación.
 
@@ -473,7 +459,7 @@ verifican el comportamiento
 
 ---
 
-## 12. Estado actual de la documentación
+## 14. Estado actual de la documentación
 
 **Documentos existentes:**
 
@@ -486,11 +472,7 @@ product/
 domain/
 ├── organizational-model.md
 └── business-rules.md
-```
 
-**Documentos previstos:**
-
-```
 architecture/
 ├── architecture-decisions.md
 ├── system-architecture.md
@@ -501,11 +483,17 @@ database/
 └── data-model.md
 ```
 
-Los documentos previstos se incorporarán progresivamente a medida que el diseño del sistema avance.
+**Documentos pendientes de creación:**
+
+```
+Ninguno dentro de la estructura arquitectónica actualmente definida.
+```
+
+Las decisiones pendientes dentro de los documentos existentes no implican que dichos documentos estén pendientes de creación.
 
 ---
 
-## 13. Regla de evolución documental
+## 15. Regla de evolución documental
 
 La cantidad de documentos no constituye un objetivo en sí mismo.
 
@@ -520,9 +508,12 @@ La documentación deberá crecer al mismo ritmo que la complejidad real del proy
 
 ---
 
-## 14. Historial de cambios
+## 16. Historial de cambios
 
 | Fecha      | Versión | Cambio                                                                                          |
 |------------|---------|-------------------------------------------------------------------------------------------------|
 | 01/09/2026 | 0.1     | Creación del índice general de documentación.                                                   |
 | 01/09/2026 | 0.2     | Separación entre documentos existentes y documentos previstos. Incorporación de reglas de mantenimiento y trazabilidad. |
+| 02/09/2026 | 0.3     | Reorganización del documento. "Fuentes de verdad" pasa al inicio y se actualiza el estado de la documentación existente. |
+| 03/09/2026 | 0.4     | Sincronización del índice con los documentos de arquitectura general, autorización y datos actualmente existentes. |
+| 03/09/2026 | 0.5     | Actualización del índice tras la consolidación global de la documentación. |

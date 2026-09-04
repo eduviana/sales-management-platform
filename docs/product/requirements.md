@@ -2,9 +2,9 @@
 
 **Proyecto:** Royal Prestige — Plataforma de Gestión de Ventas  
 **Tipo:** Aplicación web de uso interno  
-**Estado:** En relevamiento  
-**Versión:** 0.2  
-**Última actualización:** 01/09/2026
+**Estado:** En consolidación  
+**Versión:** 0.6  
+**Última actualización:** 03/09/2026
 
 ---
 
@@ -29,7 +29,9 @@ La información actualmente disponible indica que el Nivel 3 es el primer nivel 
 
 La aplicación deberá adaptar la información y las funcionalidades disponibles según la posición del usuario dentro de la estructura organizacional.
 
-> **Nota:** Los comportamientos específicos de los Niveles 4 a 7 todavía no están definidos. La nomenclatura comercial asociada a cada nivel también deberá validarse antes de considerarse definitiva.
+> **Nota:** La nomenclatura fue observada durante el relevamiento y se adopta
+> como referencia de diseño. Las responsabilidades oficiales de los Niveles 4
+> a 7 requieren validación, aunque existe una escalera de diseño consolidada.
 
 ---
 
@@ -77,7 +79,9 @@ La aplicación deberá trabajar internamente con una representación estable de 
 - Los empleados de cualquier nivel pueden continuar realizando ventas personalmente.
 - El ascenso entre niveles depende de criterios de negocio que incluyen, como mínimo, el rendimiento en ventas y el tiempo dentro de la organización.
 
-> **Pendiente:** Confirmar oficialmente los nombres, responsabilidades, permisos y comportamiento específico de los siete niveles.
+> Los nombres comerciales continúan siendo OBSERVADOS. Las responsabilidades y
+> permisos oficiales requieren validación; la versión de referencia utiliza
+> decisiones de diseño consolidadas.
 
 ### 2.3. Antigüedad del empleado
 
@@ -147,23 +151,25 @@ Durante el relevamiento inicial se observó una estructura de comisión progresi
 | Mes 3       | 30 %                 |
 | Mes 4       | Pendiente            |
 | Mes 5       | Pendiente            |
-| Mes 6 a 12  | Entre 45 % y 60 %   |
+| Mes 6 a 12  | Entre 45 % y 60 %    |
 
-Estos valores todavía deben ser validados con la empresa.
+Los porcentajes anteriores son OBSERVADOS y constituyen únicamente un
+antecedente histórico del relevamiento. La regla inicial de diseño vigente es
+**N1 → 15 %** (un vendedor Nivel 1 comienza con una comisión del 15 %),
+configurable y versionada. La anterior regla de diseño del 50 % queda
+🔄 REEMPLAZADA y se conserva solo como antecedente.
 
 El sistema deberá diseñarse de forma que las reglas de comisión puedan evolucionar sin necesidad de modificar estructuralmente toda la aplicación.
 
 **Aspectos pendientes:**
 
-- Porcentaje exacto correspondiente a los meses 4 y 5.
-- Progresión exacta entre los meses 6 y 12.
-- Porcentaje aplicable después del mes 12.
+- Reglas de comisión para N2–N7 (la única regla vigente es N1 → 15 %).
 - Base sobre la cual se calcula la comisión.
 - Condiciones adicionales para acceder a cada porcentaje.
 - Posible relación entre comisión y nivel.
 - Tratamiento de cambios de nivel.
 - Tratamiento de devoluciones o anulaciones.
-- Si el sistema calcula la comisión o recibe el valor desde otro sistema.
+- Detalles operativos de cálculos y ajustes posteriores.
 
 ### 2.8. Capacitación
 
@@ -171,7 +177,8 @@ Los vendedores nuevos de Nivel 1 deberán disponer de una sección de capacitaci
 
 La sección deberá permitir consultar material de formación proporcionado por la empresa.
 
-Actualmente se identifican los siguientes tipos de contenido:
+La estructura conceptual de capacitación será categoría → curso → módulo →
+material. Actualmente se contemplan los siguientes tipos de contenido:
 
 - Archivos PDF.
 - Videos de capacitación.
@@ -179,28 +186,31 @@ Actualmente se identifican los siguientes tipos de contenido:
 
 La sección de capacitación deberá estar integrada en la navegación principal de la aplicación, por ejemplo mediante una opción del menú lateral.
 
-**Alcance inicial conocido:**
+**Alcance consolidado:**
 
 ```
-Nivel 1
-└── Capacitación
-    ├── Documentos PDF
-    └── Videos
+Capacitación
+├── Categorías
+├── Cursos
+├── Módulos
+└── Materiales PDF y videos
 ```
 
-**Funcionalidades potenciales:**
+**Funcionalidades consolidadas:**
 
 Dependiendo de los requisitos definitivos, la sección podría incluir:
 
 - Visualización de materiales.
 - Descarga de documentos.
 - Reproducción de videos.
-- Organización por módulos o categorías.
-- Seguimiento del progreso.
-- Registro de materiales completados.
-- Capacitaciones obligatorias.
+- Organización por categorías, cursos y módulos.
+- Capacitaciones obligatorias, especialmente para nuevos N1.
+- Acceso para otros niveles según el contenido correspondiente.
 
-> **Pendiente:** Definir el alcance exacto de la capacitación, quién puede administrarla y si otros niveles también deben acceder.
+> **Decisión de diseño:** la capacitación no será exclusiva de N1. `ADMIN` la
+> administrará inicialmente; los supervisores no gestionarán contenidos en la
+> primera versión. No se implementará seguimiento individual de aprendizaje en
+> el alcance actual.
 
 ---
 
@@ -215,7 +225,14 @@ El sistema deberá contemplar:
 - Cierre de sesión.
 - Recuperación de cuenta.
 
-> **Pendiente:** Definir proveedor y estrategia de autenticación.
+> **Decisión de diseño:** el mecanismo inicial será email + contraseña, sin
+> emails corporativos obligatorios ni OAuth inicial. El proveedor concreto y la
+> infraestructura de correo permanecen pendientes.
+
+> **Decisión de diseño (cerrada):** las cuentas nuevas se crean con una
+> contraseña temporal, almacenada únicamente como hash. El usuario debe cambiar
+> obligatoriamente la contraseña en el primer inicio de sesión. No se definen
+> políticas de expiración, historial de contraseñas ni bloqueo por intentos.
 
 ### 3.2. Panel principal
 
@@ -250,9 +267,11 @@ Las demás operaciones de gestión todavía deben definirse.
 
 El sistema deberá representar información relacionada con las ventas.
 
-Actualmente se desconoce cómo ingresará esta información al sistema.
+La primera versión no depende de un sistema externo. El vendedor cargará su
+propia venta utilizando la documentación oficial de la empresa; la venta quedará
+pendiente de revisión del supervisor.
 
-**Posibles escenarios:**
+**Escenarios que podrían incorporarse en futuras etapas:**
 
 - Las ventas se registran manualmente.
 - Las ventas se importan desde otro sistema.
@@ -260,7 +279,31 @@ Actualmente se desconoce cómo ingresará esta información al sistema.
 - El sistema recibe únicamente información resumida.
 - Existe otra fuente de datos todavía no identificada.
 
-> **Pendiente crítico:** Determinar el origen de los datos de ventas antes de definir definitivamente el modelo de datos.
+> **Decisión de diseño:** el flujo inicial será interno y no incluirá
+> sincronización con sistemas externos. Las futuras integraciones deberán quedar
+> aisladas mediante adapters/ports.
+
+Estados iniciales de una venta:
+
+```text
+DRAFT → PENDING_REVIEW → APPROVED / REJECTED
+```
+
+Una venta aprobada puede pasar posteriormente a `CANCELLED` cuando corresponda.
+Las ventas aprobadas no se eliminan físicamente y las cancelaciones o
+devoluciones generan ajustes sin reescribir silenciosamente el pasado.
+
+Cada venta tendrá inicialmente un único vendedor responsable. Quien la carga y
+quien la aprueba pueden ser personas distintas. Las ventas pendientes o
+rechazadas no alimentan estadísticas definitivas ni cálculos definitivos de
+comisión.
+
+La aplicación utilizará un catálogo interno pequeño de productos; no será un
+ecommerce. El catálogo permitirá seleccionar productos al registrar ventas,
+consultar estadísticas por producto o categoría y administrar información
+comercial, precios y estado activo/inactivo. `ADMIN` realizará esa administración
+cuando corresponda. Los datos históricos de una venta deberán conservarse aunque
+cambien los datos actuales del producto.
 
 ### 3.5. Estadísticas y reportes
 
@@ -293,7 +336,9 @@ Dependiendo de las reglas definitivas, podría contemplarse:
 - Proyección de comisión.
 - Información necesaria para comprender el cálculo.
 
-La implementación final dependerá de si las comisiones son calculadas internamente o provienen de un sistema externo.
+La primera versión podrá calcular comisiones mediante reglas configurables y
+versionadas. La fórmula definitiva, la base de cálculo y cualquier fuente
+externa siguen pendientes.
 
 ### 3.7. Capacitación
 
@@ -314,7 +359,8 @@ La arquitectura deberá permitir ampliar posteriormente la sección con:
 - Evaluaciones.
 - Materiales adicionales.
 
-Estas funcionalidades adicionales no forman parte todavía de los requisitos confirmados.
+Los assessments/quizzes quedan preparados conceptualmente, pero no forman parte
+obligatoria del MVP.
 
 ---
 
@@ -364,7 +410,10 @@ Las operaciones relevantes del negocio deberían poder ser rastreadas.
 - Administración de materiales de capacitación.
 - Acciones administrativas relevantes.
 
-> **Pendiente:** Determinar exactamente qué eventos deberán ser auditados y durante cuánto tiempo deberán conservarse.
+> Como mínimo, deben auditarse creación y modificación de empleados y cuentas,
+> cambios de nivel y supervisor, activación/desactivación, ciclo de vida de
+> ventas, comisiones, productos, capacitación, autenticación, credenciales y
+> permisos. La retención y los detalles físicos permanecen pendientes.
 
 ### 4.4. Rendimiento
 
@@ -433,18 +482,17 @@ El objetivo de este documento es registrar la base funcional conocida sin conver
 
 **Pendientes principales:**
 
-- Responsabilidades de los Niveles 4 a 7.
+- Validación oficial de responsabilidades y permisos de los Niveles 4 a 7.
 - Matriz definitiva de permisos.
-- Modelo definitivo de ventas.
-- Origen de los datos de ventas.
+- Detalles definitivos de ventas, productos, estados y ajustes.
 - Reglas definitivas de comisiones.
 - Objetivos y metas.
-- Roles administrativos.
-- Historial organizacional.
-- Auditoría.
-- Integraciones externas.
-- Requisitos exactos de autenticación.
-- Requisitos detallados de capacitación.
+- Detalles operativos del rol administrativo.
+- Reglas adicionales del historial organizacional.
+- Retención y detalles físicos de auditoría.
+- Integraciones externas futuras.
+- Proveedor de autenticación y correo, sesiones y 2FA operativo.
+- Detalles adicionales de capacitación y plataforma de video.
 - Estrategia de almacenamiento de archivos y videos.
 - Reporting avanzado.
 
@@ -470,19 +518,19 @@ El objetivo de este documento es registrar la base funcional conocida sin conver
 | Capacitación para Nivel 1                | 🔎 Observado        |
 | Materiales PDF                           | 🔎 Observado        |
 | Videos de capacitación                   | 🔎 Observado        |
-| Comportamiento Nivel 4                   | ⚠️ Pendiente        |
-| Comportamiento Nivel 5                   | ⚠️ Pendiente        |
-| Comportamiento Nivel 6                   | ⚠️ Pendiente        |
-| Comportamiento Nivel 7                   | ⚠️ Pendiente        |
-| Origen de los datos de ventas            | ⚠️ Pendiente        |
+| Comportamiento Nivel 4                   | 🚧 Decisión de diseño / validar oficialmente |
+| Comportamiento Nivel 5                   | 🚧 Decisión de diseño / validar oficialmente |
+| Comportamiento Nivel 6                   | 🚧 Decisión de diseño / validar oficialmente |
+| Comportamiento Nivel 7                   | 🚧 Decisión de diseño / validar oficialmente |
+| Origen inicial de los datos de ventas    | 🚧 Decisión de diseño |
 | Reglas definitivas de comisiones         | ⚠️ Pendiente        |
 | Objetivos y metas                        | ⚠️ Pendiente        |
-| Roles administrativos                    | ⚠️ Pendiente        |
-| Requisitos de auditoría                  | ⚠️ Pendiente        |
-| Mecanismo de autenticación               | ⚠️ Pendiente        |
+| Rol administrativo `ADMIN`               | 🚧 Decisión de diseño / validar alcance |
+| Requisitos de auditoría                  | 🚧 Decisión de diseño / retención pendiente |
+| Mecanismo inicial de autenticación       | 🚧 Decisión de diseño |
 | Estrategia de almacenamiento multimedia  | ⚠️ Pendiente        |
-| Integraciones externas                   | ⚠️ Pendiente        |
-| Seguimiento de capacitación              | ⚠️ Pendiente        |
+| Integraciones externas iniciales         | 🚧 Decisión de diseño: no hay integración |
+| Seguimiento de capacitación              | 🚧 Decisión de diseño |
 
 ---
 
@@ -516,3 +564,7 @@ Las decisiones adoptadas para esta versión deberán documentarse como supuestos
 |------------|---------|-------------------------------------------------------------------------------------|
 | 01/09/2026 | 0.1     | Creación inicial del documento a partir del relevamiento informal.                  |
 | 01/09/2026 | 0.2     | Incorporación de información sobre niveles comerciales, antigüedad, comisiones y capacitación. |
+| 03/09/2026 | 0.3     | Consolidación de niveles, reclutamiento, ventas, autenticación, capacitación y estado de pendientes. |
+| 03/09/2026 | 0.4     | Consolidación del flujo de ventas, catálogo, auditoría y autenticación inicial. |
+| 03/09/2026 | 0.5     | Consolidación de regla inicial de comisión y simplificación de capacitación. |
+| 03/09/2026 | 0.6     | Comisión inicial vigente N1 → 15 % (la regla de 50 % queda REEMPLAZADA como antecedente). Cierre de contraseña temporal y cambio obligatorio en primer inicio. |
