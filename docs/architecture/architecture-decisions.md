@@ -1,8 +1,8 @@
 # Decisiones de arquitectura
 
 **Estado:** 🚧 DECISIÓN DE DISEÑO  
-**Versión:** 0.8
-**Última actualización:** 2026-09-03
+**Versión:** 0.12
+**Última actualización:** 2026-09-11
 
 ---
 
@@ -374,7 +374,9 @@ La decisión podrá revisarse si el comportamiento real del sistema demuestra qu
 
 #### Contexto
 
-Se identificó una progresión de comisión asociada a la antigüedad de un vendedor:
+Las reglas de comisión vigentes dependen del nivel comercial del vendedor. Las
+observaciones históricas sobre progresión por antigüedad se conservan solamente
+como antecedente reemplazado:
 
 | Antigüedad  | Comisión observada   |
 |-------------|----------------------|
@@ -385,10 +387,10 @@ Se identificó una progresión de comisión asociada a la antigüedad de un vend
 | Mes 5       | Pendiente            |
 | Regla inicial (anterior, 🔄 REEMPLAZADA) | 50 %                 |
 
-La regla inicial de diseño vigente es **N1 → 15 %**, configurable y versionada.
-La anterior regla de diseño del 50 % queda 🔄 REEMPLAZADA y se conserva solo
-como antecedente histórico. No se adopta ningún porcentaje histórico alternativo
-como regla vigente.
+Las tasas confirmadas son **N1 15 %, N2 20 %, N3 30 %, N4 40 %, N5 50 %, N6
+60 % y N7 70 %**, configurables y versionadas. La anterior regla general de
+diseño del 50 % queda 🔄 REEMPLAZADA como antecedente; el 50 % vigente para N5
+proviene exclusivamente de la tabla confirmada actual.
 
 Además, las reglas comerciales pueden cambiar con el tiempo.
 
@@ -403,8 +405,6 @@ Se modelarán como reglas configurables y con período de vigencia.
 ```
 CommissionRule
 ├── levelId
-├── fromMonth
-├── toMonth
 ├── percentage
 ├── effectiveFrom
 └── effectiveTo
@@ -1022,6 +1022,65 @@ Esta decisión no define:
 
 ---
 
+### ADR-012 — Generación transaccional e idempotente de comisiones
+
+> **Estado:** ✅ ACEPTADA
+
+#### Contexto
+
+La aprobación de una venta debe generar su comisión y una cancelación posterior
+debe generar su reversión. Una actualización parcial produciría estados
+inconsistentes, como una venta aprobada sin comisión o una cancelación sin
+reversión.
+
+Además, las operaciones pueden repetirse por reintentos o concurrencia y no
+deben crear entradas duplicadas.
+
+#### Decisión
+
+La aprobación y la generación de `CommissionEntry` se ejecutarán dentro de una
+misma transacción de PostgreSQL. La cancelación y la generación de su reversión
+seguirán el mismo criterio.
+
+La idempotencia se protegerá en dos niveles:
+
+- transición condicional de estado (`PENDING_REVIEW → APPROVED` y
+  `APPROVED → CANCELLED`);
+- restricciones de unicidad para una única entrada `EARNED` por venta y una
+  única `REVERSAL` por entrada original.
+
+Las reglas y la coordinación pertenecerán a Application/Domain. Prisma y las
+transacciones concretas permanecerán encapsulados en Infrastructure.
+
+La tasa histórica se conservará en `CommissionEntry`, junto con la regla, la
+base y el importe utilizados.
+
+#### Alternativas consideradas
+
+**Generar la comisión después de aprobar mediante una operación separada:**
+
+Descartado porque permitiría una venta aprobada sin comisión.
+
+**Usar eventos o un event bus:**
+
+Descartado por complejidad innecesaria para el monolito modular actual.
+
+**Evitar constraints y proteger únicamente desde Application:**
+
+Descartado porque no protege adecuadamente frente a concurrencia.
+
+#### Consecuencias
+
+- La aprobación puede fallar si no existe una regla aplicable o si no puede
+  persistirse la comisión.
+- La venta permanece en su estado anterior cuando la operación se revierte.
+- Las restricciones físicas complementan, pero no reemplazan, las invariantes
+  de dominio.
+- Las operaciones de lectura y administración continuarán usando la
+  autorización centralizada existente.
+
+---
+
 ## 4. Relación con otros documentos
 
 Las decisiones registradas aquí deben mantenerse sincronizadas con:
@@ -1056,6 +1115,320 @@ Una decisión arquitectónica no reemplaza a la regla de negocio que la origina.
 
 ---
 
+### ADR-013 — Auditoría y trazabilidad
+
+**Fecha:** 2026-09-08  
+**Estado:** ACEPTADA
+
+#### Contexto
+
+El sistema necesita registrar quién realizó qué operación, sobre qué recurso, en qué momento y con qué resultado. Esto es fundamental para:
+
+- Seguridad y control de acceso.
+- Trazabilidad de operaciones sensibles.
+- Cumplimiento de políticas internas.
+- Diagnóstico de problemas.
+- Auditoría administrativa.
+
+#### Decisión
+
+Se implementa un mecanismo de auditoría con las siguientes características:
+
+1. **Semántica best-effort:** La auditoría nunca falla la operación de negocio. Si el mecanismo de auditoría falla, la operación de negocio se confirma de todas formas.
+
+2. **AuditPort transaccional:** Para operaciones que requieren atomicidad (aprobación de venta + generación de comisión), se utiliza un `PrismaTransactionScopedAuditAdapter` que recibe el mismo cliente de transacción que los repositorios de negocio.
+
+3. **Acción tipada:** Se define un enum `AuditAction` con 20 valores que representan eventos de negocio específicos.
+
+4. **Snapshot de email:** El campo `actorEmail` almacena una snapshot del email del actor al momento del evento, preservando legibilidad cuando la cuenta es desactivada.
+
+5. **correlationId compartido:** Operaciones derivadas (aprobación + generación de comisión) comparten el mismo `correlationId` para trazabilidad.
+
+6. **Lectura restringida:** Los eventos de auditoría solo son consultables por usuarios con permiso `audit.read` (rol ADMIN).
+
+#### Eventos auditables
+
+| Categoría | Eventos |
+|-----------|---------|
+| Identidad | LOGIN_SUCCESS, LOGIN_FAILURE, LOGOUT, PASSWORD_CHANGED, PASSWORD_RESET_REQUESTED, PASSWORD_RESET_COMPLETED |
+| Organización | EMPLOYEE_CREATED, EMPLOYEE_UPDATED, EMPLOYEE_DEACTIVATED, EMPLOYEE_LEVEL_CHANGED, EMPLOYEE_SUPERVISOR_CHANGED |
+| Ventas | SALE_CREATED, SALE_UPDATED, SALE_SUBMITTED, SALE_APPROVED, SALE_REJECTED, SALE_CANCELLED |
+| Comisiones | COMMISSION_RULE_CREATED, COMMISSION_GENERATED, COMMISSION_REVERSED |
+
+#### Modelo de datos
+
+```sql
+CREATE TYPE audit_action AS ENUM (...);
+
+CREATE TABLE audit_event (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  actor_id UUID REFERENCES user_account(id),
+  actor_email VARCHAR(255),
+  action audit_action NOT NULL,
+  resource_type VARCHAR(100) NOT NULL,
+  resource_id UUID,
+  result audit_result NOT NULL,
+  correlation_id UUID,
+  metadata JSONB,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+```
+
+#### Propietario de eventos
+
+- **ApproveSaleUseCase** registra tanto SALE_APPROVED como COMMISSION_GENERATED.
+- **CancelSaleUseCase** registra tanto SALE_CANCELLED como COMMISSION_REVERSED.
+- Los casos de uso internos de comisiones NO registran eventos duplicados.
+
+#### Alternativas consideradas
+
+1. **Auditoría asíncrona (cola de mensajes):** Más desacoplada pero introduce complejidad operativa y延迟 en la consistencia. Rechazada por simplicidad.
+
+2. **Auditoría solo a nivel de middleware:** No permite contexto de negocio rico (qué cambió, por qué). Rechazada por falta de granularidad.
+
+3. **Auditoría con columnas before/after:** Más completo pero más complejo de mantener. Rechazada en favor de `metadata: Json?`.
+
+#### Consecuencias
+
+- Cada caso de uso de escritura debe inyectar `AuditPort`.
+- La migración debe validar valores existentes antes de convertir a enum.
+- El schema Prisma requiere `AuditAction` enum y campos actualizados.
+- Los tests deben proveer un mock de `AuditPort`.
+- `AuthorizationContext` requiere campo `userEmail` para snapshots.
+
+#### Documentación afectada
+
+- `docs/architecture/architecture-decisions.md` (este documento)
+- `docs/product/requirements.md` (requisitos de auditoría)
+- `docs/domain/business-rules.md` (reglas de auditoría)
+- `docs/database/data-model.md` (modelo de datos)
+- `docs/architecture/data-architecture.md` (sección de auditoría)
+- `docs/product/permissions-matrix.md` (permisos de auditoría)
+
+---
+
+### ADR-014 — Visitas, Clientes y Programa de Referidos
+
+> **Estado:** ✅ ACEPTADA (Phase 10)
+> **Fecha:** 2026-09-09
+
+#### Contexto
+
+El sistema necesita soportar el flujo completo de visitas a domicilio para demostraciones de productos, gestión de clientes y un programa de referidos con descuentos. Actualmente:
+
+- No existe entidad `Client` — las ventas usan `buyerName` como texto libre.
+- No existe entidad `Visit` — no se registra el trabajo de campo de vendedores.
+- No hay programa de referidos ni sistema de descuentos.
+- Los vendedores N1/N2 no tienen visibilidad de sus visitas asignadas.
+- Los supervisores N3+ no pueden asignar clientes a su equipo.
+
+#### Decisión
+
+Crear tres nuevas entidades (`Client`, `Visit`, `ReferralContact`) y modificar la entidad `Existente` (`Sale`) para soportar:
+
+1. **Gestión de clientes**: Entidad `Client` con información de contacto y dirección.
+2. **Registro de visitas**: Entidad `Visit` con ciclo de vida (assigned → completed/no_sale/cancelled).
+3. **Programa de referidos**: Entidad `ReferralContact` vinculada a `Sale`, con descuento del 20% sobre toda la compra.
+4. **Extensión de ventas**: Campos `visitId`, `clientId`, `paymentMethod`, `installments`, `discount`, `discountReason`.
+
+#### Alternativas consideradas
+
+1. **Expandir `buyerName` existente**: Mantener el campo de texto libre y agregar un campo `clientId` opcional. *Elegida por compatibilidad con datos existentes.*
+2. **Reemplazar `buyerName` por `clientId`**: Más limpio pero rompe datos existentes. *Descartada.*
+3. **Crear entidad `Customer` separada**: Más flexibilidad CRM pero fuera de alcance. *Descartada.*
+
+#### Consecuencias
+
+- La entidad `Client` se crea con `ownerEmployeeId` para que los referidos de N1/N2 se asignen al N3+ superior.
+- La entidad `Visit` vincula vendedor, cliente y supervisor que asignó.
+- El descuento por referidos se aplica en el mismo documento de venta.
+- Los supervisores N3+ ven el nombre del vendedor en la tabla de ventas.
+- Se crean nuevos permisos: `client.*`, `visit.*`.
+- Se agregan links al sidebar: "Mis Visitas" (todos), "Clientes" (N3+), "Mi Equipo" (N3+).
+
+#### Documentación afectada
+
+- `docs/architecture/architecture-decisions.md` (este documento)
+- `docs/database/data-model.md` (nuevas entidades)
+- `docs/domain/business-rules.md` (nuevas reglas)
+- `docs/product/requirements.md` (nuevos requisitos)
+- `docs/product/permissions-matrix.md` (nuevos permisos)
+- `docs/architecture/system-architecture.md` (nuevo módulo)
+- `docs/product/open-questions.md` (preguntas resueltas)
+
+---
+
+### ADR-015 — Numeración secuencial global de ventas
+
+> **Estado:** ✅ CONFIRMADA
+
+#### Problema
+
+Las ventas necesitan un identificador operativo legible y único, independiente del
+UUID o ID técnico. El sistema debe poder referenciar ventas de manera clara en
+listados, búsquedas y documentos internos.
+
+#### Contexto
+
+- No existe multi-tenancy en el sistema.
+- La secuencia debe ser global para todo el sistema.
+- La venta recibe el número al crearse en estado `DRAFT`.
+- La interfaz necesita mostrar valores como `VT-0001`.
+- Varias solicitudes pueden crear ventas concurrentemente.
+
+#### Decisión
+
+- Persistir el número como entero (`saleNumber`).
+- Aplicar unicidad global mediante restricción de PostgreSQL.
+- Generarlo server-side dentro de Infrastructure utilizando una secuencia nativa
+  de PostgreSQL (`CREATE SEQUENCE`).
+- Formatearlo únicamente en la capa de presentación (`VT-` + zero-padding).
+- Mantenerlo inmutable después de la creación.
+- No permitir que el cliente envíe o determine el valor.
+
+#### Alternativas consideradas
+
+- `MAX(saleNumber) + 1`: rechazada por condiciones de carrera.
+- UUID visible: rechazado por falta de legibilidad operativa.
+- Guardar directamente `VT-0001`: menos flexible para búsquedas, ordenamiento
+  y formato.
+- Secuencias separadas por vendedor/equipo: rechazadas porque el requisito es
+  global.
+- Numeración estrictamente sin huecos: no recomendada salvo requisito legal
+  explícito.
+
+#### Consecuencias
+
+- La persistencia debe coordinar generación y unicidad dentro de una transacción.
+- Puede haber huecos si se utilizan secuencias y una transacción falla.
+- Las ventas existentes requieren backfill antes de activar la restricción NOT NULL.
+- Los tests deben cubrir concurrencia y unicidad.
+- La UI centraliza el formateo del número.
+
+---
+
+### ADR-016 — Datos operativos de cliente, pago, facturación y entrega
+
+> **Estado:** ✅ ACEPTADA COMO DECISIÓN DE DISEÑO
+> **Fecha:** 2026-09-11
+
+#### Contexto
+
+La carga manual de ventas necesita conservar información suficiente para
+identificar al cliente, relacionar la venta con una visita, hacer seguimiento de
+la entrega y consultar referencias de pago o facturación generadas por H&Y Cite.
+No existe una confirmación de que esta aplicación deba procesar pagos o emitir
+comprobantes fiscales.
+
+#### Decisión
+
+1. El nombre y el teléfono del cliente son obligatorios para una venta manual.
+2. El email y el documento del cliente son opcionales hasta confirmar una
+   obligación legal o fiscal.
+3. La venta manual actual debe vincularse a una visita `completed` del vendedor
+   autenticado. `visitId` permanece opcional en el modelo para futuras ventas
+   directas.
+4. La aplicación conserva estados y referencias externas de pago y facturación,
+   pero no procesa pagos ni emite facturas.
+5. Nunca se almacenan número completo de tarjeta, CVV/CVC, PIN o credenciales
+   bancarias. Solo pueden conservarse marca y últimos cuatro dígitos si existe
+   una necesidad operativa.
+6. La dirección de entrega se conserva como snapshot histórico junto con el
+   estado de entrega.
+7. Los vendedores acceden a sus datos, los supervisores a los datos de su
+   alcance y `ADMIN` al alcance global, siempre mediante autorización server-side.
+
+#### Alternativas consideradas
+
+- **Hacer obligatorio el DNI:** descartado provisionalmente porque no se confirmó
+  su necesidad legal y podría impedir cargar ventas históricas.
+- **Guardar el número completo de tarjeta:** rechazado por riesgo y alcance de
+  cumplimiento PCI DSS innecesario.
+- **Procesar pagos o facturación desde esta aplicación:** rechazado porque H&Y
+  Cite es el sistema externo que realiza esas operaciones.
+- **Guardar únicamente datos actuales del cliente:** descartado porque no
+  preserva la dirección ni los contactos utilizados en una venta histórica.
+
+#### Consecuencias
+
+- `Sale` incorpora snapshots operativos del cliente y datos no sensibles de
+  referencia.
+- La creación de ventas requiere validación server-side de la visita y del
+  vendedor.
+- Los datos personales y referencias de pago deben protegerse mediante scopes y
+  auditoría.
+- La futura integración con H&Y Cite deberá implementarse mediante adapters/ports.
+- Las reglas sobre documento, facturación y ventas directas deberán revisarse
+  cuando exista confirmación del negocio.
+
+#### Documentación afectada
+
+- `docs/product/requirements.md`
+- `docs/product/open-questions.md`
+- `docs/product/permissions-matrix.md`
+- `docs/domain/business-rules.md`
+- `docs/database/data-model.md`
+- `docs/architecture/data-architecture.md`
+
+---
+
+### ADR-017 — Separar actividad propia y actividad del equipo
+
+> **Estado:** ✅ ACEPTADA COMO DECISIÓN DE DISEÑO
+> **Fecha:** 2026-09-11
+
+#### Contexto
+
+Los supervisores pueden consultar ventas propias y ventas de subordinados. Una
+única pantalla llamada `Mis Ventas` que cambia silenciosamente su alcance según
+el nivel mezcla dos conceptos y puede inducir a interpretar ventas del equipo
+como actividad personal.
+
+#### Decisión
+
+- `/sales` utiliza explícitamente el alcance `OWN` y muestra únicamente las
+  ventas del usuario autenticado.
+- `Mi Equipo` agrupa las vistas de equipo, incluida `/team/sales` con alcance
+  `TEAM`.
+- La navegación del equipo se expande de manera independiente en el sidebar.
+- Los alcances se reciben como intención de aplicación, pero se autorizan y se
+  resuelven server-side mediante permisos y jerarquía.
+
+#### Consecuencias
+
+- La interfaz es más clara para vendedores y supervisores.
+- El caso de uso de listado ya no debe inferir el alcance solamente desde el
+  nivel del usuario.
+- Se evita exponer datos del equipo en una vista personal por accidente.
+
+---
+
+### ADR-018 — Identificador operativo secuencial para visitas
+
+> **Estado:** ✅ ACEPTADA COMO DECISIÓN DE DISEÑO
+> **Fecha:** 2026-09-12
+
+#### Contexto
+
+Las visitas utilizan un UUID como identificador técnico. Ese valor es correcto
+para relaciones y persistencia, pero no es adecuado para que un vendedor lo use
+como referencia operativa.
+
+#### Decisión
+
+Se agrega `visitNumber`, un entero secuencial único global, cuya representación
+visible utiliza el formato `VS-0001`. El UUID continúa siendo el identificador
+técnico interno y no se muestra como referencia principal en la interfaz.
+
+#### Consecuencias
+
+- Las visitas pueden referenciarse de forma breve en la interfaz y soporte.
+- Los números pueden tener huecos si una operación falla, igual que los números
+  secuenciales de ventas.
+- La tabla de visitas muestra `VS-NNNN` y el nombre del cliente.
+
+---
+
 ## 5. Decisiones pendientes
 
 Todavía no se deben fijar en este documento decisiones definitivas sobre:
@@ -1064,7 +1437,7 @@ Todavía no se deben fijar en este documento decisiones definitivas sobre:
 - Proveedor de correo y detalles operativos de recuperación.
 - Decisiones adicionales de autorización no cubiertas por `ADR-009`.
 - Detalles de futuras integraciones de ventas.
-- Cálculo definitivo de comisiones.
+- Base comercial futura si se confirma una fórmula distinta de `Sale.totalAmount`.
 - Reglas de promoción.
 - Detalles físicos y evolución del catálogo de productos.
 - Evolución futura del sistema de formación.
@@ -1072,7 +1445,7 @@ Todavía no se deben fijar en este documento decisiones definitivas sobre:
 - Detalles operativos de despliegue.
 - Observabilidad.
 - Índices definitivos de PostgreSQL.
-- Estrategia final de auditoría.
+- Retención y cleanup de datos de auditoría.
 
 Estas decisiones se documentarán cuando exista suficiente información para justificarlas.
 
@@ -1090,3 +1463,8 @@ Estas decisiones se documentarán cuando exista suficiente información para jus
 | 0.6     | 2026-09-03 | Consolidación global de decisiones arquitectónicas y pendientes documentales |
 | 0.7     | 2026-09-03 | Consolidación final de la regla inicial de comisión y pendientes asociados |
 | 0.8     | 2026-09-03 | ADR-005: comisión inicial vigente N1 → 15 % (la regla de 50 % queda REEMPLAZADA como antecedente). |
+| 0.9     | 2026-09-07 | ADR-005 actualizado con las siete tasas confirmadas y ADR-012 sobre transacciones e idempotencia de comisiones. |
+| 0.10    | 2026-09-08 | ADR-013 sobre auditoría y trazabilidad: mecanismo append-only con AuditPort, 20 eventos tipados, semántica best-effort y lectura restringida. |
+| 0.11    | 2026-09-11 | ADR-015 sobre numeración secuencial global de ventas: secuencia PostgreSQL, formato VT-NNNN, unicidad y mutabilidad. |
+| 0.12    | 2026-09-11 | ADR-016 sobre snapshots de cliente, referencias externas de pago/facturación, entrega y protección de datos sensibles. |
+| 0.13    | 2026-09-11 | ADR-017 sobre separación explícita entre ventas propias y ventas del equipo. |

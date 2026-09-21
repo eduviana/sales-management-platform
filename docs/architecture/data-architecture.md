@@ -2,8 +2,8 @@
 
 **Proyecto:** Royal Prestige — Plataforma de Gestión de Ventas  
 **Estado:** 🚧 DECISIÓN DE DISEÑO  
-**Versión:** 0.5  
-**Última actualización:** 2026-09-03
+**Versión:** 0.7  
+**Última actualización:** 2026-09-08
 
 ---
 
@@ -104,6 +104,11 @@ La primera versión de ventas será independiente de sistemas externos. La
 persistencia deberá soportar conceptualmente la carga por el vendedor, la
 revisión del supervisor, la aprobación o el rechazo y los ajustes posteriores,
 sin definir aquí las tablas ni el esquema físico.
+
+La integración inicial con H&Y Cite no procesa pagos ni emite facturas desde esta
+aplicación. Solo se conservarán estados y referencias externas cuando estén
+disponibles. Nunca se almacenarán números completos de tarjeta, CVV/CVC, PIN ni
+credenciales bancarias.
 
 **Clasificación:**
 
@@ -332,6 +337,17 @@ de scope ni permitir el acceso a otra rama.
 Las operaciones que modifiquen datos relacionados deben ejecutarse de forma
 atómica cuando la consistencia entre esos datos sea necesaria.
 
+**Generación de `saleNumber`:** La asignación del número secuencial de venta
+debe ejecutarse dentro de una operación segura frente a concurrencia. La
+generación no debe basarse únicamente en `MAX(saleNumber) + 1` fuera de una
+transacción, porque dos solicitudes concurrentes podrían obtener el mismo
+valor.
+
+La implementación debe utilizar una estrategia atómica, por ejemplo:
+- Secuencia nativa de PostgreSQL (`CREATE SEQUENCE`).
+- Contador global bloqueado transaccionalmente.
+- Mecanismo equivalente encapsulado en Infrastructure.
+
 Ejemplo conceptual para una modificación de nivel:
 
 ```text
@@ -444,11 +460,18 @@ según la estructura de un período anterior.
 
 ### Ventas y comisiones
 
-La necesidad de conservar contexto histórico puede afectar ventas y comisiones,
-pero la forma concreta depende de reglas de negocio aún no confirmadas.
+Las comisiones deben conservar el contexto histórico utilizado: nivel vigente en
+`Sale.saleDate`, versión de regla vigente en `Sale.approvedAt`, porcentaje,
+`baseAmount` e importe calculado. `Sale.approvedAt` permite reconstruir el
+momento de aprobación que determinó la versión de la regla.
 
-No se define aquí una estrategia de event sourcing, snapshots, tablas de
-versiones ni restricciones temporales físicas.
+La aprobación y la creación de `CommissionEntry` deben persistirse dentro de la
+misma transacción. La cancelación y su entrada `REVERSAL` siguen el mismo
+criterio.
+
+No se utiliza event sourcing. Las versiones se representan mediante filas de
+`CommissionRule` con vigencia temporal y las entradas conservan snapshots de los
+valores utilizados.
 
 **Clasificación:**
 
@@ -463,30 +486,30 @@ versiones ni restricciones temporales físicas.
 
 ## 13. Auditoría desde la perspectiva de persistencia
 
-`Application` utilizará un contrato o puerto de auditoría desde los casos de
-uso. `Infrastructure` implementará la persistencia concreta de esos eventos.
+`Application` utilizará un contrato o puerto de auditoría (`AuditPort`) desde
+los casos de uso. `Infrastructure` implementará la persistencia concreta de
+esos eventos mediante `PrismaAuditAdapter`.
 
-Cuando corresponda, una operación de negocio y su evento de auditoría podrán
-persistirse dentro de la misma transacción.
+Cuando corresponda, una operación de negocio y su evento de auditoría se
+persisten dentro de la misma transacción (`PrismaTransactionScopedAuditAdapter`).
 
-Este documento no define:
+**Implementado (Fase 7, ADR-013):**
 
-- estructura física del evento;
-- eventos obligatorios;
-- retención;
-- inmutabilidad técnica;
-- auditoría de denegaciones;
-- requisitos de cumplimiento;
-- cambios antes y después.
+- Tabla `audit_event` con campos: `id`, `actorId`, `actorEmail` (snapshot),
+  `action` (enum `AuditAction` de 20 valores), `resourceType`, `resourceId`,
+  `result`, `correlationId`, `metadata`, `createdAt`.
+- Índices en `(actorId)`, `(resourceType, resourceId)`, `(action)`,
+  `(correlationId)`, `(createdAt)`.
+- Semántica best-effort: el fallo del mecanismo de auditoría no impide la
+  operación de negocio.
+- `GetAuditEventsUseCase` para lectura restringida (rol ADMIN, permiso
+  `audit.read`).
 
-**Clasificación:**
+**Pendiente:**
 
-- **DECISIÓN DERIVABLE:** la auditoría debe integrarse con los casos de uso y no
-  con componentes visuales.
-- **DECISIÓN PROPUESTA:** persistencia de auditoría detrás de un puerto en
-  Infrastructure.
-- **DEPENDE DE NEGOCIO:** eventos, retención y cumplimiento.
-- **PENDIENTE:** modelo físico y política operativa.
+- Política de retención de datos y cleanup periódico.
+- Exportación de eventos de auditoría.
+- Cambios antes/después (before/after snapshots en metadata).
 
 ---
 
@@ -695,7 +718,7 @@ Las principales cuestiones que pueden modificar la arquitectura de datos son:
 - modelo físico de roles y permisos;
 - detalles físicos y reglas adicionales del historial organizacional;
 - autorización histórica;
-- fórmula y fuente de comisiones;
+- base comercial definitiva para futuras fórmulas distintas de `Sale.totalAmount`;
 - reglas particulares de cancelación, devolución y ajustes;
 - métricas, objetivos y reporting;
 - auditoría y retención;
@@ -714,11 +737,10 @@ Estas cuestiones deben mantenerse sincronizadas con
 
 ## 21. Contradicciones documentales
 
-La regla inicial de diseño de comisión vigente es **N1 → 15 %**, configurable y
-versionada. La anterior regla de diseño del 50 % queda 🔄 REEMPLAZADA como
-antecedente histórico. Las observaciones históricas previas quedan reemplazadas
-como base de la regla operativa inicial y no deben utilizarse para definir la
-persistencia vigente.
+Las tasas confirmadas vigentes son **N1 15 %, N2 20 %, N3 30 %, N4 40 %, N5
+50 %, N6 60 % y N7 70 %**, configurables y versionadas. La anterior regla
+general de diseño del 50 % queda 🔄 REEMPLAZADA como antecedente histórico; el
+50 % vigente para N5 proviene exclusivamente de la tabla confirmada actual.
 
 La diferencia entre:
 
@@ -818,3 +840,5 @@ decisión arquitectónica.
 | 2026-09-03 | 0.3     | Consolidación de persistencia, flujo inicial de ventas y dependencias de datos. |
 | 2026-09-03 | 0.4     | Consolidación de comisiones y simplificación del alcance de capacitación. |
 | 2026-09-03 | 0.5     | Comisión inicial vigente N1 → 15 % (la regla de 50 % queda REEMPLAZADA como antecedente). |
+| 2026-09-07 | 0.6     | Tasas N1–N7 confirmadas y consistencia transaccional de aprobación, comisión y reversión documentada. |
+| 2026-09-08 | 0.7     | Fase 7: sección 13 de auditoría actualizada con AuditPort implementado, modelo AuditEvent y semántica best-effort. |

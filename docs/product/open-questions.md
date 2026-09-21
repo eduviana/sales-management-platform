@@ -140,6 +140,20 @@ Las preguntas mantienen una numeración permanente para facilitar la trazabilida
 
 **42.** ¿Las ventas son utilizadas para determinar el ascenso de nivel?
 
+**36.1.** ¿El documento del cliente es obligatorio para facturar o para algún
+medio de pago específico?
+
+**36.2.** ¿Qué tipos de comprobante y datos fiscales devuelve H&Y Cite?
+
+**36.3.** ¿Qué estados y referencias de pago deben sincronizarse desde H&Y Cite?
+
+**36.4.** ¿Los últimos cuatro dígitos y la marca de tarjeta tienen una utilidad
+operativa real para los usuarios internos?
+
+**36.5.** ¿Qué estados y eventos forman parte del seguimiento de entrega?
+
+**36.6.** ¿Se habilitarán ventas directas sin visita en una etapa posterior?
+
 ---
 
 ## 5. Productos
@@ -510,10 +524,10 @@ Prestige: la fuente indicada identifica el tipo de resolución.
 | 52 | PENDIENTE | Comparación de empleados. |
 | 53 | PENDIENTE | Rankings. |
 | 54 | PENDIENTE | Identificación de bajo rendimiento. |
-| 55 | PENDIENTE | Existencia de objetivos oficiales. |
-| 56 | PENDIENTE | Objetivos individuales/equipo. |
-| 57 | PENDIENTE | Diferenciación de objetivos por nivel. |
-| 58 | PENDIENTE | Cálculo de cumplimiento. |
+| 55 | RESPONDIDA | Sí existen objetivos oficiales de ventas. |
+| 56 | RESPONDIDA | Objetivos individuales (por nivel) y de equipo (target × subordinados). |
+| 57 | RESPONDIDA | Sí, diferentes por nivel: N1=10, N2=15, N3-N7=10 por vendedor. |
+| 58 | RESPONDIDA | Sí, el sistema calcula porcentaje de cumplimiento (ventas logradas / objetivo). |
 | 59 | RESPONDIDA | N4–N7 siguen la escalera comercial consolidada de diseño. |
 | 60 | RESPONDIDA | Los niveles superiores operan sobre estructuras mayores según diseño. |
 | 61 | RESPONDIDA | La visibilidad de subordinados depende de permisos y scope. |
@@ -523,22 +537,22 @@ Prestige: la fuente indicada identifica el tipo de resolución.
 | 65 | VALIDAR | Se prevén agregaciones de ramas; alcance funcional exacto pendiente. |
 | 66 | PENDIENTE | Drill-down desde agregados. |
 | 67 | PENDIENTE | Métricas exclusivas de niveles superiores. |
-| 68 | RESPONDIDA | La primera versión podrá calcular comisiones internamente. |
-| 69 | RESPONDIDA | Antigüedad puede ser factor de comisión. |
-| 70 | PENDIENTE | Dependencia exacta del volumen. |
-| 71 | RESPONDIDA | El nivel puede ser factor de comisión. |
-| 72 | PENDIENTE | Comisiones sobre equipos. |
+| 68 | RESPONDIDA | La primera versión calcula comisiones internamente. |
+| 69 | RESPONDIDA | Las tasas vigentes de Fase 6 no dependen de la antigüedad. |
+| 70 | RESPONDIDA | Las tasas vigentes de Fase 6 no dependen del volumen. |
+| 71 | RESPONDIDA | La tasa depende del nivel histórico del empleado vendedor. |
+| 72 | RESPONDIDA | La comisión de Fase 6 corresponde al empleado que realiza la venta; no se implementan comisiones de equipo. |
 | 73 | PENDIENTE | Base exacta de cálculo. |
 | 74 | RESPONDIDA | Reglas configurables y versionadas. |
-| 75 | DESCARTADA | La progresión observada no se utilizará como regla vigente; la regla inicial de diseño es N1 → 15 %. |
-| 76 | DESCARTADA | El porcentaje mensual observado dejó de ser la base de diseño inicial. |
-| 77 | DESCARTADA | El porcentaje mensual observado dejó de ser la base de diseño inicial. |
-| 78 | DESCARTADA | La regla inicial no utiliza una progresión mensual observada. |
-| 79 | PENDIENTE | Porcentaje y reglas posteriores a la configuración inicial. |
-| 80 | RESPONDIDA | Se conserva la fecha de ingreso original para antigüedad, sujeto a casos especiales. |
-| 81 | PENDIENTE | Comisión después de promoción. |
-| 82 | PENDIENTE | Cambios de regla por ascenso. |
-| 83 | PENDIENTE | Condiciones adicionales. |
+| 75 | REEMPLAZADA | La tabla observada fue reemplazada por las tasas confirmadas N1 15 %, N2 20 %, N3 30 %, N4 40 %, N5 50 %, N6 60 % y N7 70 %. |
+| 76 | REEMPLAZADA | No se utilizan porcentajes mensuales observados. |
+| 77 | REEMPLAZADA | No se utilizan porcentajes mensuales observados. |
+| 78 | REEMPLAZADA | No se utiliza una progresión mensual observada. |
+| 79 | RESPONDIDA | Las tasas vigentes confirmadas son N1 15 %, N2 20 %, N3 30 %, N4 40 %, N5 50 %, N6 60 % y N7 70 %. |
+| 80 | RESPONDIDA | La antigüedad no interviene en las tasas vigentes de Fase 6. |
+| 81 | RESPONDIDA | El nivel histórico vigente en la fecha de la venta determina la tasa aplicada. |
+| 82 | RESPONDIDA | Un cambio posterior de nivel no modifica una comisión histórica. |
+| 83 | RESPONDIDA | No existen condiciones adicionales vigentes por antigüedad, volumen, equipo o progresión mensual. |
 | 84 | RESPONDIDA | Cancelaciones/devoluciones producen ajustes. |
 | 85 | RESPONDIDA | Los cálculos históricos no se reescriben al cambiar reglas. |
 | 86 | RESPONDIDA | La primera versión no depende de fuente externa; detalles del cálculo pendiente. |
@@ -644,9 +658,10 @@ Posteriormente se adoptó una regla inicial de diseño para comisiones:
 | Regla inicial (anterior, 🔄 REEMPLAZADA) | 50 %               |
 
 Las observaciones históricas previas de progresión mensual quedan reemplazadas
-como base de la regla operativa inicial. La regla de diseño vigente es
-**N1 → 15 %** (configurable y versionada); la anterior regla del 50 % queda
-🔄 REEMPLAZADA como antecedente. Las condiciones futuras continúan pendientes.
+como base de la regla operativa. Las tasas confirmadas vigentes son **N1 15 %,
+N2 20 %, N3 30 %, N4 40 %, N5 50 %, N6 60 % y N7 70 %**, configurables y
+versionadas. La anterior regla general del 50 % queda 🔄 REEMPLAZADA como
+antecedente; el 50 % vigente para N5 proviene de la tabla confirmada.
 
 **⚠️ Aún sin definir en la reunión inicial:**
 
@@ -654,8 +669,8 @@ como base de la regla operativa inicial. La regla de diseño vigente es
 - Matriz exacta de permisos.
 - Modelo exacto de ventas.
 - Origen de los datos de ventas.
-- Reglas definitivas de comisiones.
-- Objetivos y metas.
+- Reglas comerciales adicionales de comisiones fuera de las tasas vigentes por nivel.
+- ~~Objetivos y metas.~~ Resueltos en Q55–Q58 (Phase 9).
 - Roles administrativos.
 - Requisitos de historial organizacional.
 - Requisitos de auditoría.
@@ -673,6 +688,46 @@ reunión.
 
 ---
 
+## 17. Preguntas resueltas (Phase 10)
+
+### Q137 — ¿Cómo se asignan las visitas?
+
+> **Estado:** RESPONDIDA (Phase 10)
+
+Las visitas son asignadas por usuarios de nivel superior a uno inferior. Los supervisores N3+ asignan clientes a vendedores de su equipo.
+
+### Q138 — ¿Existe entidad Client?
+
+> **Estado:** RESPONDIDA (Phase 10)
+
+Sí. Se crea la entidad `Client` con campos: name, phone, email, address, referredBySaleId, ownerEmployeeId.
+
+### Q139 — ¿Cómo funciona el programa de referidos?
+
+> **Estado:** RESPONDIDA (Phase 10)
+
+Si el cliente proporciona 5 contactos de futuros clientes, se aplica 20% de descuento sobre toda la compra. Los contactos se cargan en la venta y se agregan a la base de clientes del N3+.
+
+### Q140 — ¿El descuento es para nuevos o existentes?
+
+> **Estado:** RESPONDIDA (Phase 10)
+
+Para nuevos y existentes. Un cliente puede obtener el descuento múltiples veces.
+
+### Q141 — ¿Cómo asignación automática?
+
+> **Estado:** RESPONDIDA (Phase 10)
+
+Queda pendiente. Se crea el botón pero no funciona todavía.
+
+### Q142 — ¿Los campos de buyerName se mantienen?
+
+> **Estado:** RESPONDIDA (Phase 10)
+
+Sí. `buyerName` se conserva por compatibilidad con datos existentes. Se agrega `clientId` como opcional.
+
+---
+
 ## 18. Historial de cambios
 
 | Fecha      | Versión | Cambio                                                                              |
@@ -681,4 +736,6 @@ reunión.
 | 01/09/2026 | 0.2     | Incorporación de nomenclatura observada, comisiones y requisitos de capacitación.   |
 | 03/09/2026 | 0.3     | Registro de resolución y clasificación de Q01–Q136 según decisiones consolidadas.  |
 | 03/09/2026 | 0.4     | Consolidación de comisión inicial y descarte del seguimiento individual de capacitación. |
+| 07/09/2026 | 0.5     | Confirmación de las tasas vigentes de comisión N1–N7 y resolución de las preguntas relacionadas con porcentajes y progresión mensual. |
+| 08/09/2026 | 0.6     | Resolución de Q55–Q58: objetivos de ventas confirmados (individuales y por equipo, diferenciados por nivel, con cálculo de cumplimiento). |
 | 03/09/2026 | 0.5     | Comisión inicial vigente N1 → 15 % (50 % queda REEMPLAZADO como antecedente). Cierre de Q26/Q27: contraseña temporal y cambio obligatorio en primer inicio. |

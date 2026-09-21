@@ -2,8 +2,8 @@
 
 **Proyecto:** Royal Prestige — Plataforma de Gestión de Ventas  
 **Estado:** 🚧 DECISIÓN DE DISEÑO  
-**Versión:** 0.5  
-**Última actualización:** 2026-09-03
+**Versión:** 0.6  
+**Última actualización:** 2026-09-08
 
 ---
 
@@ -518,29 +518,57 @@ No se propone event sourcing en esta etapa.
 
 ## 16. Analytics y reporting
 
-Inicialmente, Analytics consultará PostgreSQL mediante servicios y repositorios de lectura específicos.
+**Implementado (Phase 9):**
+
+El módulo `analytics` proporciona el dashboard principal con KPIs, gráficos y
+tabla de rendimiento. La arquitectura sigue el patrón de lectura separada:
 
 ```text
-Analytics Query Service
+Dashboard Page (Server Component)
     ↓
-Authorization / Scope
+GetDashboardDataUseCase (Application)
     ↓
-Analytics Read Repository
+Authorization / Scope resolution
+    ↓
+AnalyticsReadRepository (Infrastructure)
+    ↓
+Prisma aggregate / groupBy / $queryRaw
     ↓
 PostgreSQL
 ```
 
-No se incorporará inicialmente un data warehouse, un microservicio de analytics ni una infraestructura distribuida.
+**Componentes implementados:**
 
-La evolución podrá incluir, si el volumen lo justifica, índices específicos, vistas o materialized views, tablas de agregados, precálculos mediante jobs, réplicas de lectura o un almacén analítico separado.
+- `GetDashboardDataUseCase`: orquesta todas las consultas del dashboard.
+  Resuelve scope (OWN/TEAM/BRANCH/GLOBAL) según nivel y rol.
+- `PrismaAnalyticsRepository`: implementa agregaciones SQL para KPIs,
+  gráficos y tabla de rendimiento.
+- `MonthlyTarget`: tabla de objetivos mensuales configurables por nivel.
+- Componentes de presentación: MetricCard, SalesBarChart, LevelDistributionChart,
+  TeamPerformanceTable, PeriodSelector.
 
-La interfaz de aplicación debe permanecer estable para permitir esos cambios. Toda consulta analítica deberá respetar el scope del usuario. No se deben obtener datos globales para filtrarlos únicamente en el navegador.
+**Períodos soportados:** Hoy, Esta Semana, Este Mes.
 
-Las métricas, objetivos, períodos, rankings y definiciones de rendimiento continúan sujetos a `requirements.md` y `open-questions.md`.
+**Gráficos:** Recharts (librería de visualización para React).
+
+No se incorporará inicialmente un data warehouse, un microservicio de analytics
+ni una infraestructura distribuida.
+
+La evolución podrá incluir, si el volumen lo justifica, índices específicos,
+vistas o materialized views, tablas de agregados, precálculos mediante jobs,
+réplicas de lectura o un almacén analítico separado.
+
+La interfaz de aplicación debe permanecer estable para permitir esos cambios.
+Toda consulta analítica deberá respetar el scope del usuario. No se deben
+obtener datos globales para filtrarlos únicamente en el navegador.
+
+Las métricas, objetivos, períodos, rankings y definiciones de rendimiento
+continúan sujetos a `requirements.md` y `open-questions.md`.
 
 - **DECISIÓN YA TOMADA:** no introducir infraestructura analítica distribuida prematuramente.
-- **DECISIÓN PROPUESTA:** consultas de lectura separadas sobre PostgreSQL.
-- **DEPENDE DE NEGOCIO:** métricas y objetivos definitivos.
+- **DECISIÓN IMPLEMENTADA:** consultas de lectura separadas sobre PostgreSQL via AnalyticsReadRepository.
+- **DECISIÓN IMPLEMENTADA:** objetivos mensuales por nivel en tabla monthly_target.
+- **DECISIÓN IMPLEMENTADA:** Recharts como librería de gráficos.
 - **PENDIENTE:** establecer umbrales de volumen y necesidades de rendimiento.
 
 ---
@@ -591,26 +619,38 @@ Los adaptadores de Next.js mapearán estos errores a respuestas o mensajes segur
 
 ### Auditoría
 
-Application utilizará un contrato o puerto de auditoría desde los casos de uso.
-La implementación concreta de ese contrato pertenece a Infrastructure. La
-auditoría no se integrará desde la interfaz.
+Application utiliza un contrato o puerto de auditoría (`AuditPort`) desde los
+casos de uso. La implementación concreta de ese contrato pertenece a
+Infrastructure (`PrismaAuditAdapter`). La auditoría no se integra desde la
+interfaz.
 
-Conceptualmente, un evento puede contener:
+Un evento de auditoría contiene:
 
 ```text
-actor
-action
-resource
-resourceId
-occurredAt
-result
-correlationId
-metadata
+actorId        — ID del usuario que realizó la acción
+actorEmail     — Snapshot del email al momento del evento
+action         — Tipo de acción (enum AuditAction, 20 valores)
+resourceType   — Tipo de recurso afectado
+resourceId     — ID del recurso afectado
+result         — SUCCESS, FAILURE o DENIED
+correlationId  — Agrupa eventos derivados de una misma operación
+metadata       — Datos adicionales flexibles (JSONB)
+createdAt      — Timestamp del evento
 ```
 
-Para operaciones críticas, el evento podrá persistirse en la misma transacción que la modificación. El registro debe ser append-only desde el punto de vista de la aplicación.
+Para operaciones críticas, el evento se persiste en la misma transacción que
+la modificación (`PrismaTransactionScopedAuditAdapter`). El registro es
+append-only desde el punto de vista de la aplicación.
 
-La lista final de eventos, su retención, los cambios antes/después y el acceso a auditoría continúan pendientes.
+La semántica es best-effort: si el mecanismo de auditoría falla, la operación
+de negocio se confirma de todas formas. Si la operación de negocio falla y se
+revierte, los eventos de auditoría asociados también desaparecen (correcto).
+
+**Lectura:** Los eventos son consultables únicamente por usuarios con permiso
+`audit.read` (rol ADMIN). El `GetAuditEventsUseCase` provee filtros por
+actor, acción, tipo de recurso, resultado y rango de fechas, con paginación.
+
+**Pendiente:** Política de retención, exportación y cleanup periódico.
 
 ### Observabilidad
 
@@ -619,9 +659,8 @@ La aplicación deberá contemplar inicialmente logs estructurados, correlation/r
 No se registrarán contraseñas, tokens, URLs firmadas ni datos comerciales o personales innecesarios.
 
 - **DECISIÓN DERIVABLE:** operaciones críticas y seguridad requieren trazabilidad.
-- **DECISIÓN PROPUESTA:** auditoría desde casos de uso y observabilidad básica desde el inicio.
-- **DEPENDE DE NEGOCIO:** eventos obligatorios y retención.
-- **PENDIENTE:** proveedor y herramientas concretas.
+- **DECISIÓN YA TOMADA (ADR-013):** auditoría desde casos de uso mediante AuditPort, 20 eventos tipados, lectura restringida a ADMIN.
+- **PENDIENTE:** retención, exportación, cleanup periódico.
 
 ---
 
@@ -649,6 +688,45 @@ La primera versión no depende de un sistema externo de ventas. El vendedor carg
 - **DECISIÓN PROPUESTA:** puertos, adaptadores y anti-corruption layer.
 - **DEPENDE DE NEGOCIO:** sistemas existentes, fuente maestra y frecuencia de sincronización.
 - **PENDIENTE:** contratos concretos de integración.
+
+---
+
+## 19. Visitas, Clientes y Programa de Referidos
+
+> **Estado:** 🚧 DECISIÓN DE DISEÑO (Phase 10)
+
+El sistema debe soportar el flujo completo de visitas a domicilio, gestión de clientes y programa de referidos.
+
+### Entidades
+
+- **Client**: Almacena información de clientes (name, phone, email, address).
+- **Visit**: Registra visitas a domicilio (seller, client, assignedBy, status).
+- **ReferralContact**: Almacena contactos referidos para el programa de descuentos.
+
+### Flujo Principal
+
+```
+1. N3+ recibe clientes de N4+
+2. N3+ asigna clientes a vendedores de su equipo
+3. Vendedor realiza visita
+4. Vendedor carga info en sistema (con o sin venta)
+5. Si hay venta → se crea con productos, pago, referidos, descuento
+6. Supervisor revisa y aprueba/rechaza
+```
+
+### Sidebar
+
+- "Mis Visitas" (todos): tabla de visitas del vendedor.
+- "Clientes" (N3+): tabla de clientes del supervisor.
+- "Mi Equipo" (N3+): tabla de vendedores del equipo.
+
+### Permisos
+
+- `client.view`, `client.create`, `client.update`, `client.assign`
+- `visit.view`, `visit.create`, `visit.update`
+- `referral.view`, `referral.create`
+
+**Referencia:** ADR-014, data-model.md §20-23, business-rules.md REG-066–071
 
 ---
 
@@ -833,7 +911,7 @@ Este documento no decide definitivamente:
 - múltiples supervisores o equipos;
 - detalles físicos y casos particulares del flujo inicial de ventas;
 - esquema definitivo de `Sale`, `SaleItem` y `Product`;
-- fórmula y fuente de las comisiones;
+- base comercial futura si se confirma una fórmula distinta de `Sale.totalAmount`;
 - motor automático de promociones;
 - objetivos y metas;
 - detalles adicionales del catálogo de capacitación;
@@ -841,7 +919,7 @@ Este documento no decide definitivamente:
 - proveedor de archivos y videos;
 - proveedor de infraestructura;
 - índices definitivos y esquema Prisma;
-- retención final de auditoría;
+- retención y cleanup de datos de auditoría;
 - data warehouse o arquitectura analítica futura.
 
 No deben implementarse estas decisiones como si fueran requisitos confirmados.
@@ -889,10 +967,10 @@ La arquitectura debe mantenerse alineada con `open-questions.md`. Los puntos con
 Se detectan además dos cuestiones documentales que no se resuelven aquí:
 
 - `organizational-model.md` mantiene abierta la alternativa de `Team` explícito o implícito, mientras `data-model.md` propone inicialmente derivarlo de la jerarquía. Esta arquitectura lo trata como una decisión provisional y lo aísla detrás de una abstracción de consulta.
-- La regla inicial de comisión vigente es **N1 → 15 %**, configurable y
-  versionada. La anterior regla de diseño del 50 % queda 🔄 REEMPLAZADA como
-  antecedente histórico. Las observaciones históricas previas quedan
-  reemplazadas como base de la regla operativa inicial.
+- Las tasas confirmadas vigentes son **N1 15 %, N2 20 %, N3 30 %, N4 40 %, N5
+  50 %, N6 60 % y N7 70 %**, configurables y versionadas. La anterior regla
+  general de diseño del 50 % queda 🔄 REEMPLAZADA como antecedente histórico; el
+  50 % vigente para N5 proviene exclusivamente de la tabla confirmada actual.
 
 Estas discrepancias no modifican las decisiones técnicas generales, pero deben resolverse antes de congelar el modelo de equipos o el cálculo de comisiones.
 
@@ -927,3 +1005,5 @@ La arquitectura no reemplaza los requisitos, reglas de negocio, permisos ni el m
 | 2026-09-03 | 0.3     | Consolidación de autenticación, ventas, capacitación e infraestructura inicial. |
 | 2026-09-03 | 0.4     | Consolidación final del flujo de ventas, historial y alcance de capacitación. |
 | 2026-09-03 | 0.5     | Comisión inicial vigente N1 → 15 % (la regla de 50 % queda REEMPLAZADA como antecedente). |
+| 2026-09-08 | 0.6     | Fase 7: sección de auditoría actualizada con AuditPort implementado, 20 eventos tipados, semántica best-effort y lectura restringida. |
+| 2026-09-08 | 0.7     | Fase 9: sección 16 de analytics actualizada con módulo implementado, GetDashboardDataUseCase, MonthlyTarget y Recharts. |

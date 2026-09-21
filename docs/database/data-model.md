@@ -43,6 +43,7 @@ Organización
 ├── Employee
 ├── Level
 ├── EmployeeLevelHistory
+├── EmployeeProgress
 └── Supervisor hierarchy
 
 Acceso
@@ -77,13 +78,26 @@ Conceptualmente contiene información propia de la persona y de su relación con
 Employee
 ---------
 id
+employeeCode          ← sequential integer, auto-generated
 firstName
 lastName
-...
+dni                   ← national ID
+email
+phone
+dateOfBirth
+street
+streetNumber
+floor
+apartment
+city
+province
+postalCode
 joinedAt
 currentLevelId
 supervisorId
 status
+deactivatedAt
+deactivationReason
 createdAt
 updatedAt
 ```
@@ -93,10 +107,13 @@ updatedAt
 `Employee` representa:
 
 - Identidad de la persona dentro de la organización.
+- Datos personales de contacto e identificación (DNI, email, teléfono, fecha de nacimiento).
+- Dirección residencial.
 - Fecha de ingreso.
 - Estado dentro de la organización.
 - Nivel actual.
 - Superior directo actual.
+- Código de empleado secuencial (referencia legible para tablas y reportes).
 
 No debería almacenar directamente el historial completo de niveles ni la lógica de comisiones.
 
@@ -231,6 +248,42 @@ Además del historial de nivel, el modelo conceptual debe contemplar un historia
 organizacional capaz de conservar, como mínimo, empleado, supervisor, nivel,
 inicio y fin de vigencia, motivo y actor del cambio. La estructura física y sus
 relaciones definitivas quedan para el modelo relacional posterior.
+
+### 6.2 EmployeeProgress
+
+Registra los puntos acumulados por un empleado para su progresión de nivel.
+
+```
+EmployeeProgress
+----------------
+id
+employeeId
+type          (SENIORITY | VISIT | SALE | TARGET_ACHIEVED)
+points
+description
+period
+createdAt
+```
+
+**Propósito:**
+
+Cada fuente de puntos genera un registro en esta tabla. Los puntos se
+acumulan de por vida y se utilizan para calcular el progreso hacia el
+siguiente nivel.
+
+**Tipo de punto:**
+
+- `SENIORITY`: 1 punto por mes de antigüedad.
+- `VISIT`: 2 puntos por visita completada.
+- `SALE`: 5 puntos por venta aprobada.
+- `TARGET_ACHIEVED`: 10 puntos de bonus por mes que supera el objetivo.
+
+**Regla:**
+
+Al ser promovido un empleado, su progreso vuelve a 0 pero los registros
+se conservan como historial.
+
+**Referencia:** business-rules.md REG-082, requirements.md §3.13
 
 ---
 
@@ -423,12 +476,39 @@ Representa una operación comercial realizada por un vendedor.
 Sale
 ----
 id
+saleNumber
 employeeId
 saleDate
 status
 totalAmount
+approvedAt
+buyerName
+clientDocumentType
+clientDocumentNumber
+clientPhone
+clientEmail
+clientId
+visitId
+paymentMethod
+paymentStatus
+installments
+externalPaymentReference
+cardBrand
+cardLast4
+discount
+discountReason
+deliveryAddress
+deliveryStatus
+deliveryEstimatedDate
+invoiceStatus
+externalInvoiceReference
 ...
 ```
+
+`saleNumber` es un entero secuencial único global que identifica la venta de
+manera operativa. Se asigna al crear la venta en estado `DRAFT`. La
+representación visible utiliza el formato `VT-0001`, `VT-0002`, etc. El
+prefijo y el zero-padding no se almacenan como parte del campo numérico.
 
 La venta pertenece al empleado que la realizó.
 
@@ -436,6 +516,12 @@ La información básica del comprador pertenece al contexto de la venta. En el
 alcance actual no se modela un agregado `Customer` independiente ni un módulo
 CRM; no habrá estadísticas, segmentación ni historial comercial centrado en el
 comprador.
+
+La venta conserva además un snapshot operativo del nombre, teléfono, email y
+documento informado al momento de la carga. El documento es opcional mientras no
+se confirme una exigencia legal o fiscal.
+
+`visitId` debe vincular una visita completada durante el flujo manual actual.
 
 Se utilizará inicialmente el siguiente flujo conceptual:
 
@@ -452,8 +538,8 @@ Cada venta tiene inicialmente un único vendedor responsable. Las ventas
 pendientes o rechazadas no alimentan estadísticas definitivas ni cálculos
 definitivos de comisión.
 
-Permanece ❓ PENDIENTE el detalle definitivo de la información comercial, las
-reglas de cada transición y los criterios exactos de validez y comisión.
+`approvedAt` conserva el momento en que la venta pasó a `APPROVED`. Ese momento
+se utiliza para seleccionar la versión vigente de `CommissionRule`.
 
 ---
 
@@ -525,21 +611,21 @@ alterar el valor histórico de una venta.
 
 Las comisiones deben modelarse como un dominio independiente de la jerarquía.
 
-La información disponible actualmente indica una progresión observada para vendedores de nivel 1:
+Las tasas confirmadas vigentes son:
 
-| Antigüedad  | Comisión observada   |
-|-------------|----------------------|
-| Mes 1       | 10 %                 |
-| Mes 2       | 15 %                 |
-| Mes 3       | 30 %                 |
-| Mes 4       | Pendiente            |
-| Mes 5       | Pendiente            |
-| Regla inicial (anterior, 🔄 REEMPLAZADA) | 50 %                 |
+| Nivel | Posición | Comisión |
+|-------|----------|----------|
+| N1 | Vendedor | 15 % |
+| N2 | Vendedor Junior | 20 % |
+| N3 | Distribuidor | 30 % |
+| N4 | Blue | 40 % |
+| N5 | Royal | 50 % |
+| N6 | Premier | 60 % |
+| N7 | Max | 70 % |
 
-La regla inicial de diseño vigente es **N1 → 15 %**, configurable y versionada.
-La anterior regla de diseño del 50 % queda 🔄 REEMPLAZADA y se conserva solo
-como antecedente histórico. La fórmula y las condiciones definitivas continúan
-pendientes.
+La tasa depende del nivel histórico del empleado que realiza la venta. No se
+agregan períodos por antigüedad ni progresiones mensuales. La versión de la
+regla se selecciona usando `Sale.approvedAt`.
 
 ---
 
@@ -554,8 +640,6 @@ CommissionRule
 --------------
 id
 levelId
-fromMonth
-toMonth
 percentage
 effectiveFrom
 effectiveTo
@@ -564,16 +648,13 @@ effectiveTo
 **Ejemplo conceptual:**
 
 ```
-Nivel 1
-Mes 1 → 10 %
-
-Nivel 1
-Mes 2 → 15 %
-
-Nivel 1
-Mes 3 → 30 %
-
-...
+Nivel 1 → 15 %
+Nivel 2 → 20 %
+Nivel 3 → 30 %
+Nivel 4 → 40 %
+Nivel 5 → 50 %
+Nivel 6 → 60 %
+Nivel 7 → 70 %
 ```
 
 **Motivo:**
@@ -600,21 +681,52 @@ relacionarse con la operación original sin eliminar el resultado histórico.
 
 ## 16. Comisión y nivel
 
-No debe asumirse todavía que la comisión depende exclusivamente del nivel actual.
+La comisión depende del nivel histórico vigente del vendedor en la fecha de la
+venta, no del nivel actual leído posteriormente.
 
-El modelo deberá poder representar al menos:
+El modelo representa:
 
 ```
-Nivel
+Nivel histórico en `saleDate`
 +
-Antigüedad
-+
-Regla de comisión vigente
+Regla vigente en `approvedAt`
 ```
 
 Esto es importante porque el sistema ya presenta evidencia de que antigüedad y nivel son variables independientes.
 
-La fórmula definitiva para calcular una comisión queda ❓ PENDIENTE.
+La base técnica inicial es `Sale.totalAmount`, conservada como `baseAmount` en
+la comisión. El importe se calcula como `baseAmount × percentage / 100` y se
+redondea a dos decimales mediante half-up.
+
+### 16.1 CommissionEntry
+
+Representa una comisión generada o un ajuste histórico asociado a una venta.
+
+```
+CommissionEntry
+---------------
+id
+saleId
+employeeId
+ruleId
+parentId
+type
+percentage
+baseAmount
+amount
+saleDate
+calculatedAt
+```
+
+`EARNED` representa la comisión original creada al aprobar una venta.
+`REVERSAL` representa una compensación negativa creada al cancelar una venta y
+debe referenciar la entrada original mediante `parentId`. `ADJUSTMENT` queda
+disponible para futuras correcciones controladas, pero no se implementa como
+operación manual en esta fase.
+
+Las entradas son históricas: no se eliminan ni se sobrescriben para corregirlas.
+La persistencia debe impedir más de una entrada `EARNED` por venta y más de una
+`REVERSAL` para la entrada original.
 
 ---
 
@@ -701,7 +813,249 @@ Employee
 
 ---
 
-## 19. Estado del modelo
+## 19. Auditoría
+
+### AuditEvent
+
+> **Estado:** ✅ IMPLEMENTADO (Fase 7)
+
+Registra eventos de auditoría del sistema. Tabla append-only sin operaciones
+de actualización ni eliminación.
+
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| `id` | UUID (PK) | Identificador único del evento |
+| `actorId` | UUID? (FK → UserAccount) | ID del usuario que realizó la acción. `NULL` para eventos del sistema. |
+| `actorEmail` | VARCHAR(255)? | Snapshot del email al momento del evento. Preserva legibilidad cuando la cuenta es desactivada. |
+| `action` | AuditAction (enum) | Tipo de evento (20 valores: LOGIN_SUCCESS, LOGOUT, SALE_APPROVED, etc.) |
+| `resourceType` | VARCHAR(100) | Tipo de recurso afectado (UserAccount, Employee, Sale, etc.) |
+| `resourceId` | UUID? | ID del recurso afectado |
+| `result` | AuditResult (enum) | SUCCESS, FAILURE o DENIED |
+| `correlationId` | UUID? | Agrupa eventos derivados de una misma operación de alto nivel |
+| `metadata` | JSONB? | Datos adicionales flexibles (cambios, contexto, etc.) |
+| `createdAt` | TIMESTAMPTZ | Timestamp del evento |
+
+**Enum AuditAction** (20 valores):
+
+- Identidad: LOGIN_SUCCESS, LOGIN_FAILURE, LOGOUT, PASSWORD_CHANGED, PASSWORD_RESET_REQUESTED, PASSWORD_RESET_COMPLETED
+- Organización: EMPLOYEE_CREATED, EMPLOYEE_UPDATED, EMPLOYEE_DEACTIVATED, EMPLOYEE_LEVEL_CHANGED, EMPLOYEE_SUPERVISOR_CHANGED
+- Ventas: SALE_CREATED, SALE_UPDATED, SALE_SUBMITTED, SALE_APPROVED, SALE_REJECTED, SALE_CANCELLED
+- Comisiones: COMMISSION_RULE_CREATED, COMMISSION_GENERATED, COMMISSION_REVERSED
+
+**Enum AuditResult:** SUCCESS, FAILURE, DENIED
+
+**Índices:**
+
+- `(actorId)` — consultas por actor.
+- `(resourceType, resourceId)` — consultas por recurso.
+- `(action)` — consultas por tipo de evento.
+- `(correlationId)` — trazabilidad de operaciones derivadas.
+- `(createdAt)` — consultas por rango de fechas y ordenamiento.
+
+**Semántica transaccional:**
+
+- Para operaciones críticas (aprobación de venta + generación de comisión), el
+  evento se persiste en la misma transacción que la modificación de negocio.
+- El fallo del mecanismo de auditoría no convierte la operación de negocio en
+  fallida (best-effort).
+
+**Referencias:** `ADR-013`, `data-architecture.md §13`, `system-architecture.md §18`
+
+---
+
+## 19. MonthlyTarget
+
+> **Estado:** 🚧 DECISIÓN DE DISEÑO (Phase 9)
+
+Almacena los objetivos mensuales de ventas configurables por nivel.
+
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| `id` | INT (PK, autoincrement) | Identificador único |
+| `levelId` | INT (FK → Level, UNIQUE) | Nivel asociado (1–7) |
+| `targetSales` | INT | Objetivo de ventas por vendedor al mes |
+| `createdAt` | TIMESTAMPTZ | Fecha de creación |
+| `updatedAt` | TIMESTAMPTZ | Fecha de última modificación |
+
+**Restricciones:**
+
+- `UNIQUE(levelId)` — cada nivel tiene exactamente un objetivo configurado.
+- `targetSales > 0` — el objetivo debe ser positivo.
+
+**Valores iniciales (seed):**
+
+| Nivel | targetSales |
+|-------|-------------|
+| N1 | 10 |
+| N2 | 15 |
+| N3–N7 | 10 |
+
+**Cálculo para supervisores (N3+):**
+
+```
+objetivo_equipo = targetSales × cantidad de subordinados directos
+```
+
+**Referencias:** `business-rules.md REG-055`, `requirements.md §2.6`, `system-architecture.md §16`
+
+---
+
+## 20. Client (Cliente)
+
+> **Estado:** 🚧 DECISIÓN DE DISEÑO (Phase 10)
+
+Almacena información de clientes para el flujo de visitas y programa de referidos.
+
+```
+Client
+├── id: UUID (PK, interno)
+├── clientNumber: INT (único, secuencial)
+├── name: String (required)
+├── documentNumber: String?
+├── phone: String?
+├── email: String?
+├── address: String (compatibilidad / representación legible)
+├── street: String (required)
+├── streetNumber: String (required)
+├── floor: String?
+├── apartment: String?
+├── city: String (required)
+├── province: String (required)
+├── postalCode: String?
+├── addressNotes: String?
+├── referredBySaleId: UUID? → Sale (si vino de referido)
+├── ownerEmployeeId: UUID → Employee (N3+ es su "dueño")
+├── createdAt: DateTime
+└── updatedAt: DateTime
+```
+
+**Relaciones:**
+
+```
+Employee (N3+) ──1:N──▶ Client (owner)
+Sale ──1:N──▶ Client (referredBySale)
+Client ──1:N──▶ Visit
+```
+
+**Reglas:**
+
+- Los referidos de vendedores N1/N2 se asignan al N3+ superior (`ownerEmployeeId`).
+- Un cliente puede recibir múltiples descuentos por referidos en compras diferentes.
+
+---
+
+## 21. Visit (Visita)
+
+> **Estado:** 🚧 DECISIÓN DE DISEÑO (Phase 10)
+
+Registra visitas a domicilio para demostraciones de productos.
+
+```
+Visit
+├── id: UUID (PK)
+├── visitNumber: INT (único, secuencial)
+├── sellerId: UUID → Employee (quien realiza)
+├── clientId: UUID → Client
+├── assignedById: UUID → Employee (quién asignó)
+├── scheduledDate: DateTime
+├── completedDate: DateTime?
+├── status: Enum [assigned, completed, no_sale, cancelled]
+├── notes: Text?
+├── visitStreet: String?
+├── visitStreetNumber: String?
+├── visitFloor: String?
+├── visitApartment: String?
+├── visitCity: String?
+├── visitProvince: String?
+├── visitPostalCode: String?
+├── visitAddressNotes: String?
+├── createdAt: DateTime
+└── updatedAt: DateTime
+```
+
+**Enum VisitStatus:** `assigned`, `completed`, `no_sale`, `cancelled`
+
+**Relaciones:**
+
+```
+Employee (vendedor) ──1:N──▶ Visit (seller)
+Employee (supervisor) ──1:N──▶ Visit (assignedBy)
+Client ──1:N──▶ Visit
+Visit ──1:1──▶ Sale (opcional)
+```
+
+**Flujo:**
+
+```
+assigned → completed (con venta) → Sale creada
+assigned → no_sale (sin venta) → Sin venta
+assigned → cancelled
+```
+
+---
+
+## 22. ReferralContact (Contacto Referido)
+
+> **Estado:** 🚧 DECISIÓN DE DISEÑO (Phase 10)
+
+Almacena contactos proporcionados por clientes para el programa de referidos.
+
+```
+ReferralContact
+├── id: UUID (PK)
+├── saleId: UUID → Sale
+├── clientName: String
+├── phone: String
+├── email: String?
+└── createdAt: DateTime
+```
+
+**Relaciones:**
+
+```
+Sale ──1:N──▶ ReferralContact
+```
+
+**Reglas:**
+
+- Si el cliente proporciona 5 contactos, se aplica 20% de descuento sobre toda la compra.
+- Los contactos se agregan a la base de clientes del N3+ superior.
+
+---
+
+## 23. Extensión de Sale
+
+> **Estado:** 🚧 DECISIÓN DE DISEÑO (Phase 10)
+
+Se agregan campos a la entidad `Sale` existente:
+
+| Campo Nuevo | Tipo | Descripción |
+|-------------|------|-------------|
+| `visitId` | UUID? (FK → Visit) | Vincula venta con visita |
+| `clientId` | UUID? (FK → Client) | Vincula venta con cliente |
+| `paymentMethod` | VARCHAR(50)? | Método de pago |
+| `paymentStatus` | VARCHAR(30)? | Estado operativo del pago |
+| `installments` | INT? | Cuotas (si aplica) |
+| `externalPaymentReference` | VARCHAR(150)? | Referencia de pago en H&Y Cite |
+| `cardBrand` | VARCHAR(40)? | Marca de tarjeta, sin número completo |
+| `cardLast4` | VARCHAR(4)? | Últimos cuatro dígitos, si son necesarios |
+| `discount` | DECIMAL? | Descuento (20% si 5 referidos) |
+| `discountReason` | VARCHAR(100)? | Motivo del descuento |
+| `clientDocumentType` | VARCHAR(30)? | Tipo de documento del snapshot |
+| `clientDocumentNumber` | VARCHAR(50)? | Documento del snapshot |
+| `clientPhone` | VARCHAR(50)? | Teléfono del snapshot |
+| `clientEmail` | VARCHAR(255)? | Email del snapshot |
+| `deliveryAddress` | TEXT? | Dirección histórica de entrega |
+| `deliveryStatus` | VARCHAR(30)? | Estado de entrega |
+| `deliveryEstimatedDate` | DATE? | Fecha estimada de entrega |
+| `invoiceStatus` | VARCHAR(30)? | Estado de facturación externa |
+| `externalInvoiceReference` | VARCHAR(150)? | Referencia de H&Y Cite |
+
+**Campos existentes se mantienen:** `buyerName` se conserva por compatibilidad con datos existentes.
+
+---
+
+## 24. Estado del modelo
 
 | Entidad / concepto       | Estado                          | Observación                          |
 |--------------------------|---------------------------------|--------------------------------------|
@@ -716,12 +1070,15 @@ Employee
 | SaleItem                 | ❓ PENDIENTE                    | Detalle físico depende del modelo comercial       |
 | Product                  | 🔎 OBSERVADO / 🚧 DECISIÓN DE DISEÑO | Catálogo interno inicial; detalles pendientes |
 | CommissionRule           | 🚧 DECISIÓN DE DISEÑO           | Reglas configurables y temporales    |
-| Formación                | ✅ CONFIRMADO                   | Debe existir para nivel 1            |
+| Formación                | ✅ IMPLEMENTADO               | Categorías, cursos, módulos y materiales implementados |
 | TrainingProgress         | 🔄 REEMPLAZADO                  | Seguimiento individual fuera del alcance actual  |
+| AuditEvent               | ✅ IMPLEMENTADO                 | Append-only, 20 acciones tipadas     |
+| MonthlyTarget            | ✅ IMPLEMENTADO                 | Objetivos mensuales por nivel (Phase 9) |
+| EmployeeProgress         | ✅ IMPLEMENTADO                 | Sistema de puntos para progresión de nivel |
 
 ---
 
-## 20. Información que todavía no debe convertirse en restricciones de base de datos
+## 21. Información que todavía no debe convertirse en restricciones de base de datos
 
 Hasta recibir confirmación de la empresa, no deben establecerse como restricciones rígidas:
 
@@ -730,8 +1087,7 @@ Hasta recibir confirmación de la empresa, no deben establecerse como restriccio
 - Relaciones exactas entre niveles 4–7.
 - Cantidad máxima de subordinados.
 - Obligación de que determinados niveles tengan equipo.
-- Porcentaje definitivo de comisión por antigüedad.
-- Fórmula final para calcular comisiones.
+- Bases comerciales futuras distintas de `Sale.totalAmount`.
 - Detalles de futuras integraciones de ventas.
 - Extensiones futuras del catálogo y de la capacitación.
 
@@ -739,7 +1095,7 @@ El modelo debe permitir representar estos escenarios posteriormente sin requerir
 
 ---
 
-## 21. Próximo paso
+## 22. Próximo paso
 
 El siguiente nivel de detalle será transformar este modelo conceptual en un modelo relacional, definiendo:
 
@@ -751,8 +1107,10 @@ El siguiente nivel de detalle será transformar este modelo conceptual en un mod
 - Unicidad.
 - Integridad temporal.
 - Estrategia para consultas jerárquicas.
-- Estrategia de auditoría.
 - Entidades definitivas del esquema Prisma.
+
+> La estrategia de auditoría quedó definida en la Fase 7 (ADR-013) con el modelo
+> `AuditEvent` y su persistencia detrás de `AuditPort`.
 
 Esta transformación deberá respetar la estrategia arquitectónica definida en
 `docs/architecture/data-architecture.md`.
@@ -761,7 +1119,7 @@ Antes de llegar a ese punto deberá reducirse la cantidad de incógnitas de `ope
 
 ---
 
-## 22. Historial de cambios
+## 23. Historial de cambios
 
 | Fecha      | Versión | Cambio |
 |------------|---------|--------|
@@ -769,3 +1127,7 @@ Antes de llegar a ese punto deberá reducirse la cantidad de incógnitas de `ope
 | 03/09/2026 | 0.4     | Incorporación del concepto de historial organizacional y consolidación de ventas, catálogo y capacitación. |
 | 03/09/2026 | 0.5     | Consolidación del comprador contextual, comisión inicial y alcance simplificado de capacitación. |
 | 03/09/2026 | 0.6     | Comisión inicial vigente N1 → 15 % (la regla de 50 % queda REEMPLAZADA como antecedente). |
+| 07/09/2026 | 0.7     | Tasas N1–N7 confirmadas, `Sale.approvedAt`, `CommissionEntry.baseAmount` y entradas históricas EARNED/REVERSAL incorporadas al modelo. |
+| 08/09/2026 | 0.8     | Fase 7: sección AuditEvent incorporada al modelo conceptual con sus campos, índices y semántica transaccional. |
+| 08/09/2026 | 0.9     | Fase 8: estado de Formación actualizado a IMPLEMENTADO con estructura categorías→cursos→módulos→materiales. |
+| 08/09/2026 | 1.0     | Fase 9: sección MonthlyTarget incorporada al modelo conceptual con objetivos mensuales por nivel. |

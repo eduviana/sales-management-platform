@@ -186,11 +186,13 @@ tiempo dentro de la organización
 **La antigüedad puede influir en diferentes reglas de negocio, incluyendo potencialmente:**
 
 - Ascensos.
-- Porcentaje de comisión.
 - Beneficios o condiciones comerciales.
 - Acceso a determinadas funcionalidades.
 
-Durante el relevamiento inicial se observó específicamente una relación entre la antigüedad de vendedores nuevos de Nivel 1 y su porcentaje de comisión.
+Durante el relevamiento inicial se observó una posible relación entre la
+antigüedad de vendedores nuevos de Nivel 1 y su porcentaje de comisión. Esa
+observación fue reemplazada para Fase 6 por tasas confirmadas directamente por
+nivel: N1 15 %, N2 20 %, N3 30 %, N4 40 %, N5 50 %, N6 60 % y N7 70 %.
 
 Por este motivo, el modelo deberá conservar una fecha de ingreso suficientemente precisa como para calcular la antigüedad correspondiente en un momento determinado.
 
@@ -200,7 +202,8 @@ Por este motivo, el modelo deberá conservar una fecha de ingreso suficientement
 - Fecha de primer inicio de sesión.
 - Fecha de creación del registro en la base de datos.
 
-> **Estado:** 🔎 OBSERVADO.
+> **Estado:** 🔄 REEMPLAZADO para las reglas de comisión vigentes; la fecha de
+> ingreso continúa siendo un dato organizacional válido para otros usos.
 
 ### 2.5. Supervisor
 

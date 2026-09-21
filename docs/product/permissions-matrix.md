@@ -3,8 +3,8 @@
 **Proyecto:** Royal Prestige — Plataforma de Gestión de Ventas  
 **Documento:** Matriz de permisos  
 **Estado:** En definición / consolidación  
-**Versión:** 0.5  
-**Última actualización:** 03/09/2026
+**Versión:** 0.6  
+**Última actualización:** 07/09/2026
 
 ---
 
@@ -240,8 +240,15 @@ A continuación se definen los permisos conceptuales que se utilizarán como bas
 | `sale.readBranch`  | Consultar ventas de la rama subordinada    |
 | `sale.readGlobal`  | Consultar todas las ventas                 |
 | `sale.create`      | Registrar una venta                        |
-| `sale.update`      | Modificar una venta                        |
-| `sale.cancel`      | Cancelar una venta                         |
+| `sale.update`      | Modificar una venta en estado DRAFT        |
+| `sale.approve`     | Aprobar una venta pendiente de revisión    |
+| `sale.reject`      | Rechazar una venta pendiente de revisión   |
+| `sale.cancel`      | Cancelar una venta aprobada                |
+
+> **Alcance de `sale.approve` y `sale.reject`:** el supervisor debe poder
+> operar sobre ventas de su equipo o rama, según su alcance autorizado.
+> Un vendedor no debe poder aprobar o rechazar ventas propias ni ajenas
+> sin permiso explícito.
 
 > Los permisos relacionados con ventas deberán ajustarse al origen real de los datos.
 >
@@ -249,10 +256,86 @@ A continuación se definen los permisos conceptuales que se utilizarán como bas
 
 Para la versión consolidada, la venta es cargada por el vendedor responsable,
 queda pendiente de revisión y luego es aprobada o rechazada por el supervisor.
-La carga y la aprobación son responsabilidades separadas; los permisos exactos
-de cada transición deberán mantenerse alineados con la matriz aprobada.
+La carga, la revisión y la aprobación son responsabilidades separadas; los
+permisos exactos de cada transición deberán mantenerse alineados con la matriz
+aprobada.
 
-### 4.5. Estadísticas y reporting
+> **Datos personales y operativos:** el vendedor puede consultar los datos de sus
+> propias ventas; los supervisores pueden consultar los datos de ventas dentro de
+> su alcance de equipo o rama; `ADMIN` puede consultarlos globalmente. Los datos
+> de tarjeta, si existieran, deben mostrarse siempre limitados a marca y últimos
+> cuatro dígitos. El número completo de tarjeta y el CVV nunca son accesibles
+> porque no se almacenan.
+
+> Los estados de entrega y facturación externa no son editables por vendedores.
+> Su futura gestión deberá quedar restringida a roles administrativos u
+> operativos autorizados.
+
+`Mis Ventas` utiliza siempre `sale.readOwn`. La consulta de ventas de
+subordinados se realiza mediante una capacidad separada dentro de `Mi Equipo`
+con `sale.readTeam` (o el alcance superior que corresponda).
+
+### 4.5. Catálogo de productos
+
+| Permiso             | Descripción                                     |
+|---------------------|-------------------------------------------------|
+| `catalog.read`      | Consultar productos y categorías del catálogo    |
+| `catalog.create`    | Crear productos o categorías en el catálogo      |
+| `catalog.update`    | Modificar productos o categorías del catálogo    |
+
+> El catálogo es interno y pequeño; no es un ecommerce.
+>
+> `catalog.read` está disponible para cualquier usuario autenticado, ya que
+> el catálogo se utiliza para seleccionar productos al registrar ventas.
+>
+> `catalog.create` y `catalog.update` son capacidades administrativas
+> destinadas a `ADMIN`. La necesidad de que supervisores gestionen el
+> catálogo queda pendiente de validación.
+
+### 4.6. Clientes (Phase 10)
+
+| Permiso               | Descripción                                     |
+|-----------------------|-------------------------------------------------|
+| `client.view`         | Consultar clientes                              |
+| `client.create`       | Crear clientes                                  |
+| `client.update`       | Modificar información de clientes               |
+| `client.assign`       | Asignar clientes a vendedores                   |
+
+> `client.view` aplica según scope: OWN (propios), TEAM (equipo), BRANCH (rama).
+> `client.assign` solo para N3+ (supervisores con equipo).
+
+> La asignación de una visita a un vendedor también requiere `visit.create` y
+> debe limitarse server-side a subordinados directos del supervisor autenticado.
+
+> `Visitas del equipo` utiliza `visit.view` con alcance TEAM. `Mis Visitas`
+> continúa utilizando alcance OWN.
+
+### 4.7. Visitas (Phase 10)
+
+| Permiso               | Descripción                                     |
+|-----------------------|-------------------------------------------------|
+| `visit.view`          | Consultar visitas                               |
+| `visit.create`        | Registrar visitas                               |
+| `visit.update`        | Actualizar estado de visitas                    |
+
+> `visit.view` aplica según scope: OWN (propias), TEAM (equipo), BRANCH (rama).
+> `visit.create` y `visit.update` solo para el vendedor asignado.
+
+> La carga de una venta debe utilizar una visita completada perteneciente al
+> vendedor autenticado. La validación se realiza server-side y no depende del
+> `visitId` recibido desde el cliente.
+
+### 4.8. Referidos (Phase 10)
+
+| Permiso               | Descripción                                     |
+|-----------------------|-------------------------------------------------|
+| `referral.view`       | Consultar contactos referidos                   |
+| `referral.create`     | Registrar contactos referidos                   |
+
+> Los referidos se cargan como parte de una venta.
+> `referral.create` requiere `sale.create`.
+
+### 4.6. Estadísticas y reporting
 
 | Permiso                      | Descripción                          |
 |------------------------------|--------------------------------------|
@@ -266,7 +349,7 @@ de cada transición deberán mantenerse alineados con la matriz aprobada.
 | `report.generate`            | Generar reportes                     |
 | `report.export`              | Exportar reportes                    |
 
-### 4.6. Objetivos
+### 4.7. Objetivos
 
 | Permiso            | Descripción                    |
 |--------------------|--------------------------------|
@@ -281,7 +364,7 @@ de cada transición deberán mantenerse alineados con la matriz aprobada.
 >
 > Los objetivos todavía no están confirmados como funcionalidad del sistema.
 
-### 4.7. Niveles y jerarquía
+### 4.8. Niveles y jerarquía
 
 | Permiso                  | Descripción                          |
 |--------------------------|--------------------------------------|
@@ -295,7 +378,7 @@ de cada transición deberán mantenerse alineados con la matriz aprobada.
 
 > Los permisos de modificación deberán estar restringidos a roles con capacidad administrativa.
 
-### 4.8. Comisiones
+### 4.9. Comisiones
 
 | Permiso                      | Descripción                                |
 |------------------------------|--------------------------------------------|
@@ -312,7 +395,7 @@ de cada transición deberán mantenerse alineados con la matriz aprobada.
 >
 > La necesidad real dependerá de si las comisiones son calculadas internamente o recibidas desde otro sistema.
 
-### 4.9. Capacitación
+### 4.10. Capacitación
 
 | Permiso                    | Descripción                          |
 |----------------------------|--------------------------------------|
@@ -331,14 +414,21 @@ de cada transición deberán mantenerse alineados con la matriz aprobada.
 >
 > El resto de las capacidades de administración y seguimiento son provisionales.
 
-### 4.10. Auditoría
+### 4.11. Auditoría
 
 | Permiso          | Descripción                          |
 |------------------|--------------------------------------|
 | `audit.read`     | Consultar registros de auditoría     |
 | `audit.export`   | Exportar registros de auditoría      |
 
-> El acceso a auditoría se considera inicialmente una capacidad administrativa.
+> `audit.read` está implementado y restringido al rol ADMIN. La consulta
+> retorna eventos de auditoría con filtros por actor, acción, recurso,
+> resultado y rango de fechas.
+>
+> `audit.export` está definido pero no implementado como endpoint. Podrá
+> incorporarse futuramente.
+>
+> El acceso a auditoría se considera una capacidad administrativa exclusiva.
 
 ---
 
@@ -912,3 +1002,4 @@ que resulte afectado.
 | 03/09/2026 | 0.3     | Consolidación de capacidades de niveles, rol administrativo, capacitación y flujo inicial de ventas. |
 | 03/09/2026 | 0.4     | Sincronización global de estados y decisiones de la matriz. |
 | 03/09/2026 | 0.5     | Exclusión del seguimiento individual de capacitación del alcance actual. |
+| 07/09/2026 | 0.6     | Incorporación de permisos `sale.approve`, `sale.reject` (revisión de ventas) y `catalog.read`, `catalog.create`, `catalog.update` (catálogo de productos). |

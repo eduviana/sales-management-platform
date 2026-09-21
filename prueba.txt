@@ -1,1 +1,771 @@
-npm install @prisma/client@latest
+Administrador	                        Admin Sistema	                                admin@royalprestige.com	                                        admin123	                        
+Supervisor	                        María García	                                supervisor@royalprestige.com	                                supervisor123	N3
+Vendedor (bajo la supervisora)	        Carlos López	                                seller@royalprestige.com	                                seller123	N1
+Vendedor (independiente)	        Ana Martínez	                                ana@royalprestige.com	                                        seller123	N1
+
+
+pendiente por hacer: 
+Asignación automática de clientes (botón deshabilitado)
+Integración de referidos con el flujo de ventas
+Modal de creación de visitas/clientes desde la UI
+Conexión de la card "Visitas Pendientes" del dashboard con la entidad Visit
+
+
+
+
+
+FASE 1 — Foundation técnica
+        ↓
+FASE 2 — Identidad y autenticación
+        ↓
+FASE 3 — Organización y jerarquía
+(tip que me diste: Lo único que dejaría anotado para el futuro
+
+No como deuda que obligue a reabrir Fase 3, sino como observación para Fase 10:
+
+Las operaciones de organización deberían terminar teniendo una estrategia clara de concurrencia/integridad cuando lleguemos a producción.
+
+Por ejemplo, dos operaciones simultáneas intentando cambiar el supervisor o nivel de la misma persona.
+
+Tenemos constraints y transacciones, que es una muy buena base, pero la revisión fina de concurrencia, aislamiento, race conditions e índices pertenece mucho más naturalmente al Hardening de Fase 10.
+
+No justificaría tocar Fase 3 por eso.)
+
+
+        ↓
+FASE 4 — Autorización y scopes
+(PermissionEvaluator retorna maxScope — Acopla permiso y scope)
+        ↓
+FASE 5 — Catálogo y gestión de ventas
+(Los nuevos permisos quedaron documentados:
+
+sale.approve
+sale.reject
+catalog.read
+catalog.create
+catalog.update
+
+Esto era importante porque la matriz es nuestra fuente de verdad.
+
+Pero dejo una pequeña observación: el informe los clasifica como ASUMIDO, no CONFIRMADO. Eso está bien siempre que la documentación respete ese estado. No debemos convertir esas decisiones de diseño en "hechos del cliente" posteriormente.)
+
+
+        ↓
+FASE 6 — Comisiones
+        ↓
+FASE 7 — Auditoría y trazabilidad
+        ↓
+FASE 8 — Capacitación
+        ↓
+FASE 9 — Dashboard, métricas y analytics
+        ↓
+FASE 10 — Hardening, testing y producción
+
+
+
+
+
+FASE 1 — Foundation técnica
+Objetivo
+
+Construir la base técnica sobre la que se apoyará todo el sistema, sin implementar todavía funcionalidades de negocio completas.
+
+Incluye
+Estructura del proyecto
+
+Establecer definitivamente la estructura modular:
+
+src/
+├── app/
+├── modules/
+│   ├── identity/
+│   ├── organization/
+│   ├── authorization/
+│   ├── sales/
+│   ├── commissions/
+│   ├── training/
+│   ├── audit/
+│   └── analytics/
+├── shared/
+└── infrastructure/
+
+La estructura exacta puede ajustarse durante la implementación, pero debe respetar las capas ya definidas.
+
+Capas
+
+Establecer:
+
+Presentation
+Application
+Domain
+Infrastructure
+
+y sus reglas de dependencia.
+
+Prisma
+
+Crear:
+
+Prisma Client singleton/adaptador
+acceso a Prisma exclusivamente desde Infrastructure
+configuración server-only
+manejo correcto de conexión
+utilidades para transacciones
+Configuración
+
+Centralizar:
+
+variables de entorno
+configuración de aplicación
+validación de configuración
+separación entre configuración pública y secreta
+Errores
+
+Crear la jerarquía/base de errores:
+
+AuthenticationError
+AuthorizationError
+ValidationError
+NotFoundError
+ConflictError
+DomainRuleError
+
+y mecanismo consistente para tratarlos.
+
+Contratos
+
+Establecer los primeros contratos/ports:
+
+Repository
+UnitOfWork / Transaction
+Audit
+
+sin intentar definir todavía todos los repositorios del sistema.
+
+Utilidades
+
+Crear únicamente utilidades realmente transversales.
+
+Evitar crear un utils/ gigante.
+
+Testing base
+
+Configurar la infraestructura de tests y realizar algunos tests básicos de prueba de la arquitectura.
+
+Criterio de finalización
+
+La Fase 1 está terminada cuando:
+
+la estructura definitiva está establecida;
+las capas tienen dependencias correctas;
+Prisma funciona únicamente desde Infrastructure;
+la configuración está centralizada;
+existen errores base;
+existe una estrategia de transacciones;
+existen ports/contracts base;
+el proyecto compila;
+lint pasa;
+tests base pasan;
+no se ha introducido lógica de negocio innecesaria.
+No incluye
+login
+usuarios
+empleados
+jerarquía
+permisos
+ventas
+comisiones
+dashboards
+UI completa
+
+Esta fase prepara el terreno.
+
+FASE 2 — Identidad y autenticación
+Objetivo
+
+Implementar quién es el usuario y cómo entra al sistema.
+
+Incluye
+
+UserAccount + autenticación.
+
+Implementar:
+
+login con email/password;
+hashing de contraseñas;
+sesión;
+logout;
+recuperación de contraseña;
+tokens de recuperación;
+expiración de tokens;
+mustChangePassword;
+cuentas ACTIVE, SUSPENDED, LOCKED;
+protección de rutas autenticadas;
+identificación del usuario actual;
+relación UserAccount → Employee.
+Importante
+
+Todavía no implementar toda la autorización jerárquica.
+
+La Fase 2 responde:
+
+"¿Quién sos?"
+
+La Fase 4 responderá:
+
+"¿Qué podés hacer y sobre qué datos?"
+
+Criterio de finalización
+
+Un usuario existente puede:
+
+login
+  ↓
+crear sesión
+  ↓
+acceder a zona autenticada
+  ↓
+obtener identidad actual
+  ↓
+logout
+
+y el flujo de recuperación de contraseña funciona correctamente.
+
+FASE 3 — Organización y jerarquía
+Objetivo
+
+Implementar el modelo organizacional real.
+
+Incluye
+Employee
+Level
+niveles N1–N7
+EmployeeLevelHistory
+EmployeeSupervisorHistory
+supervisorId
+alta de empleados
+baja lógica/inactivación
+cambio de nivel
+promoción
+democión
+cambio de supervisor
+historial de cambios
+construcción de jerarquía
+obtención de subordinados directos
+descendientes
+superiores
+árbol organizacional
+Reglas críticas
+
+Implementar la escalera:
+
+N7 Max
+ ↓
+N6 Premier
+ ↓
+N5 Royal
+ ↓
+N4 Blue
+ ↓
+N3 Distribuidor
+ ↓
+N2 Vendedor Junior
+ ↓
+N1 Vendedor
+
+y las reglas de reclutamiento:
+
+N3 → N1
+N4 → N3
+N5 → N4
+N6 → N5
+N7 → N6
+Importante
+
+No implementar todavía permisos completos.
+
+La jerarquía debe funcionar independientemente de la autorización.
+
+Criterio de finalización
+
+Podemos crear empleados, modificar su posición jerárquica y consultar correctamente:
+
+supervisor
+subordinados
+rama
+nivel actual
+historial de nivel
+historial de supervisor
+
+sin perder información histórica.
+
+FASE 4 — Autorización y scopes
+
+Esta es una de las fases más importantes del proyecto.
+
+Objetivo
+
+Convertir las reglas de permisos y alcance en un mecanismo real y centralizado.
+
+Incluye
+permisos;
+scopes;
+evaluator;
+resolver de scopes;
+políticas de recursos;
+autorización server-side;
+protección de Server Components;
+protección de Server Actions;
+protección de Route Handlers;
+autorización de archivos protegidos;
+control de acceso por jerarquía.
+
+Scopes:
+
+OWN
+TEAM
+BRANCH
+GLOBAL
+SYSTEM
+Flujo
+
+Toda operación protegida deberá conceptualmente pasar por:
+
+Identity
+   ↓
+Permission
+   ↓
+Scope
+   ↓
+Resource
+   ↓
+Operation
+Casos que deben probarse
+
+Por ejemplo:
+
+N1 intenta ver venta de otro N1
+N3 intenta ver equipo de otro N3
+N3 intenta modificar empleado fuera de su alcance
+usuario manipula un ID
+usuario accede directamente a una URL
+usuario invoca Server Action directamente
+usuario intenta acceder a archivo protegido
+usuario suspendido intenta autenticarse
+Criterio de finalización
+
+La autorización ya no depende de:
+
+if (user.role === ...)
+
+dispersos por el código.
+
+Existe un mecanismo centralizado y verificable.
+
+FASE 5 — Catálogo y gestión de ventas
+Objetivo
+
+Implementar el núcleo comercial del sistema.
+
+Incluye
+Catálogo
+categorías;
+productos;
+precios;
+activación/desactivación;
+código de producto.
+Ventas
+
+Implementar:
+
+DRAFT
+   ↓
+PENDING_REVIEW
+   ↓
+APPROVED
+
+y:
+
+PENDING_REVIEW → REJECTED → DRAFT
+
+y:
+
+APPROVED → CANCELLED
+Venta
+
+Implementar:
+
+creación;
+edición mientras corresponde;
+items;
+precio histórico;
+datos básicos del comprador;
+documentación;
+envío a revisión;
+revisión del supervisor;
+rechazo con motivo;
+aprobación;
+cancelación;
+consultas según scope.
+Regla crítica
+
+El supervisor no modifica silenciosamente una venta creada por el vendedor.
+
+Seller
+  ↓
+DRAFT
+  ↓
+PENDING_REVIEW
+  ↓
+Supervisor
+  ├── APPROVED
+  └── REJECTED
+          ↓
+       Seller
+          ↓
+        DRAFT
+Criterio de finalización
+
+El ciclo completo de una venta funciona correctamente y las consultas respetan autorización y scope.
+
+FASE 6 — Comisiones
+Objetivo
+
+Implementar el motor de comisiones basado en las ventas aprobadas.
+
+Incluye
+CommissionRule
+versionado de reglas;
+vigencia;
+cálculo;
+CommissionEntry;
+generación al aprobar venta;
+reversión al cancelar;
+ajustes;
+snapshot del porcentaje aplicado;
+trazabilidad de la regla utilizada.
+Regla inicial
+
+N1:
+
+15%
+
+N2–N7:
+
+sin porcentaje definido todavía
+
+No inventar valores.
+
+Concepto
+Sale APPROVED
+      ↓
+CommissionRule vigente
+      ↓
+CommissionCalculation
+      ↓
+CommissionEntry
+
+Cancelación:
+
+Sale CANCELLED
+      ↓
+Reversal
+      ↓
+CommissionEntry
+
+No borrar la comisión original.
+
+Criterio de finalización
+
+Una venta aprobada produce la comisión correcta y una cancelación produce su reversión correspondiente.
+
+FASE 7 — Auditoría y trazabilidad
+Objetivo
+
+Hacer que las operaciones importantes del sistema sean reconstruibles.
+
+Incluye
+
+AuditEvent.
+
+Registrar eventos relevantes:
+
+login;
+logout cuando corresponda;
+intentos fallidos;
+cambios de empleados;
+cambios de nivel;
+cambios de supervisor;
+creación de ventas;
+envío a revisión;
+rechazo;
+aprobación;
+cancelación;
+modificaciones sensibles;
+cambios de reglas de comisión;
+operaciones administrativas.
+
+Registrar, cuando corresponda:
+
+actor
+acción
+recurso
+resourceId
+resultado
+timestamp
+correlationId
+metadata
+Importante
+
+No convertir esto en event sourcing.
+
+La auditoría es:
+
+registro histórico de acciones importantes.
+
+No:
+
+fuente primaria de estado.
+
+Criterio de finalización
+
+Las operaciones críticas dejan evidencia suficiente para reconstruir quién hizo qué, cuándo y con qué resultado.
+
+FASE 8 — Capacitación
+Objetivo
+
+Implementar el módulo de formación.
+
+Estructura:
+
+Category
+   ↓
+Course
+   ↓
+Module
+   ↓
+Material
+Incluye
+categorías;
+cursos;
+módulos;
+materiales;
+PDFs;
+videos mediante abstracción;
+documentos;
+links;
+estados:
+DRAFT
+PUBLISHED
+ARCHIVED
+visibilidad por nivel;
+contenido general.
+Acceso acumulativo
+N1 → N1
+N2 → N2 + N1
+N3 → N3 + N2 + N1
+...
+N7 → N7 ... N1
+No incluye
+progreso;
+porcentajes;
+evaluaciones;
+certificados;
+TrainingProgress.
+Criterio de finalización
+
+Un empleado puede visualizar únicamente el contenido de capacitación que le corresponde según su nivel.
+
+FASE 9 — Dashboard, métricas y analytics
+Objetivo
+
+Construir la capa de información y visualización.
+
+Esta fase viene deliberadamente después de ventas + comisiones + autorización, porque ahora ya tenemos datos reales sobre los cuales consultar.
+
+Incluye
+
+Métricas como:
+
+ventas propias;
+ventas del equipo;
+ventas de rama;
+cantidad de ventas;
+ventas aprobadas;
+ventas pendientes;
+ventas canceladas;
+comisiones;
+evolución temporal;
+rendimiento según alcance permitido.
+Dashboards
+
+Adaptados al alcance del usuario:
+
+N1/N2
+→ métricas propias
+
+N3
+→ propias + equipo
+
+N4+
+→ propias + equipo + rama
+
+según los permisos definitivos.
+
+Importante
+
+No hacer:
+
+SELECT *
+→ traer todo
+→ filtrar en React
+
+Las consultas deben nacer con el scope correspondiente.
+
+Criterio de finalización
+
+Cada usuario ve únicamente las métricas que puede consultar y los datos se obtienen mediante queries específicas y eficientes.
+
+FASE 10 — Hardening, testing y producción
+Objetivo
+
+Preparar el sistema para ser utilizado realmente.
+
+Incluye
+Testing
+unit tests;
+domain tests;
+application tests;
+authorization tests;
+integration tests;
+tests de flujos críticos;
+tests de regresión.
+
+Especialmente:
+
+auth
+authz
+hierarchy
+sales
+commissions
+audit
+Seguridad
+
+Revisar:
+
+sesiones;
+contraseñas;
+autorización;
+IDOR;
+escalada horizontal;
+escalada vertical;
+archivos;
+inputs;
+validación;
+rate limiting donde corresponda;
+secretos;
+errores expuestos al cliente.
+Base de datos
+índices;
+queries;
+EXPLAIN ANALYZE;
+transacciones;
+constraints;
+integridad referencial.
+Producción
+Vercel;
+PostgreSQL gestionado/producción;
+variables de entorno;
+almacenamiento de archivos;
+backups;
+migraciones;
+observabilidad;
+manejo de errores.
+Criterio de finalización
+
+El sistema puede desplegarse con confianza y existe un procedimiento reproducible de:
+
+development
+    ↓
+migration
+    ↓
+build
+    ↓
+deployment
+    ↓
+verification
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Lo que falta hacer — Por prioridad
+🔴 Alta prioridad (bloquea funcionalidad core)
+1. Cálculo de comisiones — REG-065 define las tasas (N1=15%...N7=70%), pero no hay generación de CommissionEntry al aprobar una venta. Falta:
+- Generación al aprobar
+- Reversión al cancelar
+- Vista de consulta para vendedores y supervisores
+2. Campos obligatorios de empleado (Q23) — Recién expandimos el modelo, pero falta definir cuáles son obligatorios vs. opcionales al crear
+3. Reglas de promoción (Q03, Q04) — No existen criterios confirmados para ascender de nivel
+🟡 Media prioridad (mejora la experiencia)
+4. Gestión de catálogo de productos — CRUD de productos para ADMIN (alta, edición, activar/desactivar)
+5. Gestión de contenido de capacitación — CRUD para ADMIN (publicar/despublicar materiales)
+6. Métricas de analytics más allá del dashboard — Comparación por período, rankings, drill-down, métricas individuales vs. de equipo (Q48-Q53)
+7. Consulta de comisiones — Vista para vendedores (propias) y supervisores (equipo)
+🟦 Baja prioridad (mejoras futuras)
+ 8. Exportación de datos — Reportes, comisiones, auditoría
+ 9. Almacenamiento de archivos — Proveedor concreto para PDFs y videos de capacitación
+10. Recuperación de contraseña — Flujo con token
+11. Limpieza de auditoría — Políticas de retención y exportación
+12. Niveles 4-7 — Funcionalidades exclusivas (gestión de equipos, métricas de branches, reglas de comisión N7)
+Preguntas abiertas que bloquean decisiones
+Pregunta
+Q03/Q04 — Criterios de promoción
+Q23 — Campos obligatorios de empleado
+Q48-Q53 — Métricas exactas
+Q73 — Base de cálculo de comisiones
+Q105/Q108/Q110 — Seguridad e infraestructura
+Q114-Q116 — Sistemas externos existentes
+Orden recomendado
+1. Comisiones (generación + consulta)
+   └─ Requiere: Q73 respondida, REG-065 confirmada
+
+2. Gestión de catálogo (CRUD productos)
+   └─ Requiere: definición de campos obligatorios
+
+3. Gestión de capacitación (CRUD materiales)
+   └─ Requiere: decisión de almacenamiento (Q124)
+
+4. Analytics extendido
+   └─ Requiere: Q48-Q53 respondidas
+
+5. Exportación de datos
+   └─ Requiere: definición de reportes
+
+6. Niveles 4-7
+   └─ Requiere: Q63, Q64, Q66, Q67 respondidas
+Inconsistencias menores detectadas
+- data-model.md: versión en header (0.6) no coincide con historial (1.0)
+- system-architecture.md: versión 0.6 vs historial 0.7
+- open-questions.md: versión 0.5 vs historial 0.6
+- permissions-matrix.md: numeración de secciones duplicada (4.6, 4.7 aparecen dos veces)
+- open-questions.md: preguntas Q137-Q142 (Phase 10) no integradas al registro principal

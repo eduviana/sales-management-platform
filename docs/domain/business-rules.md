@@ -391,6 +391,90 @@ El vendedor cargará su propia venta utilizando la documentación oficial de la
 empresa. La primera versión no depende de sistemas externos ni de sincronización.
 Las futuras integraciones deberán mantenerse detrás de adapters/ports.
 
+### REG-072 — Toda venta posee un número secuencial
+
+> **Estado:** ✅ CONFIRMADA
+
+La venta debe tener un número entero secuencial dentro del espacio global de
+ventas. El número se asigna durante la creación de la venta, cuando esta se
+encuentra en estado `DRAFT`.
+
+### REG-073 — El número de venta es único
+
+> **Estado:** ✅ CONFIRMADA
+
+No pueden existir dos ventas con el mismo número. La unicidad debe estar
+protegida tanto por la regla de dominio como por una restricción de
+persistencia.
+
+### REG-074 — El número de venta no depende de la jerarquía
+
+> **Estado:** ✅ CONFIRMADA
+
+La numeración es global para todo el sistema y no se reinicia por vendedor,
+equipo, nivel o período.
+
+### REG-075 — La representación visible utiliza formato VT-NNNN
+
+> **Estado:** ✅ CONFIRMADA
+
+El valor persistido es numérico; el prefijo `VT-` y el zero-padding pertenecen
+a la representación presentada al usuario.
+
+```text
+saleNumber = 1
+display     = VT-0001
+```
+
+### REG-076 — El número de venta es inmutable
+
+> **Estado:** ✅ CONFIRMADA
+
+Una vez asignado, el número de venta no puede modificarse durante el ciclo de
+vida de la venta.
+
+### REG-077 — La venta debe identificar al cliente
+
+> **Estado:** ⚠️ ASUMIDA
+
+Toda venta cargada mediante el flujo manual debe conservar como mínimo el nombre
+y el teléfono del cliente. El email y el documento son opcionales mientras no se
+confirme una exigencia legal, fiscal o del sistema externo.
+
+### REG-078 — La venta manual debe relacionarse con una visita completada
+
+> **Estado:** ⚠️ ASUMIDA
+
+Durante el alcance actual, una venta manual debe vincularse a una visita del
+vendedor con estado `completed`. El servidor debe verificar la pertenencia de la
+visita al vendedor autenticado. El modelo no impide incorporar ventas directas
+en una etapa posterior.
+
+### REG-079 — No se almacenan datos completos de tarjetas
+
+> **Estado:** 🚧 DECISIÓN DE DISEÑO
+
+La aplicación no debe almacenar número completo de tarjeta, CVV/CVC, PIN ni
+credenciales bancarias. Puede conservar una referencia externa del pago y, si
+existe una necesidad operativa confirmada, la marca y los últimos cuatro dígitos.
+
+### REG-080 — La facturación y el procesamiento de pagos pertenecen al sistema externo
+
+> **Estado:** ⚠️ ASUMIDA
+
+La aplicación no emite comprobantes fiscales ni procesa pagos. H&Y Cite se
+considera la fuente externa para esas operaciones. La venta puede conservar el
+estado y la referencia externa de pago o facturación, sin duplicar información
+fiscal o financiera sensible.
+
+### REG-081 — La venta conserva información mínima de entrega
+
+> **Estado:** ⚠️ ASUMIDA
+
+La venta debe conservar una dirección de entrega y un estado operativo de entrega.
+La dirección se almacena como snapshot histórico y no se reemplaza
+retroactivamente si cambia la dirección actual del cliente.
+
 ---
 
 ## 9. Reglas relacionadas con estadísticas
@@ -507,11 +591,11 @@ Ambos conceptos deberán mantenerse independientes.
 
 ### REG-039 — La antigüedad puede utilizarse para determinar condiciones de comisión
 
-> **Estado:** 🔎 OBSERVADA
+> **Estado:** 🔄 REEMPLAZADA por REG-065
 
-Según la información disponible durante el relevamiento inicial, la antigüedad de un vendedor de Nivel 1 interviene en la determinación de su porcentaje de comisión.
-
-Los detalles exactos de esta regla todavía deben validarse.
+La observación inicial sobre antigüedad y porcentaje de comisión no rige para las
+tasas confirmadas de Fase 6. La antigüedad continúa siendo un dato organizacional
+disponible, pero no modifica las tasas N1–N7 vigentes.
 
 ---
 
@@ -541,11 +625,11 @@ REG-065.
 
 ### REG-041 — Las reglas de comisión deben permitir una progresión temporal
 
-> **Estado:** 🔎 OBSERVADA
+> **Estado:** 🔄 REEMPLAZADA por REG-065
 
-La información disponible indica que el porcentaje de comisión puede cambiar según el período de antigüedad del vendedor.
-
-El sistema deberá ser capaz de representar reglas de comisión dependientes de períodos temporales.
+La progresión temporal observada no forma parte de las tasas vigentes de Fase 6.
+Las versiones de `CommissionRule` continúan teniendo vigencia temporal para
+versionar cambios futuros por nivel, no para introducir meses de antigüedad.
 
 ### REG-042 — Las reglas de comisión no deben quedar codificadas rígidamente en la lógica de ventas
 
@@ -555,45 +639,57 @@ Los porcentajes de comisión y sus condiciones no deberán estar distribuidos di
 
 Deberán poder modificarse de manera controlada sin requerir cambios generalizados en la aplicación.
 
-### REG-043 — El cálculo de comisión debe conservar el contexto temporal correspondiente
+### REG-043 — El cálculo de comisión debe conservar el nivel histórico correspondiente
 
 > **Estado:** 🚧 DECISIÓN DE DISEÑO
 
-Cuando una comisión dependa de la antigüedad del vendedor, el cálculo deberá considerar la antigüedad correspondiente al momento de la venta y no únicamente la situación actual del empleado.
+El cálculo deberá considerar el nivel histórico vigente del vendedor en la fecha
+de la venta y no únicamente el nivel actual del empleado.
 
-Esto será especialmente importante si posteriormente se permite modificar reglas, niveles o porcentajes.
+Esto permite conservar el contexto histórico si posteriormente se modifican
+niveles o porcentajes.
 
-### REG-044 — Los porcentajes de comisión observados requieren validación
+### REG-044 — Los porcentajes de comisión vigentes fueron confirmados
 
-> **Estado:** ❓ PENDIENTE
+> **Estado:** 🔄 REEMPLAZADA por REG-065
 
-**Deben confirmarse:**
+La incertidumbre sobre porcentajes mensuales y reglas por antigüedad fue resuelta
+por la tabla confirmada de tasas N1–N7. La base comercial definitiva para futuras
+fórmulas, si existiera una distinta de `Sale.totalAmount`, permanece separada de
+esta definición de porcentajes.
 
-- Porcentaje del mes 4.
-- Porcentaje del mes 5.
-- Progresión exacta entre los meses 6 y 12.
-- Porcentaje aplicable después del mes 12.
-- Base sobre la cual se calcula la comisión.
-- Condiciones adicionales para obtener cada porcentaje.
-- Relación entre comisión y nivel.
-- Tratamiento de ascensos.
-- Tratamiento de anulaciones y devoluciones.
-- Fuente del cálculo.
+### REG-065 — Tasas vigentes de comisión por nivel
 
-### REG-065 — Regla inicial de comisión vigente: N1 → 15 %
+> **Estado:** ✅ CONFIRMADA
 
-> **Estado:** 🚧 DECISIÓN DE DISEÑO (CERRADA)
+Las comisiones vigentes se determinan según el nivel comercial histórico del
+empleado que realiza la venta:
 
-Un vendedor Nivel 1 (N1) comienza con una comisión del 15 %. Esta regla se
-define como dato configurable y versionado del sistema de comisiones; no queda
-hardcodeada y podrá ser reemplazada por nuevas reglas sin alterar cálculos
-históricos.
+| Nivel | Posición | Comisión |
+|-------|----------|----------|
+| N1 | Vendedor | 15 % |
+| N2 | Vendedor Junior | 20 % |
+| N3 | Distribuidor | 30 % |
+| N4 | Blue | 40 % |
+| N5 | Royal | 50 % |
+| N6 | Premier | 60 % |
+| N7 | Max | 70 % |
 
-La anterior regla de diseño del 50 % queda 🔄 REEMPLAZADA y se conserva
-únicamente como antecedente histórico.
+Estas tasas son configurables y versionadas mediante `CommissionRule`. La regla
+aplicable se selecciona según el nivel histórico del vendedor en la fecha de la
+venta y la versión vigente al momento de aprobación. La entrada histórica debe
+conservar la regla, el porcentaje, la base y el importe utilizados.
 
-**Continúan pendientes:** reglas para N2–N7, base de cálculo y condiciones para
-escenarios no especificados. No se definen valores alternativos.
+No se aplican actualmente condiciones adicionales por antigüedad, volumen,
+margen, equipo o progresión mensual.
+
+La base técnica inicial del cálculo será `Sale.totalAmount`, preservada como
+`baseAmount` en la entrada. Esta base queda encapsulada para poder reemplazarse
+si se confirma posteriormente una definición comercial diferente.
+
+La anterior regla de diseño del 50 % queda 🔄 REEMPLAZADA como antecedente
+histórico general; el 50 % vigente para N5 se define exclusivamente por esta
+nueva tabla confirmada.
 
 ---
 
@@ -601,18 +697,19 @@ escenarios no especificados. No se definen valores alternativos.
 
 ### REG-045 — Los vendedores nuevos de Nivel 1 deben disponer de acceso a capacitación
 
-> **Estado:** 🔎 OBSERVADA
+> **Estado:** ✅ CONFIRMADA
 
 Los vendedores nuevos de Nivel 1 deberán disponer de una sección específica de capacitación dentro de la aplicación.
 
 El acceso no será exclusivo de Nivel 1; otros niveles podrán acceder a contenido
-correspondiente.
+correspondiente. El acceso es acumulativo: un usuario de nivel N puede ver
+materiales de nivel N y todos los niveles inferiores.
 
 ### REG-046 — La capacitación debe formar parte de la navegación de la aplicación
 
-> **Estado:** 🔎 OBSERVADA
+> **Estado:** ✅ CONFIRMADA
 
-La sección de capacitación deberá estar disponible mediante la navegación principal de la aplicación.
+La sección de capacitación deberá estar disponible mediante la navegación principal de la aplicación (sidebar).
 
 **Por ejemplo:**
 
@@ -628,23 +725,23 @@ La ubicación final dentro de la navegación será una decisión de producto y d
 
 ### REG-047 — La capacitación debe soportar documentos PDF
 
-> **Estado:** 🔎 OBSERVADA
+> **Estado:** ✅ CONFIRMADA
 
 La sección de capacitación deberá permitir acceder a materiales de formación en formato PDF.
 
-Los PDFs deberán poder visualizarse y descargarse.
+Los PDFs deberán poder visualizarse y descargarse mediante enlaces externos.
 
 ### REG-048 — La capacitación debe soportar videos
 
-> **Estado:** 🔎 OBSERVADA
+> **Estado:** ✅ CONFIRMADA
 
 La sección de capacitación deberá permitir acceder a videos utilizados como material de formación.
 
-La estrategia para alojar o integrar los videos deberá definirse posteriormente.
+Los videos se acceden mediante enlaces externos (URL).
 
 ### REG-049 — La capacitación debe soportar una estructura jerárquica de contenidos
 
-> **Estado:** ⚠️ ASUMIDA
+> **Estado:** ✅ CONFIRMADA
 
 El sistema deberá poder representar una estructura de capacitación compuesta por:
 
@@ -652,10 +749,10 @@ El sistema deberá poder representar una estructura de capacitación compuesta p
 - Cursos.
 - Módulos.
 - Materiales.
-- Materiales organizados por categoría, curso y módulo.
 
-No se implementará seguimiento individual de aprendizaje, progreso, completitud,
-historial de progreso ni assessments en el alcance actual.
+Los materiales se organizan por categoría, curso y módulo. No se implementa
+seguimiento individual de aprendizaje, progreso, completitud, historial de
+progreso ni assessments en el alcance actual.
 
 ---
 
@@ -690,32 +787,42 @@ Por ejemplo, cambiar de supervisor no debería modificar retroactivamente la inf
 
 ## 15. Reglas relacionadas con auditoría
 
-### REG-052 — Las operaciones críticas deberían poder rastrearse
+### REG-052 — Las operaciones críticas se rastrean mediante auditoría
 
-> **Estado:** 🚧 DECISIÓN DE DISEÑO
+> **Estado:** ✅ CONFIRMADA
 
-El sistema debería permitir identificar, cuando corresponda:
+El sistema registra eventos de auditoría que permiten identificar:
 
-- Quién realizó una acción.
-- Qué acción realizó.
-- Sobre qué recurso.
-- Cuándo ocurrió.
-- Resultado de la operación.
+- Quién realizó una acción (`actorId`, `actorEmail`).
+- Qué acción realizó (`action` — enum `AuditAction`).
+- Sobre qué recurso (`resourceType`, `resourceId`).
+- Cuándo ocurrió (`createdAt`).
+- Resultado de la operación (`result` — SUCCESS, FAILURE, DENIED).
+- Correlación entre eventos derivados (`correlationId`).
 
-### REG-053 — La creación de cuentas debería ser auditable
+El mecanismo es best-effort: un fallo de auditoría no impide la operación de negocio.
 
-> **Estado:** ⚠️ ASUMIDA
+### REG-053 — La creación de cuentas es auditable
 
-Cuando un usuario cree una cuenta para otro empleado, debería poder determinarse quién realizó la acción y cuándo.
+> **Estado:** ✅ CONFIRMADA
 
-### REG-054 — Las operaciones sensibles deben poder auditarse
+Cuando un usuario crea una cuenta para otro empleado, se registra un evento
+`EMPLOYEE_CREATED` que incluye el `actorId`, `actorEmail` y el `createdAt`.
+El evento se persiste en la misma transacción que la creación.
 
-> **Estado:** 🚧 DECISIÓN DE DISEÑO
+### REG-054 — Las operaciones sensibles se auditadan
 
-Como mínimo, deben auditarse las operaciones sensibles de empleados, cuentas,
-niveles, supervisores, ventas, comisiones, productos, capacitación,
-autenticación, credenciales y permisos. La estructura, retención e inmutabilidad
-del registro permanecen pendientes.
+> **Estado:** ✅ CONFIRMADA
+
+Se auditadan las siguientes categorías de operaciones:
+
+- **Identidad:** LOGIN_SUCCESS, LOGIN_FAILURE, LOGOUT, PASSWORD_CHANGED, PASSWORD_RESET_REQUESTED, PASSWORD_RESET_COMPLETED.
+- **Organización:** EMPLOYEE_CREATED, EMPLOYEE_UPDATED, EMPLOYEE_DEACTIVATED, EMPLOYEE_LEVEL_CHANGED, EMPLOYEE_SUPERVISOR_CHANGED.
+- **Ventas:** SALE_CREATED, SALE_UPDATED, SALE_SUBMITTED, SALE_APPROVED, SALE_REJECTED, SALE_CANCELLED.
+- **Comisiones:** COMMISSION_RULE_CREATED, COMMISSION_GENERATED, COMMISSION_REVERSED.
+
+La lista completa de eventos y su modelo de datos se define en `ADR-013` y en
+el schema de Prisma.
 
 ---
 
@@ -825,11 +932,11 @@ Prestige cuando su estado no sea CONFIRMADO:
 - El catálogo interno es pequeño, no es un ecommerce y permite seleccionar
   productos, consultar estadísticas y administrar productos, categorías, precios
   y estado.
-- La regla inicial de comisión vigente es **N1 → 15 %** (REG-065), definida
-  como dato configurable y versionado; no queda hardcodeada y podrá ser
-  reemplazada por nuevas reglas sin alterar cálculos históricos. La anterior
-  regla de diseño del 50 % queda 🔄 REEMPLAZADA como antecedente. No se
-  definen todavía reglas para N2–N7.
+- Las tasas vigentes de comisión son **N1 15 %, N2 20 %, N3 30 %, N4 40 %, N5
+  50 %, N6 60 % y N7 70 %** (REG-065). Se mantienen como datos configurables y
+  versionados; no quedan hardcodeadas y una nueva versión no altera cálculos
+  históricos. La anterior regla general de diseño del 50 % queda 🔄 REEMPLAZADA
+  como antecedente; el 50 % vigente para N5 proviene de la tabla confirmada.
 - La comisión se genera conceptualmente cuando una venta pasa a `APPROVED`.
   Una cancelación posterior genera un ajuste o reversión asociado, sin eliminar
   la comisión original.
@@ -862,16 +969,15 @@ Las siguientes áreas todavía pueden modificar sustancialmente el comportamient
 - Existencia y funcionamiento de equipos como entidades independientes.
 - Posibilidad de múltiples supervisores.
 - Posibilidad de pertenecer a múltiples equipos.
-- Reglas definitivas de comisión.
-- Base del cálculo de comisión.
-- Reglas de comisión para N2–N7 y condiciones futuras que puedan reemplazar la
-  regla vigente N1 → 15 %.
+- Reglas comerciales adicionales de base, descuentos, impuestos o margen para
+  futuras versiones del cálculo.
+- Base comercial futura si se confirma una fórmula distinta de `Sale.totalAmount`.
 - Objetivos individuales.
 - Objetivos de equipo.
 - Detalles de permisos para modificar ventas.
 - Casos particulares de cancelaciones, devoluciones y ajustes.
 - Integraciones externas.
-- Detalles físicos y retención de auditoría.
+- Retención de datos de auditoría (cleanup periódico).
 - Reglas adicionales de reconstrucción histórica.
 - Almacenamiento de archivos.
 - Alojamiento de videos.
@@ -972,6 +1078,233 @@ Las reglas OBSERVADAS deberán pasar a CONFIRMADAS, ASUMIDAS o DESCARTADAS una v
 
 ---
 
+### REG-055 — Objetivos mensuales de ventas por nivel
+
+> **Estado:** ✅ CONFIRMADA (Phase 9)
+
+El sistema deberá soportar objetivos mensuales de ventas configurables por nivel.
+
+**Reglas:**
+
+- Cada nivel tiene un número objetivo de ventas por vendedor al mes.
+- Los valores iniciales son: N1=10, N2=15, N3–N7=10 ventas por vendedor.
+- Para vendedores individuales (N1/N2): el objetivo es el valor configurado para su nivel.
+- Para supervisores (N3+): el objetivo del equipo es `targetPorVendedor × cantidad de subordinados directos`.
+- El sistema calcula el porcentaje de cumplimiento: `ventasLogradas / objetivo × 100`.
+- Los objetivos se almacenan en la tabla `monthly_target` y pueden ser modificados por ADMIN.
+
+**Referencia:** requirements.md §2.6, data-model.md MonthlyTarget
+
+---
+
+### REG-066 — Visita puede o no resultar en una venta
+
+> **Estado:** ✅ CONFIRMADA (Phase 10)
+
+Una visita a domicilio puede resultar en una venta o no. El sistema debe permitir que el vendedor registre visitas sin ventas concretadas.
+
+**Reglas:**
+
+- El vendedor puede cargar una visita con status `completed` (con venta) o `no_sale` (sin venta).
+- Las visitas sin venta se registran para capitalizar el trabajo realizado.
+- El supervisor puede revisar visitas con y sin venta.
+
+**Referencia:** data-model.md Visit
+
+---
+
+### REG-067 — El vendedor debe cargar la información de la visita
+
+> **Estado:** ✅ CONFIRMADA (Phase 10)
+
+Hasta que el vendedor no cargue la información de las visitas realizadas, no puede capitalizar el trabajo realizado.
+
+**Reglas:**
+
+- El vendedor debe cargar la información de cada visita realizada.
+- La información incluye: productos vendidos (si los hay), método de pago, cuotas, contactos referidos.
+- Hasta que no se envíe a revisión, la venta no aparece en la tabla del supervisor.
+
+El resultado de la visita es el punto de entrada del flujo. Cuando existe una
+venta, el sistema crea una `Sale` vinculada a la visita y al cliente. Cuando no
+existe una venta, solo actualiza la visita a `no_sale` y conserva las
+observaciones del vendedor.
+
+### REG-082 — Las ventas propias y las ventas del equipo se consultan por separado
+
+> **Estado:** 🚧 DECISIÓN DE DISEÑO
+
+La vista `Mis Ventas` debe limitarse a las ventas del empleado autenticado. Las
+ventas de subordinados se consultan desde una sección explícita de equipo y no
+deben mezclarse silenciosamente con la actividad personal.
+
+### REG-083 — Los supervisores pueden asignar visitas a su equipo
+
+> **Estado:** ✅ CONFIRMADA
+
+Un supervisor N3+ puede seleccionar un cliente existente o crear uno nuevo y
+asignar una visita a un vendedor subordinado. El servidor valida la relación
+jerárquica y conserva quién realizó la asignación.
+
+### REG-084 — La dirección del cliente es obligatoria para visitas
+
+> **Estado:** ✅ CONFIRMADA
+
+Todo cliente utilizado para asignar una visita debe tener una dirección de
+domicilio. La dirección es necesaria para que el vendedor pueda realizar la
+demostración y debe mostrarse al seleccionar el cliente.
+
+### REG-085 — La dirección se almacena de forma estructurada y se copia en la visita
+
+> **Estado:** 🚧 DECISIÓN DE DISEÑO
+
+La dirección de un cliente se compone de calle, número, ciudad y provincia, con
+piso, departamento, código postal y referencias como datos opcionales. Al
+asignar una visita, estos datos se copian como snapshot en la visita para
+preservar la dirección operativa aunque el cliente la modifique posteriormente.
+
+**Referencia:** data-model.md Visit, Sale
+
+---
+
+### REG-068 — Programa de referidos con descuento
+
+> **Estado:** ✅ CONFIRMADA (Phase 10)
+
+Si el cliente proporciona 5 contactos de futuros clientes, se aplica un 20% de descuento sobre toda la compra.
+
+**Reglas:**
+
+- El descuento es sobre toda la compra (no por producto).
+- Los 5 contactos se cargan en la venta (sección de referidos).
+- El descuento se aplica en el mismo documento de venta.
+- Un cliente puede obtener el descuento múltiples veces (nueva compra + 5 nuevos contactos).
+
+**Referencia:** data-model.md ReferralContact, Sale
+
+---
+
+### REG-069 — Asignación de clientes por supervisores
+
+> **Estado:** ✅ CONFIRMADA (Phase 10)
+
+Los supervisores N3+ asignan clientes a los vendedores de su equipo.
+
+**Reglas:**
+
+- Los supervisores N3+ reciben clientes de sus superiores (N4+).
+- Pueden asignar clientes manualmente a vendedores de su equipo.
+- La asignación automática queda pendiente (botón deshabilitado).
+- Los referidos de vendedores N1/N2 se asignan al N3+ superior.
+
+**Referencia:** data-model.md Client, Visit
+
+---
+
+### REG-070 — Revisión de documentos por supervisores
+
+> **Estado:** ✅ CONFIRMADA (Phase 10)
+
+El supervisor revisa los documentos uno a la vez, contrastando la información física con la del sistema.
+
+**Reglas:**
+
+- El supervisor ve ventas "pend. revisión" en su tabla.
+- Puede ver el detalle de cada venta (productos, pago, referidos, descuento).
+- Contrastar con el documento físico original.
+- Aprueba o rechaza con motivo.
+
+**Referencia:** data-model.md Sale
+
+---
+
+### REG-071 — Sidebar con nuevas secciones
+
+> **Estado:** ✅ CONFIRMADA (Phase 10)
+
+El sidebar debe incluir nuevas secciones para visitas, clientes y equipo.
+
+**Reglas:**
+
+- "Mis Visitas" (todos los niveles): tabla de visitas del vendedor.
+- "Clientes" (N3+): tabla de clientes del supervisor.
+- "Mi Equipo" (N3+): tabla de vendedores del equipo.
+
+**Referencia:** system-architecture.md, requirements.md
+
+---
+
+## 20.1. Reglas de progresión de nivel
+
+### REG-082 — Sistema de puntos para progresión de nivel
+
+> **Estado:** 🚧 Decisión de diseño
+
+El sistema de progresión de nivel se basa en acumulación de puntos.
+Los puntos se obtienen por distintas actividades y se acumulan de por vida.
+
+**Fuentes de puntos:**
+
+| Factor | Puntos por unidad | Descripción |
+|--------|------------------|-------------|
+| Antigüedad | 1 punto/mes | Meses desde el ingreso a la organización |
+| Visita completada | 2 puntos | Visitas con estado COMPLETED o NO_SALE |
+| Venta aprobada | 5 puntos | Ventas con estado APPROVED |
+| Objetivo mensual alcanzado | 10 puntos/bono | Cuando las ventas del mes superan el objetivo del nivel |
+
+**Umbrales por nivel:**
+
+| Transición | Puntos requeridos |
+|------------|------------------|
+| N1 → N2 | 100 |
+| N2 → N3 | 200 |
+| N3 → N4 | 350 |
+| N4 → N5 | 500 |
+| N5 → N6 | 700 |
+| N6 → N7 | 1000 |
+| N7 | Nivel máximo (sin progresión) |
+
+**Reglas:**
+
+- Los puntos se acumulan de por vida (histórico).
+- Al ser promovido por ADMIN, el progreso vuelve a 0 pero el historial se conserva.
+- La promoción es manual: solo ADMIN puede ascender de nivel.
+- El sistema calcula puntos automáticamente desde datos existentes.
+- Los puntos se almacenan en la tabla `employee_progress` como auditoría.
+
+**Referencia:** requirements.md §3.12, data-model.md EmployeeProgress
+
+### REG-083 — Visibilidad del progreso
+
+> **Estado:** 🚧 Decisión de diseño
+
+El progreso de nivel se muestra:
+
+- **ADMIN:** Barra de progreso en tabla de empleados y card detallada en detalle de empleado.
+- **Vendedor:** Card de progreso en su dashboard personal.
+
+**Referencia:** requirements.md §3.12
+
+### REG-084 — Gestión de equipo por ADMIN
+
+> **Estado:** 🚧 Decisión de diseño
+
+El ADMIN puede gestionar la estructura jerárquica de cualquier empleado:
+
+- Ver los subordinados directos de cualquier empleado N3+.
+- Reasignar un vendedor de un supervisor a otro.
+- Crear nuevos empleados bajo cualquier supervisor.
+
+**Reglas:**
+
+- La reasignación valida reglas de jerarquía (no auto-supervisión, no ciclos).
+- La operación queda registrada en auditoría.
+- El cambio es inmediato.
+
+**Referencia:** requirements.md §3.12.3, REG-012
+
+---
+
 ## 21. Historial de cambios
 
 | Fecha      | Versión | Cambio                                                                              |
@@ -983,3 +1316,9 @@ Las reglas OBSERVADAS deberán pasar a CONFIRMADAS, ASUMIDAS o DESCARTADAS una v
 | 03/09/2026 | 0.5     | Consolidación de comisión inicial y simplificación del seguimiento de capacitación. |
 | 03/09/2026 | 0.4     | Consolidación documental global de reglas y pendientes. |
 | 03/09/2026 | 0.6     | REG-065: comisión inicial vigente N1 → 15 % (la regla de diseño del 50 % queda REEMPLAZADA como antecedente). Cierre de contraseña temporal y cambio obligatorio en primer inicio. |
+| 07/09/2026 | 0.7     | REG-065 actualizado: tasas confirmadas N1 15 %, N2 20 %, N3 30 %, N4 40 %, N5 50 %, N6 60 % y N7 70 %. Las observaciones de antigüedad quedan reemplazadas. |
+| 08/09/2026 | 0.8     | REG-052, REG-053, REG-054 actualizadas: auditoría implementada con 20 eventos auditables, lectura restringida y correlación transaccional. |
+| 08/09/2026 | 0.9     | REG-055: objetivos mensuales de ventas por nivel implementados (tabla monthly_target, cálculo individual y de equipo). |
+| 08/09/2026 | 0.9     | REG-045, REG-046, REG-047, REG-048, REG-049 actualizadas: capacitación implementada con estructura categorías→cursos→módulos→materiales, acceso acumulativo por nivel y CRUD administrativo. |
+| 11/09/2026 | 1.0     | REG-077 a REG-081: cliente y visita obligatorios en la carga manual, protección de datos de tarjeta, referencias externas y snapshot de entrega. |
+| 21/09/2026 | 1.1     | REG-082 a REG-084: sistema de puntos para progresión de nivel, visibilidad del progreso y gestión de equipo por ADMIN. |
