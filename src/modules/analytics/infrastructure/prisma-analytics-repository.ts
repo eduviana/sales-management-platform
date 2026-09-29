@@ -10,12 +10,13 @@
 import type { PrismaClient } from "@prisma/client";
 import type {
   AnalyticsReadRepository,
+  SystemAdminReadRepository,
   DateRange,
   DailySalesBar,
   DailySaleCount,
   LevelDistribution,
   TeamPerformanceRow,
-  PersonalSalesRow,
+  LevelEmployeeCount,
 } from "../domain";
 
 /** Spanish month abbreviations for chart labels. */
@@ -24,7 +25,7 @@ const MONTH_LABELS = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "S
 /** Statuses that count as valid sales for analytics. */
 const VALID_STATUSES = ["APPROVED", "PENDING_REVIEW"] as const;
 
-export class PrismaAnalyticsRepository implements AnalyticsReadRepository {
+export class PrismaAnalyticsRepository implements AnalyticsReadRepository, SystemAdminReadRepository {
   constructor(private readonly prisma: PrismaClient) {}
 
   // =========================================================================
@@ -324,41 +325,25 @@ export class PrismaAnalyticsRepository implements AnalyticsReadRepository {
     };
   }
 
-  async getPersonalSalesHistory(employeeId: string, dateRange: DateRange): Promise<PersonalSalesRow[]> {
-    const rows: Array<{
-      id: string;
-      sale_date: string;
-      buyer_name: string;
-      total_amount: bigint;
-      status: string;
-    }> = await this.prisma.$queryRaw`
-      SELECT
-        s.id::text,
-        TO_CHAR(s."saleDate", 'YYYY-MM-DD') AS sale_date,
-        COALESCE(s."buyerName", 'Sin cliente') AS buyer_name,
-        s."totalAmount" AS total_amount,
-        s.status
-      FROM sale s
-      WHERE s."employeeId" = ${employeeId}::uuid
-        AND s."saleDate" BETWEEN ${dateRange.from} AND ${dateRange.to}
-        AND s.status IN ('APPROVED', 'PENDING_REVIEW', 'REJECTED', 'CANCELLED')
-      ORDER BY s."saleDate" DESC
-    `;
-
-    return rows.map((row) => ({
-      saleId: row.id,
-      saleDate: row.sale_date,
-      buyerName: row.buyer_name,
-      totalAmount: Number(row.total_amount),
-      status: row.status as PersonalSalesRow["status"],
-    }));
-  }
-
   async sumAllTimeSales(employeeId: string): Promise<number> {
     const result = await this.prisma.sale.aggregate({
       _sum: { totalAmount: true },
       where: {
         employeeId,
+        status: { in: [...VALID_STATUSES] },
+      },
+    });
+
+    return Number(result._sum.totalAmount ?? 0);
+  }
+
+  async sumAllTimeSalesForEmployees(employeeIds: string[]): Promise<number> {
+    if (employeeIds.length === 0) return 0;
+
+    const result = await this.prisma.sale.aggregate({
+      _sum: { totalAmount: true },
+      where: {
+        employeeId: { in: employeeIds },
         status: { in: [...VALID_STATUSES] },
       },
     });
@@ -398,5 +383,38 @@ export class PrismaAnalyticsRepository implements AnalyticsReadRepository {
     });
 
     return Number(rule?.percentage ?? 0);
+  }
+
+  // =========================================================================
+  // System admin queries (ADMIN dashboard)
+  // =========================================================================
+
+  async countActiveEmployees(): Promise<number> {
+    return this.prisma.employee.count({
+      where: { status: "ACTIVE" },
+    });
+  }
+
+  async getLevelEmployeeCounts(): Promise<LevelEmployeeCount[]> {
+    const rows: Array<{
+      level_id: number | null;
+      level_code: string | null;
+      count: bigint;
+    }> = await this.prisma.$queryRaw`
+      SELECT
+        e."currentLevelId" AS level_id,
+        l.code AS level_code,
+        COUNT(*)::bigint AS count
+      FROM employee e
+      LEFT JOIN level l ON e."currentLevelId" = l.id
+      GROUP BY e."currentLevelId", l.code
+      ORDER BY e."currentLevelId" NULLS LAST
+    `;
+
+    return rows.map((row) => ({
+      levelId: row.level_id,
+      levelCode: row.level_code ?? "ADMIN",
+      count: Number(row.count),
+    }));
   }
 }

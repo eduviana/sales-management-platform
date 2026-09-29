@@ -16,6 +16,15 @@ import { PrismaOrganizationRepository } from "@/infrastructure/organization/pris
 import { createSalesUseCases } from "@/modules/sales/composition-root";
 import { resolveAuthContext } from "@/modules/sales/presentation/resolve-auth-context";
 import { SaleActions } from "./sale-actions";
+import {
+  CreditCard,
+  MessageSquareWarning,
+  Phone,
+  ShoppingBag,
+  StickyNote,
+  User,
+  Users,
+} from "lucide-react";
 
 const STATUS_LABELS: Record<string, string> = {
   DRAFT: "Borrador",
@@ -24,6 +33,62 @@ const STATUS_LABELS: Record<string, string> = {
   REJECTED: "Rechazada",
   CANCELLED: "Cancelada",
 };
+
+const STATUS_COLORS: Record<string, { bg: string; text: string; border: string }> = {
+  APPROVED: { bg: "bg-[#00df81]/10", text: "text-[#00df81]", border: "border-[#00df81]/20" },
+  PENDING_REVIEW: { bg: "bg-amber-400/10", text: "text-amber-400", border: "border-amber-400/20" },
+  REJECTED: { bg: "bg-red-400/10", text: "text-red-400", border: "border-red-400/20" },
+  CANCELLED: { bg: "bg-surface-container-high", text: "text-zinc-400", border: "border-outline-variant" },
+  DRAFT: { bg: "bg-surface-container-high", text: "text-zinc-400", border: "border-outline-variant" },
+};
+
+function Field({ label, value, mono = false }: { label: string; value: string; mono?: boolean }) {
+  return (
+    <div>
+      <p className="text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider mb-1">
+        {label}
+      </p>
+      <p className={`text-on-surface text-base ${mono ? "font-mono" : "font-medium"}`}>{value}</p>
+    </div>
+  );
+}
+
+function StatusPill({ status }: { status: string }) {
+  const config = STATUS_COLORS[status] ?? STATUS_COLORS.DRAFT;
+  return (
+    <span
+      className={`inline-flex items-center gap-1.5 ${config.bg} ${config.text} border ${config.border} px-3.5 py-1.5 rounded-full text-sm font-semibold`}
+    >
+      {STATUS_LABELS[status] ?? status}
+    </span>
+  );
+}
+
+function SectionCard({
+  icon,
+  accent,
+  title,
+  children,
+  className = "",
+}: {
+  icon: React.ReactNode;
+  accent: string;
+  title: string;
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <section
+      className={`bg-surface-container border border-outline-variant rounded-2xl p-7 ${className}`}
+    >
+      <div className="flex items-center gap-2.5 mb-6">
+        <div className={`p-2 rounded-lg ${accent}`}>{icon}</div>
+        <h2 className="text-sm font-semibold text-on-surface uppercase tracking-wider">{title}</h2>
+      </div>
+      {children}
+    </section>
+  );
+}
 
 export default async function SaleDetailPage({
   params,
@@ -79,129 +144,126 @@ export default async function SaleDetailPage({
     (authContext.levelId !== null && authContext.levelId >= 3);
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="w-full space-y-6">
       {/* Back link */}
-      <div className="mb-2">
-        <Link
-          href="/sales"
-          className="inline-flex items-center text-sm font-medium text-sky-400 hover:text-sky-300 transition-colors"
-        >
-          <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-          </svg>
-          Volver a ventas
-        </Link>
-      </div>
+      <Link
+        href="/sales"
+        className="inline-flex items-center text-sm font-medium text-sky-400 hover:text-sky-300 transition-colors"
+      >
+        ← Volver a ventas
+      </Link>
 
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl lg:text-3xl font-bold text-white tracking-tight">
-          Venta VT-{String(sale.saleNumber).padStart(4, "0")}
-        </h1>
-        <span className={`inline-flex items-center px-3.5 py-1 rounded-full text-xs font-semibold ${
-          sale.status === "APPROVED"
-            ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30"
-            : sale.status === "PENDING_REVIEW"
-              ? "bg-amber-500/10 text-amber-400 border border-amber-500/30"
-              : sale.status === "REJECTED" || sale.status === "CANCELLED"
-                ? "bg-rose-500/10 text-rose-400 border border-rose-500/30"
-                : "bg-gray-500/10 text-gray-400 border border-gray-500/30"
-        }`}>
-          {STATUS_LABELS[sale.status] ?? sale.status}
-        </span>
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <div className="bg-primary/10 text-sky-400 w-12 h-12 rounded-xl flex items-center justify-center">
+            <ShoppingBag className="w-6 h-6" aria-hidden="true" />
+          </div>
+          <div>
+            <h1 className="text-2xl lg:text-3xl font-bold text-white tracking-tight">
+              Venta VT-{String(sale.saleNumber).padStart(4, "0")}
+            </h1>
+            <p className="text-sm text-on-surface-variant mt-0.5">
+              {sale.buyerName ?? "Cliente sin nombre"}
+            </p>
+          </div>
+        </div>
+        <StatusPill status={sale.status} />
       </div>
 
-      {/* General info card */}
-      <section className="bg-[#161618] border border-[#27272e] rounded-xl p-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-y-6 gap-x-12">
-          <div>
-            <p className="text-xs font-medium text-on-surface-variant uppercase tracking-wider mb-1">Fecha de venta</p>
-            <p className="text-white text-base font-medium">
-              {new Date(sale.saleDate).toLocaleDateString("es-AR")}
-            </p>
-          </div>
-          <div>
-            <p className="text-xs font-medium text-on-surface-variant uppercase tracking-wider mb-1">Cliente</p>
-            <p className="text-white text-base font-medium">
-              {sale.buyerName ?? "—"}
-            </p>
-          </div>
-          <div>
-            <p className="text-xs font-medium text-on-surface-variant uppercase tracking-wider mb-1">Total</p>
-            <p className="text-white text-lg font-semibold tracking-tight font-mono">
-              ${sale.totalAmount.toFixed(2)}
-            </p>
-          </div>
-          <div>
-            <p className="text-xs font-medium text-on-surface-variant uppercase tracking-wider mb-1">Creada</p>
-            <p className="text-white text-base font-medium">
-              {new Date(sale.createdAt).toLocaleDateString("es-AR")}
-            </p>
-          </div>
-
-          <div className="md:col-span-2 pt-2 border-t border-[#27272e]">
-            <p className="text-xs font-medium text-on-surface-variant uppercase tracking-wider mb-3">Datos del cliente</p>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div>
-                <p className="text-xs text-on-surface-variant mb-1">Teléfono</p>
-                <p className="text-sm text-white">{sale.clientPhone ?? "—"}</p>
-              </div>
-              <div>
-                <p className="text-xs text-on-surface-variant mb-1">Email</p>
-                <p className="text-sm text-white break-all">{sale.clientEmail ?? "—"}</p>
-              </div>
-              <div>
-                <p className="text-xs text-on-surface-variant mb-1">Documento</p>
-                <p className="text-sm text-white">{sale.clientDocumentType && sale.clientDocumentNumber
-                  ? `${sale.clientDocumentType}: ${sale.clientDocumentNumber}`
-                  : "—"}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="md:col-span-2 pt-2 border-t border-[#27272e]">
-            <p className="text-xs font-medium text-on-surface-variant uppercase tracking-wider mb-3">Pago y entrega</p>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div>
-                <p className="text-xs text-on-surface-variant mb-1">Pago</p>
-                <p className="text-sm text-white">{sale.paymentStatus ?? "—"}</p>
-              </div>
-              <div>
-                <p className="text-xs text-on-surface-variant mb-1">Método</p>
-                <p className="text-sm text-white">{sale.paymentMethod ?? "—"}{sale.installments ? ` · ${sale.installments} cuotas` : ""}</p>
-              </div>
-              <div>
-                <p className="text-xs text-on-surface-variant mb-1">Entrega</p>
-                <p className="text-sm text-white">{sale.deliveryStatus ?? "—"}</p>
-              </div>
-            </div>
-            {sale.deliveryAddress && (
-              <p className="mt-3 text-sm text-on-surface">Dirección: {sale.deliveryAddress}</p>
-            )}
-          </div>
-
-          {sale.notes && (
-            <div className="md:col-span-2 pt-2 border-t border-[#27272e]">
-              <p className="text-xs font-medium text-on-surface-variant uppercase tracking-wider mb-1">Notas</p>
-              <p className="text-on-surface text-sm break-all font-mono">{sale.notes}</p>
-            </div>
-          )}
-
-          {sale.rejectionReason && (
-            <div className="md:col-span-2 pt-2 border-t border-[#27272e]">
-              <p className="text-xs font-medium text-rose-400 uppercase tracking-wider mb-1">Motivo de rechazo</p>
-              <p className="text-on-surface text-sm">{sale.rejectionReason}</p>
-            </div>
-          )}
+      {/* Overview strip */}
+      <section className="bg-surface-container border border-outline-variant rounded-2xl p-7 relative overflow-hidden">
+        <div className="absolute -right-10 -bottom-10 w-44 h-44 bg-sky-400/5 rounded-full blur-3xl pointer-events-none" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-10 gap-y-6">
+          <Field label="Fecha de venta" value={new Date(sale.saleDate).toLocaleDateString("es-AR")} />
+          <Field label="Total" value={`$${sale.totalAmount.toFixed(2)}`} mono />
+          <Field label="Estado" value={STATUS_LABELS[sale.status] ?? sale.status} />
+          <Field label="Creada" value={new Date(sale.createdAt).toLocaleDateString("es-AR")} />
         </div>
       </section>
 
+      {/* Client + payment */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <SectionCard
+          icon={<User className="w-4 h-4 text-on-surface" aria-hidden="true" />}
+          accent="bg-primary/10 text-sky-400"
+          title="Cliente"
+          className="lg:col-span-4"
+        >
+          <div className="space-y-5">
+            <Field label="Nombre" value={sale.buyerName ?? "—"} />
+            <Field label="Documento" value={sale.clientDocumentType && sale.clientDocumentNumber
+              ? `${sale.clientDocumentType}: ${sale.clientDocumentNumber}`
+              : "—"} mono />
+          </div>
+        </SectionCard>
+
+        <SectionCard
+          icon={<Phone className="w-4 h-4 text-on-surface" aria-hidden="true" />}
+          accent="bg-secondary/10 text-secondary"
+          title="Contacto"
+          className="lg:col-span-8"
+        >
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-10 gap-y-6">
+            <Field label="Teléfono" value={sale.clientPhone ?? "—"} mono />
+            <Field label="Email" value={sale.clientEmail ?? "—"} />
+          </div>
+        </SectionCard>
+      </div>
+
+      {/* Payment & delivery */}
+      <SectionCard
+        icon={<CreditCard className="w-4 h-4 text-on-surface" aria-hidden="true" />}
+        accent="bg-tertiary/10 text-tertiary"
+        title="Pago y entrega"
+      >
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-10 gap-y-6">
+          <Field label="Pago" value={sale.paymentStatus ?? "—"} />
+          <Field label="Método" value={
+            sale.paymentMethod
+              ? `${sale.paymentMethod}${sale.installments ? ` · ${sale.installments} cuotas` : ""}`
+              : "—"
+          } />
+          <Field label="Entrega" value={sale.deliveryStatus ?? "—"} />
+          <Field label="Dirección de entrega" value={sale.deliveryAddress ?? "—"} />
+        </div>
+      </SectionCard>
+
+      {/* Notes */}
+      {sale.notes && (
+        <SectionCard
+          icon={<StickyNote className="w-4 h-4 text-on-surface" aria-hidden="true" />}
+          accent="bg-[#00df81]/10 text-[#00df81]"
+          title="Notas"
+        >
+          <p className="text-on-surface text-base whitespace-pre-wrap leading-relaxed">
+            {sale.notes}
+          </p>
+        </SectionCard>
+      )}
+
+      {/* Rejection reason */}
+      {sale.rejectionReason && (
+        <SectionCard
+          icon={<MessageSquareWarning className="w-4 h-4 text-on-surface" aria-hidden="true" />}
+          accent="bg-red-400/10 text-red-400"
+          title="Motivo de rechazo"
+        >
+          <p className="text-on-surface text-base leading-relaxed">{sale.rejectionReason}</p>
+        </SectionCard>
+      )}
+
       {/* Products table */}
-      <section className="bg-surface border border-[#27272e] rounded-xl overflow-hidden">
+      <SectionCard
+        icon={<ShoppingBag className="w-4 h-4 text-on-surface" aria-hidden="true" />}
+        accent="bg-primary/10 text-primary"
+        title="Productos"
+        className="p-0 overflow-hidden"
+      >
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="border-b border-[#27272e] bg-[#141417]">
+              <tr className="border-b border-outline-variant bg-surface-container-low">
                 <th className="py-3.5 px-6 text-xs font-semibold text-on-surface-variant uppercase tracking-wider" scope="col">
                   Producto
                 </th>
@@ -218,8 +280,8 @@ export default async function SaleDetailPage({
             </thead>
             <tbody className="text-on-surface-dim">
               {items.map((item) => (
-                <tr key={item.id} className="hover:bg-surface-container transition-colors">
-                  <td className="py-4 px-6 text-sm font-medium text-on-surface-dim">
+                <tr key={item.id} className="hover:bg-surface-container-low transition-colors">
+                  <td className="py-4 px-6 text-sm font-medium text-on-surface">
                     <span className="text-on-surface-variant">{item.product.code}</span>{" "}
                     {item.product.name}
                   </td>
@@ -236,7 +298,7 @@ export default async function SaleDetailPage({
               ))}
             </tbody>
             <tfoot>
-              <tr className="border-t border-[#27272e] bg-[#141417]/70">
+              <tr className="border-t border-outline-variant bg-surface-container-low/70">
                 <td colSpan={3} className="py-4 px-6 text-sm font-semibold text-on-surface text-right">
                   Total:
                 </td>
@@ -247,19 +309,20 @@ export default async function SaleDetailPage({
             </tfoot>
           </table>
         </div>
-      </section>
+      </SectionCard>
 
       {/* Referral contacts — shown when there are any */}
       {referralContacts.length > 0 && (
-        <section className="bg-[#161618] border border-[#27272e] rounded-xl p-6 space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-white uppercase tracking-wider">
-              Programa de referidos
-            </h2>
-            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+        <SectionCard
+          icon={<Users className="w-4 h-4 text-on-surface" aria-hidden="true" />}
+          accent="bg-[#00df81]/10 text-[#00df81]"
+          title="Programa de referidos"
+        >
+          <div className="flex items-center justify-between mb-5">
+            <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold ${
               referralContacts.length === 5
-                ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30"
-                : "bg-amber-500/10 text-amber-400 border border-amber-500/30"
+                ? "bg-[#00df81]/10 text-[#00df81] border border-[#00df81]/20"
+                : "bg-amber-400/10 text-amber-400 border border-amber-400/20"
             }`}>
               {referralContacts.length}/5 referidos
             </span>
@@ -267,38 +330,27 @@ export default async function SaleDetailPage({
 
           <div className="space-y-3">
             {referralContacts.map((contact, index) => (
-              <div key={contact.id} className="border border-[#27272e] rounded-lg p-4 space-y-2">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">
-                    Referido {index + 1}
-                  </h3>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
-                  <div>
-                    <p className="text-xs text-on-surface-variant mb-0.5">Nombre</p>
-                    <p className="text-white">{contact.clientName}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-on-surface-variant mb-0.5">Teléfono</p>
-                    <p className="text-white">{contact.phone}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-on-surface-variant mb-0.5">Email</p>
-                    <p className="text-white">{contact.email ?? "—"}</p>
-                  </div>
+              <div key={contact.id} className="border border-outline-variant rounded-xl p-5">
+                <h3 className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-3">
+                  Referido {index + 1}
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-10 gap-y-4 text-sm">
+                  <Field label="Nombre" value={contact.clientName} />
+                  <Field label="Teléfono" value={contact.phone} />
+                  <Field label="Email" value={contact.email ?? "—"} />
                 </div>
                 {(contact.street || contact.city || contact.province) && (
-                  <div className="text-sm">
-                    <p className="text-xs text-on-surface-variant mb-0.5">Dirección</p>
-                    <p className="text-white">
-                      {[contact.street && contact.streetNumber ? `${contact.street} ${contact.streetNumber}` : null, contact.floor ? `Piso ${contact.floor}` : null, contact.apartment ? `Depto. ${contact.apartment}` : null].filter(Boolean).join(", ")}
-                      {(contact.city || contact.province) && (
-                        <span className="text-zinc-400"> — {[contact.city, contact.province, contact.postalCode].filter(Boolean).join(", ")}</span>
-                      )}
-                      {contact.addressNotes && (
-                        <span className="text-zinc-500"> — {contact.addressNotes}</span>
-                      )}
-                    </p>
+                  <div className="mt-4">
+                    <Field
+                      label="Dirección"
+                      value={[
+                        contact.street && contact.streetNumber ? `${contact.street} ${contact.streetNumber}` : null,
+                        contact.floor ? `Piso ${contact.floor}` : null,
+                        contact.apartment ? `Depto. ${contact.apartment}` : null,
+                        [contact.city, contact.province, contact.postalCode].filter(Boolean).join(", "),
+                        contact.addressNotes,
+                      ].filter(Boolean).join(" · ")}
+                    />
                   </div>
                 )}
               </div>
@@ -306,68 +358,53 @@ export default async function SaleDetailPage({
           </div>
 
           {canReview && sale.status === "PENDING_REVIEW" && referralContacts.length === 5 && (
-            <p className="text-xs text-zinc-500 border-t border-[#27272e] pt-3">
+            <p className="text-sm text-on-surface-variant border-t border-outline-variant pt-4 mt-5">
               Verifique que estos 5 referidos no existan en su base de datos de clientes. Si son válidos, el descuento del 20% se aplicará al aprobar la venta.
             </p>
           )}
-        </section>
+        </SectionCard>
       )}
 
       {/* Commission entries — shown when sale has been processed */}
       {commissionEntries.length > 0 && (
-        <section className="bg-[#161618] border border-[#27272e] rounded-xl p-6 space-y-4">
-          <h2 className="text-sm font-semibold text-white uppercase tracking-wider">
-            Comisión
-          </h2>
-
+        <SectionCard
+          icon={<CreditCard className="w-4 h-4 text-on-surface" aria-hidden="true" />}
+          accent="bg-primary/10 text-primary"
+          title="Comisión"
+        >
           <div className="space-y-3">
             {commissionEntries.map((entry) => {
               const isEarned = entry.type === "EARNED";
               return (
-                <div key={entry.id} className="border border-[#27272e] rounded-lg p-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+                <div key={entry.id} className="border border-outline-variant rounded-xl p-5">
+                  <div className="flex items-center justify-between mb-4">
+                    <span className={`inline-flex items-center px-3 py-0.5 rounded-full text-xs font-semibold ${
                       isEarned
-                        ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30"
-                        : "bg-rose-500/10 text-rose-400 border border-rose-500/30"
+                        ? "bg-[#00df81]/10 text-[#00df81] border border-[#00df81]/20"
+                        : "bg-red-400/10 text-red-400 border border-red-400/20"
                     }`}>
                       {isEarned ? "Comisión generada" : "Comisión revertida"}
                     </span>
-                    <span className="text-xs text-on-surface-variant">
+                    <span className="text-sm text-on-surface-variant">
                       {new Date(entry.calculatedAt).toLocaleDateString("es-AR")}
                     </span>
                   </div>
-                  <div className="grid grid-cols-3 gap-4 text-sm">
-                    <div>
-                      <p className="text-xs text-on-surface-variant mb-1">Porcentaje</p>
-                      <p className="text-white font-medium">{Number(entry.percentage)}%</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-on-surface-variant mb-1">Base</p>
-                      <p className="text-white font-medium font-mono">
-                        ${Number(entry.baseAmount).toFixed(2)}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-on-surface-variant mb-1">
-                        {isEarned ? "Monto" : "Reversión"}
-                      </p>
-                      <p className={`font-semibold font-mono ${isEarned ? "text-emerald-400" : "text-rose-400"}`}>
-                        {isEarned ? "+" : ""}{Number(entry.amount).toFixed(2)}
-                      </p>
-                    </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-10 gap-y-4">
+                    <Field label="Porcentaje" value={`${Number(entry.percentage)}%`} mono />
+                    <Field label="Base" value={`$${Number(entry.baseAmount).toFixed(2)}`} mono />
+                    <Field label={isEarned ? "Monto" : "Reversión"} value={`${isEarned ? "+" : ""}$${Number(entry.amount).toFixed(2)}`} mono />
                   </div>
                 </div>
               );
             })}
           </div>
-        </section>
+        </SectionCard>
       )}
 
       {/* Actions — only show when there are available actions */}
       {((isOwner && (sale.status === "DRAFT" || sale.status === "REJECTED")) ||
         (canReview && (sale.status === "PENDING_REVIEW" || sale.status === "APPROVED"))) && (
-        <section className="bg-[#161618] border border-[#27272e] rounded-xl p-6">
+        <section className="bg-surface-container border border-outline-variant rounded-2xl p-7">
           <SaleActions
             saleId={sale.id}
             status={sale.status}

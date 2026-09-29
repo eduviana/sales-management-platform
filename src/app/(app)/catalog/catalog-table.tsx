@@ -69,17 +69,17 @@ export function CatalogTable({ products, canCreate }: CatalogTableProps) {
         <div className="overflow-x-auto w-full">
           <table className="w-full border-collapse">
             <thead>
-              <tr className="table-header">
-                <th className="py-3 px-4 text-label-md text-on-surface-variant uppercase tracking-wider text-center">
+              <tr className="bg-surface-container-low border-b border-[#27272e]">
+                <th className="py-3 px-4 text-xs text-on-surface-variant uppercase tracking-wider text-center">
                   Código
                 </th>
-                <th className="py-3 px-4 text-label-md text-on-surface-variant uppercase tracking-wider text-center">
+                <th className="py-3 px-4 text-xs text-on-surface-variant uppercase tracking-wider text-center">
                   Nombre
                 </th>
-                <th className="py-3 px-4 text-label-md text-on-surface-variant uppercase tracking-wider text-center">
+                <th className="py-3 px-4 text-xs text-on-surface-variant uppercase tracking-wider text-center">
                   Precio
                 </th>
-                <th className="py-3 px-4 text-label-md text-on-surface-variant uppercase tracking-wider text-center">
+                <th className="py-3 px-4 text-xs text-on-surface-variant uppercase tracking-wider text-center">
                   Estado
                 </th>
               </tr>

@@ -75,6 +75,52 @@ export interface AuditEventQueryResult {
 }
 
 // =============================================================================
+// Aggregation types
+// =============================================================================
+
+export type AuditResultType = "SUCCESS" | "FAILURE" | "DENIED";
+
+export interface AuditResultCount {
+  readonly result: AuditResultType;
+  readonly count: number;
+}
+
+export interface DailyAuditActivity {
+  /** ISO date string "YYYY-MM-DD". */
+  readonly date: string;
+  /** Short label (weekday in Spanish, e.g. "lun", "mar"). */
+  readonly label: string;
+  readonly success: number;
+  readonly failure: number;
+  readonly denied: number;
+}
+
+// =============================================================================
+// Weekday labels
+// =============================================================================
+
+const WEEKDAY_LABELS = [
+  "dom",
+  "lun",
+  "mar",
+  "mié",
+  "jue",
+  "vie",
+  "sáb",
+] as const;
+
+/**
+ * Returns the Spanish weekday label for a date (e.g. "lun", "mar", "mié").
+ * Accepts either a Date or an ISO string "YYYY-MM-DD" (parsed as local time).
+ */
+export function formatWeekdayLabel(date: Date | string): string {
+  const d = typeof date === "string"
+    ? new Date(`${date}T00:00:00`)
+    : date;
+  return WEEKDAY_LABELS[d.getDay()];
+}
+
+// =============================================================================
 // Repository port
 // =============================================================================
 
@@ -87,4 +133,19 @@ export interface AuditEventRepository {
     filters: AuditEventQueryFilters,
     options: AuditEventQueryOptions,
   ): Promise<AuditEventQueryResult>;
+
+  /**
+   * Count audit events grouped by result within an optional date range.
+   */
+  countByResult(
+    filters: { from?: Date; to?: Date },
+  ): Promise<AuditResultCount[]>;
+
+  /**
+   * Daily audit activity within a date range grouped by day and result.
+   */
+  getDailyActivity(
+    from: Date,
+    to: Date,
+  ): Promise<DailyAuditActivity[]>;
 }

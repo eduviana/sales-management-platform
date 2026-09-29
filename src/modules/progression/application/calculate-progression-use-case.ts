@@ -31,9 +31,12 @@ export class CalculateProgressionUseCase {
 
     const now = new Date();
 
-    // Only record monthly target bonuses (idempotent — checks for duplicates)
+    // Baseline: progression is measured from the start of the current level.
+    // Only record monthly target bonuses earned within the current level
+    // (checks for duplicates, idempotent).
+    const levelStartDate = await this.getLevelStartDate(employeeId, joinedAt);
     const monthlyTargets = await this.getMonthlyTargets(currentLevelId);
-    const monthsToCheck = Math.min(this.monthsBetween(joinedAt, now), 12);
+    const monthsToCheck = Math.min(this.monthsBetween(levelStartDate, now), 12);
 
     const newBonuses: Array<{
       employeeId: string;
@@ -85,6 +88,18 @@ export class CalculateProgressionUseCase {
     const fromD = new Date(from);
     const toD = new Date(to);
     return (toD.getFullYear() - fromD.getFullYear()) * 12 + (toD.getMonth() - fromD.getMonth());
+  }
+
+  private async getLevelStartDate(
+    employeeId: string,
+    joinedAt: Date,
+  ): Promise<Date> {
+    const openHistory = await this.prisma.employeeLevelHistory.findFirst({
+      where: { employeeId, endedAt: null },
+      orderBy: { startedAt: "desc" },
+      select: { startedAt: true },
+    });
+    return openHistory?.startedAt ?? joinedAt;
   }
 
   private async getMonthlyTargets(levelId: number): Promise<number> {

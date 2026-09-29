@@ -7,6 +7,15 @@ export { GetTrainingCategoryUseCase } from "./get-training-category-use-case";
 export type { GetTrainingCategoryInput, TrainingCategoryDetail } from "./get-training-category-use-case";
 export { GetTrainingCourseUseCase } from "./get-training-course-use-case";
 export type { GetTrainingCourseInput, TrainingCourseDetail, ModuleWithMaterials } from "./get-training-course-use-case";
+export { GetTrainingTreeUseCase } from "./get-training-tree-use-case";
+export type {
+  GetTrainingTreeInput,
+  TrainingTree,
+  CategoryConfigNode,
+  CourseConfigNode,
+  ModuleConfigNode,
+  MaterialConfigNode,
+} from "./get-training-tree-use-case";
 export { CreateTrainingCategoryUseCase } from "./create-training-category-use-case";
 export type { CreateTrainingCategoryInput } from "./create-training-category-use-case";
 export { UpdateTrainingCategoryUseCase } from "./update-training-category-use-case";

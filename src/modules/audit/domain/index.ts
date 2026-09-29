@@ -7,4 +7,7 @@ export type {
   AuditEventQueryFilters,
   AuditEventQueryOptions,
   AuditEventQueryResult,
+  AuditResultCount,
+  AuditResultType,
+  DailyAuditActivity,
 } from "./audit-event-repository";

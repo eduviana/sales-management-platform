@@ -13,6 +13,7 @@ import { createAuditModule } from "@/modules/audit/composition-root";
 import { createAuthorizationService } from "@/modules/authorization/composition-root";
 import { prisma } from "@/infrastructure/prisma/client";
 import { resolveAuthContext } from "@/modules/sales/presentation/resolve-auth-context";
+import { resolveResourceLabels } from "@/modules/audit/presentation/resolve-resource-labels";
 import type { AuditAction } from "@/shared/ports/audit-port";
 
 export interface AuditEventsActionState {
@@ -61,8 +62,21 @@ export async function queryAuditEvents(
       pageSize: input.pageSize,
     });
 
+    // Resolve readable resource references (presentation layer). The UUID
+    // stays as source of truth in the persisted event; the label is derived
+    // at read time for the audit table (requirements.md §3.12.1.1).
+    const resourceLabels = await resolveResourceLabels(result.events);
+
+    const events = result.events.map((event) => ({
+      ...event,
+      resourceLabel:
+        event.resourceId !== null
+          ? resourceLabels.get(event.resourceId) ?? null
+          : null,
+    }));
+
     return {
-      events: result.events as unknown as Record<string, unknown>[],
+      events: events as unknown as Record<string, unknown>[],
       totalCount: result.totalCount,
       page: result.page,
       pageSize: result.pageSize,

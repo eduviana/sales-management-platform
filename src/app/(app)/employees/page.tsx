@@ -27,7 +27,12 @@ export default async function EmployeesPage() {
   const { getAllEmployeesUseCase } = createOrganizationModule(auth);
   const { getEmployeeProgression, calculateProgression } = createProgressionModule(prisma);
 
-  const { employees } = await getAllEmployeesUseCase.execute();
+  const { employees: allEmployees } = await getAllEmployeesUseCase.execute();
+
+  // The system ADMIN account (currentLevelId === null) is a platform-level
+  // account, not a sales employee: exclude it from the employee table.
+  // Only ADMIN can access this page, so this is a display rule, not auth.
+  const employees = allEmployees.filter((emp) => emp.currentLevelId !== null);
 
   // Calculate and record progression for all active employees
   for (const emp of employees) {

@@ -1,8 +1,8 @@
 # Modelo de datos
 
 **Estado:** 🚧 DECISIÓN DE DISEÑO  
-**Versión:** 0.6
-**Última actualización:** 2026-09-03
+**Versión:** 0.7
+**Última actualización:** 2026-09-25
 
 ---
 
@@ -268,20 +268,23 @@ createdAt
 **Propósito:**
 
 Cada fuente de puntos genera un registro en esta tabla. Los puntos se
-acumulan de por vida y se utilizan para calcular el progreso hacia el
-siguiente nivel.
+acumulan de por vida como historial; el progreso hacia el siguiente nivel
+se calcula únicamente con los registros generados desde el inicio del
+nivel actual (REG-082).
 
 **Tipo de punto:**
 
-- `SENIORITY`: 1 punto por mes de antigüedad.
-- `VISIT`: 2 puntos por visita completada.
-- `SALE`: 5 puntos por venta aprobada.
+- `SENIORITY`: 1 punto por mes de antigüedad desde el inicio del nivel actual.
+- `VISIT`: 2 puntos por visita completada desde el inicio del nivel actual.
+- `SALE`: 5 puntos por venta aprobada desde el inicio del nivel actual.
 - `TARGET_ACHIEVED`: 10 puntos de bonus por mes que supera el objetivo.
 
 **Regla:**
 
-Al ser promovido un empleado, su progreso vuelve a 0 pero los registros
-se conservan como historial.
+Al ser promovido un empleado, el ADMIN abre un nuevo registro de nivel en
+`employee_level_history` con `startedAt` en la fecha del ascenso. El
+progreso vuelve a 0 % porque la medición comienza desde ese nuevo inicio;
+los registros previos se conservan como historial y no se borran.
 
 **Referencia:** business-rules.md REG-082, requirements.md §3.13
 
@@ -453,7 +456,10 @@ updatedAt
 Employee 1 ──── 0..1 UserAccount
 ```
 
-No toda persona registrada necesariamente debe tener una cuenta activa.
+La cuenta se crea y asigna antes de que el empleado pueda comenzar a
+operar (REG-086). Un empleado con estado activo siempre debe poseer una
+cuenta de usuario; la ausencia de cuenta (o cuenta inactiva) solo puede
+responder a la pérdida de acceso de un empleado que conserva su historial.
 
 **Esta separación permite:**
 
@@ -1131,3 +1137,5 @@ Antes de llegar a ese punto deberá reducirse la cantidad de incógnitas de `ope
 | 08/09/2026 | 0.8     | Fase 7: sección AuditEvent incorporada al modelo conceptual con sus campos, índices y semántica transaccional. |
 | 08/09/2026 | 0.9     | Fase 8: estado de Formación actualizado a IMPLEMENTADO con estructura categorías→cursos→módulos→materiales. |
 | 08/09/2026 | 1.0     | Fase 9: sección MonthlyTarget incorporada al modelo conceptual con objetivos mensuales por nivel. |
+| 24/09/2026 | 1.1     | §6 EmployeeProgress: el progreso hacia el siguiente nivel se mide desde el inicio del nivel actual (registro abierto de `employee_level_history`). Al ascender la barra vuelve a 0 %; los registros previos se conservan como historial y no se borran. |
+| 25/09/2026 | 1.2     | §10 UserAccount: la cuenta se crea y asigna antes de que el empleado pueda operar (REG-086). Un empleado activo siempre posee cuenta; la ausencia o inactividad de cuenta solo responde a la pérdida de acceso con conservación de historial. |

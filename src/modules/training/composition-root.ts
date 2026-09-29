@@ -18,6 +18,7 @@ import type { AuthorizationService } from "@/modules/authorization/domain";
 import { ListTrainingCategoriesUseCase } from "./application/list-training-categories-use-case";
 import { GetTrainingCategoryUseCase } from "./application/get-training-category-use-case";
 import { GetTrainingCourseUseCase } from "./application/get-training-course-use-case";
+import { GetTrainingTreeUseCase } from "./application/get-training-tree-use-case";
 
 // Write use cases
 import { CreateTrainingCategoryUseCase } from "./application/create-training-category-use-case";
@@ -51,6 +52,13 @@ export function createTrainingModule(authorizationService: AuthorizationService)
   const listCategories = new ListTrainingCategoriesUseCase(authorizationService, categoryRepo, courseRepo);
   const getCategory = new GetTrainingCategoryUseCase(authorizationService, categoryRepo, courseRepo);
   const getCourse = new GetTrainingCourseUseCase(authorizationService, courseRepo, moduleRepo, materialRepo);
+  const getTrainingTree = new GetTrainingTreeUseCase(
+    authorizationService,
+    categoryRepo,
+    courseRepo,
+    moduleRepo,
+    materialRepo,
+  );
 
   // Write use cases
   const createCategory = new CreateTrainingCategoryUseCase(authorizationService, categoryRepo);
@@ -79,6 +87,7 @@ export function createTrainingModule(authorizationService: AuthorizationService)
     listCategories,
     getCategory,
     getCourse,
+    getTrainingTree,
 
     // Write
     createCategory,

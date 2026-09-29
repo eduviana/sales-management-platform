@@ -110,20 +110,6 @@ export interface TeamPerformanceRow {
 }
 
 // =============================================================================
-// Personal Sales History (N1/N2 Table)
-// =============================================================================
-
-export type SaleStatusDisplay = "PENDING_REVIEW" | "APPROVED" | "REJECTED" | "CANCELLED";
-
-export interface PersonalSalesRow {
-  readonly saleId: string;
-  readonly saleDate: string;
-  readonly buyerName: string;
-  readonly totalAmount: number;
-  readonly status: SaleStatusDisplay;
-}
-
-// =============================================================================
 // Dashboard Data (Composite)
 // =============================================================================
 
@@ -131,9 +117,13 @@ export interface DashboardData {
   readonly kpis: KpiSummary;
   readonly dailySales: DailySalesBar[];
   readonly dailySaleCounts: DailySaleCount[];
+  /**
+   * Daily sale counts for the team members only (excludes the supervisor's own
+   * sales). Same baseline as the team objective card. Empty when no team.
+   */
+  readonly teamDailySaleCounts: DailySaleCount[];
   readonly levelDistribution: LevelDistribution[];
   readonly teamPerformance: TeamPerformanceRow[];
-  readonly personalSalesHistory: PersonalSalesRow[];
   readonly period: DashboardPeriod;
   readonly dateRange: DateRange;
   /** Whether the user has team members under their scope. */
@@ -166,5 +156,54 @@ export interface PersonalDashboardKpis {
 export interface PersonalDashboardData {
   readonly kpis: PersonalDashboardKpis;
   readonly dailySaleCounts: DailySaleCount[];
-  readonly salesHistory: PersonalSalesRow[];
+}
+
+// =============================================================================
+// System Overview (ADMIN dashboard — system health + organization)
+// =============================================================================
+
+/** One day of stacked audit activity (bar chart). */
+export interface AuditActivityPoint {
+  /** ISO date string "YYYY-MM-DD". */
+  readonly date: string;
+  /** Day of month label (1–31). */
+  readonly label: string;
+  readonly success: number;
+  readonly failure: number;
+  readonly denied: number;
+}
+
+/** Compact audit event used in the "recent activity" feed. */
+export interface SystemAuditEvent {
+  readonly id: string;
+  readonly actorEmail: string | null;
+  readonly action: string;
+  readonly result: "SUCCESS" | "FAILURE" | "DENIED";
+  readonly createdAt: Date;
+}
+
+/** Employee count by level (levelId null = ADMIN). */
+export interface LevelEmployeeCount {
+  readonly levelId: number | null;
+  readonly levelCode: string;
+  readonly count: number;
+}
+
+export interface SystemOverview {
+  readonly kpis: {
+    /** Sum of all-time sales amounts across the whole organization. */
+    readonly totalSalesAmount: number;
+    /** Sum of sales amounts in the current month across the whole organization. */
+    readonly monthSalesAmount: number;
+    /** Total employees with ACTIVE status. */
+    readonly activeEmployeeCount: number;
+    /** Dangerous audit events in the current month (FAILURE + DENIED). */
+    readonly dangerousAuditEventCount: number;
+  };
+  /** Last 7 days of audit activity (stacked bar). */
+  readonly auditActivity: AuditActivityPoint[];
+  /** Sales amounts by level for the current month (donut). */
+  readonly levelDistribution: LevelDistribution[];
+  /** Recent audit events (feed). */
+  readonly recentEvents: SystemAuditEvent[];
 }

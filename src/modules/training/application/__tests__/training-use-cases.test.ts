@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { ListTrainingCategoriesUseCase } from "../list-training-categories-use-case";
 import { GetTrainingCategoryUseCase } from "../get-training-category-use-case";
 import { GetTrainingCourseUseCase } from "../get-training-course-use-case";
+import { GetTrainingTreeUseCase } from "../get-training-tree-use-case";
 import type { AuthorizationService } from "@/modules/authorization/domain";
 import type {
   TrainingCategoryRepository,
@@ -115,6 +116,17 @@ function makeMaterialRepo(overrides?: Partial<TrainingMaterialRepository>): Trai
   };
 }
 
+function makeModuleRepo(overrides?: Partial<TrainingModuleRepository>): TrainingModuleRepository {
+  return {
+    findById: vi.fn().mockResolvedValue(mockModule),
+    findByCourseId: vi.fn().mockResolvedValue([mockModule]),
+    create: vi.fn().mockResolvedValue(mockModule),
+    update: vi.fn().mockResolvedValue(mockModule),
+    delete: vi.fn().mockResolvedValue(undefined),
+    ...overrides,
+  };
+}
+
 describe("ListTrainingCategoriesUseCase", () => {
   let auth: AuthorizationService;
   let categoryRepo: TrainingCategoryRepository;
@@ -206,13 +218,7 @@ describe("GetTrainingCourseUseCase", () => {
   beforeEach(() => {
     auth = makeAllowAuth();
     courseRepo = makeCourseRepo();
-    moduleRepo = {
-      findById: vi.fn().mockResolvedValue(mockModule),
-      findByCourseId: vi.fn().mockResolvedValue([mockModule]),
-      create: vi.fn(),
-      update: vi.fn(),
-      delete: vi.fn(),
-    };
+    moduleRepo = makeModuleRepo();
     materialRepo = makeMaterialRepo();
     useCase = new GetTrainingCourseUseCase(auth, courseRepo, moduleRepo, materialRepo);
   });
@@ -238,5 +244,61 @@ describe("GetTrainingCourseUseCase", () => {
   it("returns all materials for ADMIN", async () => {
     await useCase.execute({ authContext: makeAdminContext(), courseId: "course-1" });
     expect(materialRepo.findAll).toHaveBeenCalledWith({ moduleId: "mod-1" });
+  });
+});
+
+describe("GetTrainingTreeUseCase", () => {
+  let auth: AuthorizationService;
+  let categoryRepo: TrainingCategoryRepository;
+  let courseRepo: TrainingCourseRepository;
+  let moduleRepo: TrainingModuleRepository;
+  let materialRepo: TrainingMaterialRepository;
+  let useCase: GetTrainingTreeUseCase;
+
+  beforeEach(() => {
+    auth = makeAllowAuth();
+    categoryRepo = makeCategoryRepo();
+    courseRepo = makeCourseRepo();
+    moduleRepo = makeModuleRepo();
+    materialRepo = makeMaterialRepo();
+    useCase = new GetTrainingTreeUseCase(auth, categoryRepo, courseRepo, moduleRepo, materialRepo);
+  });
+
+  it("returns the full hierarchy with materials", async () => {
+    const result = await useCase.execute({ authContext: makeAdminContext() });
+
+    expect(result.categories).toHaveLength(1);
+    expect(result.categories[0].category.name).toBe("Categoría Test");
+    expect(result.categories[0].courses).toHaveLength(1);
+    expect(result.categories[0].courses[0].course.name).toBe("Curso Test");
+    expect(result.categories[0].courses[0].modules).toHaveLength(1);
+    expect(result.categories[0].courses[0].modules[0].module.name).toBe("Módulo Test");
+    expect(result.categories[0].courses[0].modules[0].materials).toHaveLength(1);
+    expect(result.categories[0].courses[0].modules[0].materials[0].material.name).toBe("Material Test");
+  });
+
+  it("loads all materials without status filtering", async () => {
+    await useCase.execute({ authContext: makeAdminContext() });
+
+    expect(categoryRepo.findAll).toHaveBeenCalled();
+    expect(courseRepo.findByCategoryId).toHaveBeenCalledWith("cat-1");
+    expect(moduleRepo.findByCourseId).toHaveBeenCalledWith("course-1");
+    expect(materialRepo.findAll).toHaveBeenCalledWith({ moduleId: "mod-1" });
+    expect(materialRepo.findAccessibleByLevel).not.toHaveBeenCalled();
+  });
+
+  it("throws when not authorized", async () => {
+    const denyAuth = makeDenyAuth();
+    const denyUseCase = new GetTrainingTreeUseCase(
+      denyAuth,
+      categoryRepo,
+      courseRepo,
+      moduleRepo,
+      materialRepo,
+    );
+
+    await expect(
+      denyUseCase.execute({ authContext: makeAuthContext() }),
+    ).rejects.toThrow("Denied");
   });
 });

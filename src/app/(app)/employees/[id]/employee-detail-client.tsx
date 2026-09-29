@@ -3,6 +3,7 @@
  *
  * Renders editable employee information with form submission.
  *
+ * Visual reference: design/stitch/DESIGN.md
  * Reference: requirements.md §3.12.2
  */
 
@@ -11,6 +12,11 @@
 import { useActionState } from "react";
 import { useRouter } from "next/navigation";
 import { startTransition } from "react";
+import {
+  MapPin,
+  UserX,
+  Users,
+} from "lucide-react";
 import type { EmployeeRecord } from "@/modules/organization/domain/organization-repository";
 import { updateEmployee } from "./actions";
 
@@ -21,6 +27,17 @@ function formatDateValue(date: Date | null): string {
   const month = String(d.getMonth() + 1).padStart(2, "0");
   const day = String(d.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
+}
+
+function formatDateTime(date: Date): string {
+  return new Intl.DateTimeFormat("es-AR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).format(new Date(date));
 }
 
 export function EmployeeDetailClient({ employee }: { employee: EmployeeRecord }) {
@@ -46,100 +63,132 @@ export function EmployeeDetailClient({ employee }: { employee: EmployeeRecord })
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      {/* General info (read-only) */}
-      <section className="bg-surface border border-outline-variant rounded-xl p-6">
-        <h2 className="text-sm font-semibold text-on-surface-variant uppercase tracking-wider mb-4">
-          Información General
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <ReadOnlyField label="ID de Empleado" value={String(employee.employeeCode)} />
-          <ReadOnlyField label="Nivel" value={employee.currentLevelId ? `N${employee.currentLevelId}` : "ADMIN"} />
-          <ReadOnlyField label="Fecha de Ingreso" value={formatDate(employee.joinedAt)} />
-          <ReadOnlyField label="Supervisor" value={employee.supervisorId ?? "—"} />
-        </div>
-      </section>
-
-      {/* Personal data (editable) */}
-      <section className="bg-surface border border-outline-variant rounded-xl p-6">
-        <h2 className="text-sm font-semibold text-on-surface-variant uppercase tracking-wider mb-4">
-          Datos Personales
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <form onSubmit={handleSubmit} className="contents">
+      {/* Personal data (editable) — paired with Progreso card on the right */}
+      <SectionCard
+        id="edit-form"
+        className="lg:col-span-7 lg:row-start-1 scroll-mt-6"
+        icon={<Users className="w-4 h-4 text-on-surface" aria-hidden="true" />}
+        accent="bg-secondary/10 text-secondary"
+        title="Datos Personales"
+        hint="* Campos requeridos"
+      >
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5">
           <Field name="firstName" label="Nombre" defaultValue={employee.firstName} required />
           <Field name="lastName" label="Apellido" defaultValue={employee.lastName} required />
-          <Field name="dni" label="DNI" defaultValue={employee.dni ?? ""} />
-          <Field name="email" label="Email" type="email" defaultValue={employee.email ?? ""} />
-          <Field name="phone" label="Teléfono" type="tel" defaultValue={employee.phone ?? ""} />
+          <Field name="dni" label="DNI / Identificación" defaultValue={employee.dni ?? ""} mono />
+          <Field name="email" label="Email Corporativo" type="email" defaultValue={employee.email ?? ""} mono />
+          <Field name="phone" label="Teléfono" type="tel" defaultValue={employee.phone ?? ""} mono />
           <Field name="dateOfBirth" label="Fecha de Nacimiento" type="date" defaultValue={formatDateValue(employee.dateOfBirth)} />
         </div>
-      </section>
+      </SectionCard>
 
-      {/* Address (editable) */}
-      <section className="bg-surface border border-outline-variant rounded-xl p-6">
-        <h2 className="text-sm font-semibold text-on-surface-variant uppercase tracking-wider mb-4">
-          Dirección
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Field name="street" label="Calle" defaultValue={employee.street ?? ""} />
-          <Field name="streetNumber" label="Número" defaultValue={employee.streetNumber ?? ""} />
-          <Field name="floor" label="Piso" defaultValue={employee.floor ?? ""} />
-          <Field name="apartment" label="Departamento" defaultValue={employee.apartment ?? ""} />
-          <Field name="city" label="Ciudad" defaultValue={employee.city ?? ""} />
-          <Field name="province" label="Provincia" defaultValue={employee.province ?? ""} />
-          <Field name="postalCode" label="Código Postal" defaultValue={employee.postalCode ?? ""} />
+      {/* Address (editable) — paired with Equipo a Cargo card on the right */}
+      <SectionCard
+        className="lg:col-span-7 lg:row-start-2"
+        icon={<MapPin className="w-4 h-4 text-on-surface" aria-hidden="true" />}
+        accent="bg-sky-400/10 text-sky-400"
+        title="Dirección y Residencia"
+      >
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-6 gap-y-5">
+          <div className="sm:col-span-2">
+            <Field name="street" label="Calle" defaultValue={employee.street ?? ""} />
+          </div>
+          <div>
+            <Field name="streetNumber" label="Número" defaultValue={employee.streetNumber ?? ""} mono />
+          </div>
+          <div>
+            <Field name="floor" label="Piso" defaultValue={employee.floor ?? ""} mono center />
+          </div>
+          <div>
+            <Field name="apartment" label="Departamento" defaultValue={employee.apartment ?? ""} center />
+          </div>
+          <div>
+            <Field name="postalCode" label="Código Postal" defaultValue={employee.postalCode ?? ""} mono center />
+          </div>
+          <div>
+            <Field name="city" label="Ciudad" defaultValue={employee.city ?? ""} />
+          </div>
+          <div>
+            <Field name="province" label="Provincia" defaultValue={employee.province ?? ""} />
+          </div>
         </div>
-      </section>
+      </SectionCard>
 
       {/* Deactivation info (conditional, read-only) */}
       {employee.deactivatedAt && (
-        <section className="bg-surface border border-outline-variant rounded-xl p-6">
-          <h2 className="text-sm font-semibold text-on-surface-variant uppercase tracking-wider mb-4">
-            Baja
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <SectionCard
+          className="lg:col-span-7"
+          icon={<UserX className="w-4 h-4 text-on-surface" aria-hidden="true" />}
+          accent="bg-tertiary/10 text-tertiary"
+          title="Baja"
+        >
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5">
             <ReadOnlyField label="Fecha de Baja" value={formatDateTime(employee.deactivatedAt)} />
             <ReadOnlyField label="Motivo" value={employee.deactivationReason ?? "—"} />
           </div>
-        </section>
+        </SectionCard>
       )}
-
-      {/* Timestamps (read-only) */}
-      <section className="bg-surface border border-outline-variant rounded-xl p-6">
-        <h2 className="text-sm font-semibold text-on-surface-variant uppercase tracking-wider mb-4">
-          Metadatos
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <ReadOnlyField label="Creado" value={formatDateTime(employee.createdAt)} />
-          <ReadOnlyField label="Última Actualización" value={formatDateTime(employee.updatedAt)} />
-        </div>
-      </section>
 
       {/* Error message */}
       {state && (
-        <div className="bg-tertiary/10 border border-tertiary/20 rounded-lg px-4 py-3 text-sm text-tertiary">
+        <div className="lg:col-span-7 bg-tertiary/10 border border-tertiary/20 rounded-lg px-4 py-3 text-sm text-tertiary">
           {state}
         </div>
       )}
 
       {/* Actions */}
-      <div className="flex justify-end gap-3">
+      <div className="lg:col-span-7 flex items-center justify-end gap-3 pt-2">
         <button
           type="button"
           onClick={() => router.back()}
-          className="px-4 py-2 text-sm font-medium rounded-lg bg-[#27272a] hover:bg-[#323238] text-zinc-300 border border-[#3f3f46] transition-colors"
+          className="px-5 py-2.5 text-xs font-medium rounded-lg bg-[#27272a] hover:bg-[#323238] text-zinc-300 border border-[#3f3f46] transition-colors"
         >
           Cancelar
         </button>
         <button
           type="submit"
           disabled={isPending}
-          className="px-4 py-2 text-sm font-medium text-[#0a1b12] bg-[#00df81] rounded-lg hover:bg-[#00c873] transition-colors disabled:opacity-50"
+          className="inline-flex items-center gap-2 px-6 py-2.5 text-xs font-bold text-[#0a1b12] bg-[#00df81] rounded-lg hover:bg-[#00c873] transition-colors disabled:opacity-50"
         >
           {isPending ? "Guardando..." : "Guardar cambios"}
         </button>
       </div>
     </form>
+  );
+}
+
+function SectionCard({
+  id,
+  icon,
+  accent,
+  title,
+  hint,
+  className = "",
+  children,
+}: {
+  id?: string;
+  icon: React.ReactNode;
+  accent: string;
+  title: string;
+  hint?: string;
+  className?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section
+      id={id}
+      className={`bg-surface-container border border-outline-variant rounded-2xl overflow-hidden shadow-sm ${className}`}
+    >
+      <div className="px-5 py-4 border-b border-outline-variant flex items-center justify-between">
+        <div className="flex items-center gap-2.5">
+          <div className={`p-1.5 rounded-md ${accent}`}>{icon}</div>
+          <h2 className="text-xs font-bold text-on-surface uppercase tracking-wider">{title}</h2>
+        </div>
+        {hint && <span className="text-[11px] text-on-surface-variant">{hint}</span>}
+      </div>
+      <div className="p-5">{children}</div>
+    </section>
   );
 }
 
@@ -149,20 +198,24 @@ function Field({
   type = "text",
   defaultValue = "",
   required = false,
+  mono = false,
+  center = false,
 }: {
   name: string;
   label: string;
   type?: string;
   defaultValue?: string;
   required?: boolean;
+  mono?: boolean;
+  center?: boolean;
 }) {
   return (
     <div>
       <label
         htmlFor={name}
-        className="block text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-1.5"
+        className="block text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider mb-1.5"
       >
-        {label} {required && <span className="text-tertiary">*</span>}
+        {label} {required && <span className="text-secondary">*</span>}
       </label>
       <input
         id={name}
@@ -170,37 +223,19 @@ function Field({
         type={type}
         defaultValue={defaultValue}
         required={required}
-        className="w-full bg-surface-container-low border border-outline-variant text-sm text-on-surface rounded-lg px-3 py-2 placeholder:text-on-surface-variant focus:outline-none focus:border-primary transition-colors"
+        className={`w-full bg-surface-container-low border border-outline-variant text-sm text-on-surface rounded-lg px-3 py-2 placeholder:text-on-surface-variant focus:outline-none focus:border-primary transition-colors ${mono ? "font-mono" : ""} ${center ? "text-center" : ""}`}
       />
     </div>
   );
 }
 
-function ReadOnlyField({ label, value }: { label: string; value: string }) {
+function ReadOnlyField({ label, value, mono = false }: { label: string; value: string; mono?: boolean }) {
   return (
     <div>
-      <dt className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-1">
+      <dt className="text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider mb-1">
         {label}
       </dt>
-      <dd className="text-on-surface text-sm">{value}</dd>
+      <dd className={`text-on-surface text-base ${mono ? "font-mono" : "font-medium"}`}>{value}</dd>
     </div>
   );
-}
-
-function formatDate(date: Date): string {
-  return new Intl.DateTimeFormat("es-AR", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  }).format(new Date(date));
-}
-
-function formatDateTime(date: Date): string {
-  return new Intl.DateTimeFormat("es-AR", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(new Date(date));
 }

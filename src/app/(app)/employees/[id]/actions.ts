@@ -3,6 +3,7 @@
 import { prisma } from "@/infrastructure/prisma/client";
 import { createAuthorizationService } from "@/modules/authorization/composition-root";
 import { createOrganizationModule } from "@/modules/organization/composition-root";
+import { createProgressionModule } from "@/modules/progression/composition-root";
 import { resolveAuthContext } from "@/modules/sales/presentation/resolve-auth-context";
 
 export async function updateEmployee(
@@ -126,37 +127,16 @@ export async function promoteEmployee(formData: FormData): Promise<void> {
     }
 
     const { LEVEL_THRESHOLDS } = await import("@/modules/progression/domain");
+    const { getEmployeeProgression } = createProgressionModule(prisma);
 
-    // Calculate current points
-    const monthsSinceJoining = monthsBetween(employee.joinedAt, new Date());
-    const seniorityPoints = monthsSinceJoining * 1; // 1 point per month
-
-    const visitCount = await prisma.visit.count({
-      where: {
-        sellerId: employeeId,
-        status: { in: ["COMPLETED", "NO_SALE"] },
-      },
+    // Points are measured from the start of the current level (same metric
+    // shown in the progression bar), so the server validation matches the UI.
+    const progression = await getEmployeeProgression.execute({
+      employeeId,
+      currentLevelId: employee.currentLevelId,
+      joinedAt: employee.joinedAt,
     });
-    const visitPoints = visitCount * 2; // 2 points per visit
-
-    const saleCount = await prisma.sale.count({
-      where: {
-        employeeId,
-        status: "APPROVED",
-      },
-    });
-    const salePoints = saleCount * 5; // 5 points per sale
-
-    const targetBonusPoints = await prisma.employeeProgress.aggregate({
-      where: {
-        employeeId,
-        type: "TARGET_ACHIEVED",
-      },
-      _sum: { points: true },
-    });
-    const targetPoints = targetBonusPoints._sum.points ?? 0;
-
-    const totalPoints = seniorityPoints + visitPoints + salePoints + targetPoints;
+    const totalPoints = progression.currentPoints;
 
     // Check if enough points for the next level
     const requiredPoints = LEVEL_THRESHOLDS[employee.currentLevelId] ?? 0;
@@ -171,24 +151,11 @@ export async function promoteEmployee(formData: FormData): Promise<void> {
   const auth = createAuthorizationService(prisma);
   const { changeLevelUseCase } = createOrganizationModule(auth);
 
-  const result = await changeLevelUseCase.execute({
+  await changeLevelUseCase.execute({
     employeeId,
     targetLevelId: targetLevel,
     reason: `Promoción/descenso por ADMIN a N${targetLevel}`,
     actorId: authContext.employeeId,
     actorEmail: authContext.userEmail,
   });
-
-  // Clear progression points when promoted (reset to 0)
-  if (result.changeType === "promotion") {
-    await prisma.employeeProgress.deleteMany({
-      where: { employeeId },
-    });
-  }
-}
-
-function monthsBetween(from: Date, to: Date): number {
-  const fromD = new Date(from);
-  const toD = new Date(to);
-  return (toD.getFullYear() - fromD.getFullYear()) * 12 + (toD.getMonth() - fromD.getMonth());
 }

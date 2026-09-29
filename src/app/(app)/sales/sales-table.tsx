@@ -19,6 +19,12 @@ interface SalesTableProps {
   sales: Sale[];
   title?: string;
   showCreateAction?: boolean;
+  /** Extra classes for the <h1> title. Used when embedding the table in another page. */
+  titleClassName?: string;
+  /** When true (default), renders the page header (title + create action). */
+  showHeader?: boolean;
+  /** When true (default), renders the search input. */
+  showSearch?: boolean;
 }
 
 const STATUS_LABELS: Record<string, string> = {
@@ -37,7 +43,16 @@ const STATUS_BADGE: Record<string, string> = {
   CANCELLED: "badge-error",
 };
 
-export function SalesTable({ sales, title = "Mis Ventas", showCreateAction = true }: SalesTableProps) {
+export type { Sale as SalesTableSale };
+
+export function SalesTable({
+  sales,
+  title = "Mis Ventas",
+  showCreateAction = true,
+  titleClassName = "text-2xl font-semibold text-on-surface mb-1",
+  showHeader = true,
+  showSearch = true,
+}: SalesTableProps) {
   const [search, setSearch] = useState("");
   const hasSeller = sales.some((s) => s.sellerName);
 
@@ -51,39 +66,43 @@ export function SalesTable({ sales, title = "Mis Ventas", showCreateAction = tru
   return (
     <>
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold text-on-surface mb-1">{title}</h1>
-        {showCreateAction && <Link
-          href="/visits"
-          className="px-4 py-2 text-sm font-medium text-[#0a1b12] bg-[#00df81] rounded-lg hover:bg-[#00c873] transition-colors"
-        >
-          Registrar visita
-        </Link>}
-      </div>
+      {showHeader && (
+        <div className="flex items-center justify-between">
+          <h1 className={titleClassName}>{title}</h1>
+          {showCreateAction && <Link
+            href="/visits"
+            className="px-4 py-2 text-sm font-medium text-[#0a1b12] bg-[#00df81] rounded-lg hover:bg-[#00c873] transition-colors"
+          >
+            Registrar visita
+          </Link>}
+        </div>
+      )}
 
       {/* Search */}
-      <div className="relative max-w-sm">
-        <svg
-          className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface-variant pointer-events-none"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+      {showSearch && (
+        <div className="relative max-w-sm">
+          <svg
+            className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface-variant pointer-events-none"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+            />
+          </svg>
+          <input
+            type="text"
+            placeholder={hasSeller ? "Buscar por número, vendedor..." : "Buscar por número..."}
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full bg-surface-container-low border border-outline-variant text-sm text-on-surface rounded-lg pl-9 pr-3 py-2 placeholder:text-on-surface-variant focus:outline-none focus:border-primary transition-colors"
           />
-        </svg>
-        <input
-          type="text"
-          placeholder={hasSeller ? "Buscar por número, vendedor..." : "Buscar por número..."}
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="w-full bg-surface-container-low border border-outline-variant text-sm text-on-surface rounded-lg pl-9 pr-3 py-2 placeholder:text-on-surface-variant focus:outline-none focus:border-primary transition-colors"
-        />
-      </div>
+        </div>
+      )}
 
       {/* Sales table */}
       <div className="surface rounded-xl overflow-hidden">

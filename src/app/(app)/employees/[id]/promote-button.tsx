@@ -3,7 +3,8 @@
  *
  * Only visible when the employee has enough points for the next level.
  * Promotes exactly one level (no level skipping).
- * Clears progression points on promotion.
+ * After promotion, the progression bar resets to 0 % for the new level
+ * (points are measured from the start of the current level, REG-082).
  *
  * Reference: requirements.md §3.12.3, business-rules.md REG-082
  */
@@ -89,7 +90,8 @@ export function PromoteButton({
         Ascender a <strong>{employeeName}</strong> de <strong>{currentName}</strong> a <strong>{nextName}</strong>?
       </p>
       <p className="text-xs text-on-surface-variant">
-        Se limpiarán los puntos de progreso.
+        El progreso hacia el siguiente nivel se medirá desde el inicio del
+        nuevo nivel (la barra volverá a 0 %).
       </p>
 
       {state && (

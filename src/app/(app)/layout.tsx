@@ -34,6 +34,7 @@ const ADMIN_NAV_ITEMS = [
   { href: "/sales", label: "Ventas", icon: "◇" },
   { href: "/catalog", label: "Catálogo", icon: "◻" },
   { href: "/training", label: "Capacitación", icon: "◆" },
+  { href: "/audit", label: "Auditoría", icon: "◉" },
 ] as const;
 
 const TEAM_NAV_ITEMS = [

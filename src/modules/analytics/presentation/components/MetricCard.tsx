@@ -33,9 +33,7 @@ export function MetricCard({
   progress,
   progressLabel,
 }: MetricCardProps) {
-  const containerBg = variant === "primary"
-    ? "bg-surface-container-high"
-    : "bg-surface";
+  const containerBg = "bg-surface";
 
   const valueColor = variant === "primary"
     ? "text-[#ffb95f]"
@@ -50,7 +48,7 @@ export function MetricCard({
       : "text-primary";
 
   return (
-    <div className={`${containerBg} rounded-xl border border-outline-variant p-6 flex flex-col justify-between h-full`}>
+    <div className={`${containerBg} rounded-xl border border-outline-variant p-6 flex flex-col justify-between h-full transition-colors duration-200 hover:bg-surface-container-high`}>
       <div>
         <div className="flex justify-between items-start mb-2">
           <span className="text-sm font-mono text-on-surface-variant uppercase tracking-wider leading-tight">

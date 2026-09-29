@@ -70,7 +70,6 @@ export class GetDashboardDataUseCase {
       teamPerformance,
       totalSalesAllTime,
       salesThisMonth,
-      personalSalesHistory,
     ] = await Promise.all([
       this.analyticsRepository.sumSalesAmount(employeeIds, dateRange),
       this.analyticsRepository.sumPersonalSales(input.authContext.employeeId, dateRange),
@@ -86,16 +85,24 @@ export class GetDashboardDataUseCase {
         : Promise.resolve([]),
       this.analyticsRepository.sumAllTimeSales(input.authContext.employeeId),
       this.analyticsRepository.sumCurrentMonthSales(input.authContext.employeeId),
-      !hasTeam
-        ? this.analyticsRepository.getPersonalSalesHistory(input.authContext.employeeId, dateRange)
-        : Promise.resolve([]),
     ]);
 
     // 5. Calculate target
     const targetTotal = await this.calculateTarget(input.authContext, hasTeam, employeeIds.length);
+    // Team objective counts only team members' sales. Each seller belongs to exactly
+    // one team: a supervisor's own sales count toward their own supervisor's team
+    // objective, not their own (REG-055).
+    const objectiveSales = hasTeam
+      ? await this.analyticsRepository.countSales(employeeIds.slice(1), dateRange)
+      : currentSales;
     const targetProgress = targetTotal > 0
-      ? Math.min(Math.round((currentSales / targetTotal) * 100), 100)
+      ? Math.min(Math.round((objectiveSales / targetTotal) * 100), 100)
       : 0;
+
+    // Team chart bars use the same baseline as the objective (team members only).
+    const teamDailySaleCounts = hasTeam
+      ? await this.analyticsRepository.getMonthlySaleCounts(employeeIds.slice(1), dateRange)
+      : [];
 
     // 6. Calculate target amount (targetTotal × average sale amount)
     const averageSaleAmount = currentSales > 0 ? personalSalesAmount / currentSales : 0;
@@ -118,10 +125,9 @@ export class GetDashboardDataUseCase {
     if (hasTeam && input.includePersonalData) {
       const employeeId = input.authContext.employeeId;
 
-      const [personalDailySaleCounts, personalSalesHistory, personalSalesAmount, personalCurrentSales] =
+      const [personalDailySaleCounts, personalSalesAmount, personalCurrentSales] =
         await Promise.all([
           this.analyticsRepository.getMonthlySaleCounts([employeeId], dateRange),
-          this.analyticsRepository.getPersonalSalesHistory(employeeId, dateRange),
           this.analyticsRepository.sumPersonalSales(employeeId, dateRange),
           this.analyticsRepository.countSales([employeeId], dateRange),
         ]);
@@ -145,7 +151,6 @@ export class GetDashboardDataUseCase {
           personalTargetProgress,
         },
         dailySaleCounts: personalDailySaleCounts,
-        salesHistory: personalSalesHistory,
       };
     }
 
@@ -166,9 +171,9 @@ export class GetDashboardDataUseCase {
       },
       dailySales,
       dailySaleCounts,
+      teamDailySaleCounts,
       levelDistribution,
       teamPerformance: teamPerformanceWithStatus,
-      personalSalesHistory,
       period,
       dateRange,
       hasTeam,

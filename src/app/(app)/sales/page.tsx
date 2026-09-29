@@ -2,6 +2,8 @@
  * Sales list page — lists accessible sales.
  *
  * Server Component that loads sales with scope-based filtering.
+ * Scope is resolved by role: ADMIN queries globally (sale.readGlobal);
+ * sellers/team-leaders query their own sales (sale.readOwn).
  *
  * Visual reference: design/stitch/DESIGN.md
  * Reference: business-rules.md §8, §16.1, permissions-matrix.md §4.4
@@ -22,7 +24,12 @@ export default async function SalesPage() {
   const orgRepo = new PrismaOrganizationRepository(prisma);
   const useCases = createSalesUseCases(prisma, auth, orgRepo);
 
-  const result = await useCases.listSales.execute({ authContext, scope: "OWN" });
+  // ADMIN has GLOBAL scope (see permissions-matrix.md §4.4); non-admin
+  // roles list their own sales. The authorization service validates the
+  // permission server-side for each scope.
+  const scope = authContext.role === "ADMIN" ? "GLOBAL" : "OWN";
+
+  const result = await useCases.listSales.execute({ authContext, scope });
 
   // Fetch commission entries for all sales in a single query
   const saleIds = result.sales.map((s) => s.id);

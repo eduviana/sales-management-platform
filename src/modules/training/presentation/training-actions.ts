@@ -291,6 +291,29 @@ export async function updateTrainingMaterialAction(
   }
 }
 
+/**
+ * Update only the target level of a training material.
+ *
+ * Used by the ADMIN configuration screen. Requires training.update (ADMIN only).
+ */
+export async function updateTrainingMaterialLevelAction(
+  materialId: string,
+  levelId: number | null,
+): Promise<TrainingActionState> {
+  try {
+    const authContext = await resolveAuthContext();
+    const authorizationService = createAuthorizationService(prisma);
+    const { updateMaterial } = createTrainingModule(authorizationService);
+
+    const material = await updateMaterial.execute({ authContext, materialId, levelId });
+
+    return { data: material, error: null, loading: false };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown error";
+    return { data: null, error: message, loading: false };
+  }
+}
+
 export async function deleteTrainingMaterialAction(
   materialId: string,
 ): Promise<TrainingActionState> {

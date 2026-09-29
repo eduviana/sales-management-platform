@@ -4,6 +4,7 @@
  * Shows full employee information, progression, team, and edit capabilities.
  * Only accessible to ADMIN role.
  *
+ * Visual reference: design/stitch/DESIGN.md
  * Reference: requirements.md §3.12
  */
 
@@ -14,11 +15,13 @@ import { createAuthorizationService } from "@/modules/authorization/composition-
 import { createOrganizationModule } from "@/modules/organization/composition-root";
 import { createProgressionModule } from "@/modules/progression/composition-root";
 import { prisma } from "@/infrastructure/prisma/client";
+import { getLevelName } from "@/modules/organization/domain/level";
 import { EmployeeDetailClient } from "./employee-detail-client";
 import { ProgressCard } from "@/modules/progression/presentation/components/ProgressCard";
 import { TeamMembersList } from "./team-members-list";
 import { PromoteButton } from "./promote-button";
 import { LEVEL_THRESHOLDS } from "@/modules/progression/domain";
+import { CheckCircle2, Crown, Pencil, User } from "lucide-react";
 
 const STATUS_LABELS: Record<string, string> = {
   ACTIVE: "Activo",
@@ -29,6 +32,88 @@ const STATUS_COLORS: Record<string, string> = {
   ACTIVE: "bg-secondary/10 text-secondary border-secondary/20",
   INACTIVE: "bg-tertiary/10 text-tertiary border-tertiary/20",
 };
+
+const LEVEL_CODES: Record<number, string> = {
+  1: "N1",
+  2: "N2",
+  3: "N3",
+  4: "N4",
+  5: "N5",
+  6: "N6",
+  7: "N7",
+};
+
+function StatusPill({ status }: { status: "ACTIVE" | "INACTIVE" }) {
+  const classes = STATUS_COLORS[status] ?? "";
+  const isActive = status === "ACTIVE";
+  return (
+    <span
+      className={`inline-flex items-center gap-1.5 ${classes} border px-3.5 py-1.5 rounded-full text-sm font-semibold`}
+    >
+      {isActive ? <CheckCircle2 className="w-4 h-4" aria-hidden="true" /> : null}
+      {STATUS_LABELS[status]}
+    </span>
+  );
+}
+
+function RibbonCard({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="bg-surface-container border border-outline-variant rounded-xl p-4">
+      <p className="text-[10px] font-semibold text-on-surface-variant uppercase tracking-wider">
+        {label}
+      </p>
+      <div className="mt-1.5">{children}</div>
+    </div>
+  );
+}
+
+function formatDate(date: Date): string {
+  return new Intl.DateTimeFormat("es-AR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  }).format(new Date(date));
+}
+
+function formatDateTime(date: Date): string {
+  return new Intl.DateTimeFormat("es-AR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).format(new Date(date));
+}
+
+/** "#0002" style employee code used in the summary ribbon. */
+function formatEmployeeCode(code: number): string {
+  return `#${String(code).padStart(4, "0")}`;
+}
+
+/** Human-readable tenure since the hire date, e.g. "3 años" / "2 meses". */
+function formatTenure(joinedAt: Date): string {
+  const now = new Date();
+  let years = now.getFullYear() - joinedAt.getFullYear();
+  let months = now.getMonth() - joinedAt.getMonth();
+  if (months < 0) {
+    years -= 1;
+    months += 12;
+  }
+  if (years > 0) {
+    return years === 1 ? "1 año" : `${years} años`;
+  }
+  if (months > 0) {
+    return months === 1 ? "1 mes" : `${months} meses`;
+  }
+  return "Recién ingresado";
+}
 
 export default async function EmployeeDetailPage({
   params,
@@ -78,13 +163,33 @@ export default async function EmployeeDetailPage({
   // Get direct subordinates (team members)
   const subordinates = await organizationRepository.getDirectSubordinates(employee.id);
 
-  // Get all employees for reassignment dropdown
+  // Get all employees for reassignment dropdown + supervisor name resolution
   const allEmployees = await organizationRepository.getAllEmployees();
 
-  const statusClass = STATUS_COLORS[employee.status] ?? "";
+  const isAdmin = employee.currentLevelId === null;
+  const levelCode = isAdmin
+    ? "ADMIN"
+    : (LEVEL_CODES[employee.currentLevelId!] ?? `N${employee.currentLevelId}`);
+  const levelName = isAdmin
+    ? "Administrador"
+    : getLevelName(employee.currentLevelId!);
+
+  const supervisor = employee.supervisorId
+    ? allEmployees.find((e) => e.id === employee.supervisorId) ?? null
+    : null;
+
+  // Promote button — only shown when points are sufficient for next level.
+  const canPromote =
+    employee.currentLevelId !== null &&
+    employee.currentLevelId < 7 &&
+    progression !== null &&
+    LEVEL_THRESHOLDS[employee.currentLevelId] > 0 &&
+    progression.currentPoints >= LEVEL_THRESHOLDS[employee.currentLevelId];
+
+  const hasTeam = employee.currentLevelId !== null && employee.currentLevelId >= 3;
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="w-full space-y-6">
       {/* Back link */}
       <Link
         href="/employees"
@@ -93,59 +198,119 @@ export default async function EmployeeDetailPage({
         ← Volver a empleados
       </Link>
 
-      {/* Header */}
-      <header className="flex items-center gap-3">
-        <h1 className="text-2xl lg:text-3xl font-bold text-on-surface tracking-tight">
-          {employee.firstName} {employee.lastName}
-        </h1>
-        <span className={`border px-2 py-0.5 rounded-full text-xs font-semibold ${statusClass}`}>
-          {STATUS_LABELS[employee.status]}
-        </span>
-      </header>
+      {/* Header profile banner */}
+      <section className="bg-surface-container border border-outline-variant rounded-2xl p-5 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <div className="w-14 h-14 rounded-xl bg-sky-400/10 border border-sky-400/30 flex items-center justify-center text-sky-400 shrink-0">
+            {isAdmin ? (
+              <Crown className="w-7 h-7" aria-hidden="true" />
+            ) : (
+              <User className="w-7 h-7" aria-hidden="true" />
+            )}
+          </div>
+          <div>
+            <div className="flex items-center gap-3">
+              <h1 className="text-2xl font-bold text-on-surface tracking-tight">
+                {employee.firstName} {employee.lastName}
+              </h1>
+              <StatusPill status={employee.status} />
+            </div>
+            <p className="text-xs text-on-surface-variant mt-1 flex flex-wrap items-center gap-2">
+              <span>Creado: {formatDateTime(employee.createdAt)}</span>
+              <span className="text-on-surface-variant">·</span>
+              <span>Última actualización: {formatDateTime(employee.updatedAt)}</span>
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-3 self-end md:self-center">
+          <a
+            href="#edit-form"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium text-on-surface bg-surface-container-low hover:bg-surface-container-high border border-outline-variant rounded-lg transition"
+          >
+            <Pencil className="w-3.5 h-3.5 text-sky-400" aria-hidden="true" />
+            Editar Perfil
+          </a>
+        </div>
+      </section>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Main content (2/3) */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Edit form */}
-          <EmployeeDetailClient employee={employee} />
+      {/* Summary ribbon */}
+      <section className="grid grid-cols-2 md:grid-cols-5 gap-3">
+        <RibbonCard label="Estado">
+          <div className="flex items-center gap-1.5">
+            <span
+              className={`w-2 h-2 rounded-full ${employee.status === "ACTIVE" ? "bg-secondary" : "bg-tertiary"}`}
+            />
+            <span className="text-sm font-semibold text-on-surface">
+              {STATUS_LABELS[employee.status]}
+            </span>
+          </div>
+        </RibbonCard>
+        <RibbonCard label="Nivel Jerárquico">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-bold text-on-surface">{levelCode}</span>
+            <span className="text-[10px] text-on-surface-variant bg-surface-container-low px-1.5 py-0.5 rounded">
+              {levelName}
+            </span>
+          </div>
+        </RibbonCard>
+        <RibbonCard label="Código Empleado">
+          <div className="text-sm font-mono font-bold text-on-surface">
+            {formatEmployeeCode(employee.employeeCode)}
+          </div>
+        </RibbonCard>
+        <RibbonCard label="Supervisor">
+          <div className="text-sm font-medium text-on-surface-variant italic">
+            {supervisor
+              ? `${supervisor.firstName} ${supervisor.lastName}`
+              : "— Sin asignar"}
+          </div>
+        </RibbonCard>
+        <RibbonCard label="Fecha de Ingreso">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-sm font-semibold text-on-surface">
+              {formatDate(employee.joinedAt)}
+            </span>
+            <span className="text-[10px] text-secondary font-mono">
+              {formatTenure(employee.joinedAt)}
+            </span>
+          </div>
+        </RibbonCard>
+      </section>
 
-          {/* Team members */}
-          {employee.currentLevelId !== null && employee.currentLevelId >= 3 && (
-            <TeamMembersList
+      {/* Main grid — paired rows share height:
+          row 1: Datos Personales (7) + Progreso (5)
+          row 2: Dirección y Residencia (7) + Equipo a Cargo (5)
+          The employee form uses display: contents so its sections become
+          direct grid items and line up with the right-side cards. */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <EmployeeDetailClient employee={employee} />
+
+        {progression && (
+          <ProgressCard
+            progression={progression}
+            className="lg:col-span-5 lg:row-start-1"
+          />
+        )}
+
+        {canPromote && employee.currentLevelId !== null && (
+          <div className="lg:col-span-5 lg:col-start-8">
+            <PromoteButton
               employeeId={employee.id}
               employeeName={`${employee.firstName} ${employee.lastName}`}
-              subordinates={subordinates}
-              allEmployees={allEmployees}
+              currentLevelId={employee.currentLevelId}
+              nextLevelId={employee.currentLevelId + 1}
             />
-          )}
-        </div>
+          </div>
+        )}
 
-        {/* Sidebar (1/3) */}
-        <div className="space-y-6">
-          {/* Progression card */}
-          {progression && (
-            <ProgressCard progression={progression} />
-          )}
-
-          {/* Promote button — only shown when points are sufficient for next level */}
-          {employee.currentLevelId !== null &&
-            employee.currentLevelId < 7 &&
-            progression &&
-            (() => {
-              const nextLevel = employee.currentLevelId! + 1;
-              const requiredPoints = LEVEL_THRESHOLDS[employee.currentLevelId!];
-              const hasEnough = requiredPoints > 0 && progression.currentPoints >= requiredPoints;
-              if (!hasEnough) return null;
-              return (
-                <PromoteButton
-                  employeeId={employee.id}
-                  employeeName={`${employee.firstName} ${employee.lastName}`}
-                  currentLevelId={employee.currentLevelId!}
-                  nextLevelId={nextLevel}
-                />
-              );
-            })()}
-        </div>
+        {hasTeam && (
+          <TeamMembersList
+            className="lg:col-span-5 lg:row-start-2"
+            employeeId={employee.id}
+            subordinates={subordinates}
+            allEmployees={allEmployees}
+          />
+        )}
       </div>
     </div>
   );

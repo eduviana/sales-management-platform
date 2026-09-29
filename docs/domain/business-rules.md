@@ -3,8 +3,8 @@
 **Proyecto:** Royal Prestige — Plataforma de Gestión de Ventas  
 **Documento:** Reglas de negocio  
 **Estado:** En consolidación  
-**Versión:** 0.6  
-**Última actualización:** 03/09/2026
+**Versión:** 1.5  
+**Última actualización:** 25/09/2026
 
 ---
 
@@ -101,6 +101,23 @@ Cuando una cuenta pierde acceso al sistema, la información histórica asociada 
 - Estadísticas históricas.
 - Información organizacional.
 - Registros de auditoría.
+
+### REG-086 — Todo empleado activo posee una cuenta de usuario asignada
+
+> **Estado:** ✅ CONFIRMADA
+
+La cuenta de usuario se crea y asigna antes de que el empleado pueda
+comenzar a operar. Un empleado activo nunca debe encontrarse sin cuenta
+de usuario.
+
+**Reglas:**
+
+- No se admite un empleado con estado `ACTIVE` sin cuenta de usuario.
+- La cuenta se asigna previo al inicio de operaciones.
+- Un empleado puede quedar sin cuenta activa únicamente al perder su
+  acceso (ver REG-004); en ese caso conserva su historial.
+
+**Referencia:** requirements.md §3.12.1, organizational-model.md §2.2
 
 ---
 
@@ -1089,7 +1106,8 @@ El sistema deberá soportar objetivos mensuales de ventas configurables por nive
 - Cada nivel tiene un número objetivo de ventas por vendedor al mes.
 - Los valores iniciales son: N1=10, N2=15, N3–N7=10 ventas por vendedor.
 - Para vendedores individuales (N1/N2): el objetivo es el valor configurado para su nivel.
-- Para supervisores (N3+): el objetivo del equipo es `targetPorVendedor × cantidad de subordinados directos`.
+- Para supervisores (N3+): el objetivo del equipo es `targetPorVendedor × cantidad de subordinados directos`. El `targetPorVendedor` corresponde al valor configurado para el nivel del supervisor.
+- Para supervisores (N3+): las `ventasLogradas` del objetivo del equipo se calculan **solo con las ventas de los subordinados directos**. Las ventas propias del supervisor no cuentan para el objetivo de su propio equipo: cada vendedor pertenece a un único equipo y sus ventas cuentan para el objetivo del equipo de su supervisor directo y para su propio progreso personal.
 - El sistema calcula el porcentaje de cumplimiento: `ventasLogradas / objetivo × 100`.
 - Los objetivos se almacenan en la tabla `monthly_target` y pueden ser modificados por ADMIN.
 
@@ -1241,15 +1259,17 @@ El sidebar debe incluir nuevas secciones para visitas, clientes y equipo.
 > **Estado:** 🚧 Decisión de diseño
 
 El sistema de progresión de nivel se basa en acumulación de puntos.
-Los puntos se obtienen por distintas actividades y se acumulan de por vida.
+Los puntos se obtienen por distintas actividades y el progreso se mide
+desde el inicio del nivel actual; los puntos de niveles anteriores se
+conservan como historial.
 
 **Fuentes de puntos:**
 
 | Factor | Puntos por unidad | Descripción |
 |--------|------------------|-------------|
-| Antigüedad | 1 punto/mes | Meses desde el ingreso a la organización |
-| Visita completada | 2 puntos | Visitas con estado COMPLETED o NO_SALE |
-| Venta aprobada | 5 puntos | Ventas con estado APPROVED |
+| Antigüedad | 1 punto/mes | Meses desde el inicio del nivel actual |
+| Visita completada | 2 puntos | Visitas con estado COMPLETED o NO_SALE realizadas desde el inicio del nivel actual |
+| Venta aprobada | 5 puntos | Ventas con estado APPROVED realizadas desde el inicio del nivel actual |
 | Objetivo mensual alcanzado | 10 puntos/bono | Cuando las ventas del mes superan el objetivo del nivel |
 
 **Umbrales por nivel:**
@@ -1266,11 +1286,25 @@ Los puntos se obtienen por distintas actividades y se acumulan de por vida.
 
 **Reglas:**
 
-- Los puntos se acumulan de por vida (histórico).
-- Al ser promovido por ADMIN, el progreso vuelve a 0 pero el historial se conserva.
+- El progreso hacia el siguiente nivel se mide desde el inicio del nivel
+  actual (fecha `startedAt` del registro abierto en `employee_level_history`),
+  no desde el ingreso a la organización.
+- Al ascender de nivel, el ADMIN abre un nuevo registro de nivel con
+  `startedAt` en la fecha del ascenso, por lo que la barra de progreso
+  vuelve a 0 % y comienza a crecer mes a mes desde ese momento.
+- Las visitas y ventas que cuentan para el progreso son únicamente las
+  realizadas desde el inicio del nivel actual (por `scheduledDate` y
+  `saleDate`, respectivamente).
+- Los puntos históricos de niveles anteriores se conservan como historial
+  en `employee_progress` y en `employee_level_history`; no se borran al
+  ascender, simplemente dejan de contar para el progreso actual.
 - La promoción es manual: solo ADMIN puede ascender de nivel.
 - El sistema calcula puntos automáticamente desde datos existentes.
 - Los puntos se almacenan en la tabla `employee_progress` como auditoría.
+- El ascenso se realiza **de un solo nivel a la vez** (N1 → N2, N2 → N3, ...);
+  no se permite saltar más de un nivel en una misma operación.
+- El ADMIN puede ascender desde la tabla de empleados cuando la barra de
+  progreso alcanza el 100% del umbral del nivel actual.
 
 **Referencia:** requirements.md §3.12, data-model.md EmployeeProgress
 
@@ -1281,9 +1315,12 @@ Los puntos se obtienen por distintas actividades y se acumulan de por vida.
 El progreso de nivel se muestra:
 
 - **ADMIN:** Barra de progreso en tabla de empleados y card detallada en detalle de empleado.
-- **Vendedor:** Card de progreso en su dashboard personal.
+- **Vendedor:** Card de progreso en su dashboard personal y página de desglose (`/dashboard/progression`).
+- **Supervisor N3+:** Página de progresión del equipo (`/dashboard/progression?scope=team`) con
+  estadísticas agregadas y tabla de progresión por miembro. Visible desde la card
+  "Progreso del Objetivo" del tab "Mi equipo" del dashboard. Requiere `analytics.viewTeam`.
 
-**Referencia:** requirements.md §3.12
+**Referencia:** requirements.md §3.12, §3.13.3
 
 ### REG-084 — Gestión de equipo por ADMIN
 
@@ -1322,3 +1359,7 @@ El ADMIN puede gestionar la estructura jerárquica de cualquier empleado:
 | 08/09/2026 | 0.9     | REG-045, REG-046, REG-047, REG-048, REG-049 actualizadas: capacitación implementada con estructura categorías→cursos→módulos→materiales, acceso acumulativo por nivel y CRUD administrativo. |
 | 11/09/2026 | 1.0     | REG-077 a REG-081: cliente y visita obligatorios en la carga manual, protección de datos de tarjeta, referencias externas y snapshot de entrega. |
 | 21/09/2026 | 1.1     | REG-082 a REG-084: sistema de puntos para progresión de nivel, visibilidad del progreso y gestión de equipo por ADMIN. |
+| 23/09/2026 | 1.2     | REG-055 clarificado: el objetivo del equipo se calcula solo con las ventas de los subordinados directos; las ventas propias del supervisor no cuentan para su propio objetivo de equipo. |
+| 24/09/2026 | 1.3     | REG-082 clarificado: ascenso manual por ADMIN de un solo nivel a la vez desde la tabla de empleados cuando el progreso alcanza el 100% del umbral. |
+| 24/09/2026 | 1.4     | REG-082: el progreso hacia el siguiente nivel se mide desde el inicio del nivel actual (registro abierto de `employee_level_history`), no desde el ingreso. Al ascender, la barra vuelve a 0 % y crece mes a mes; las visitas, ventas y bonos anteriores al inicio del nivel dejan de contar pero se conservan como historial. |
+| 25/09/2026 | 1.5     | REG-086: todo empleado activo posee una cuenta de usuario asignada. La cuenta se crea y asigna antes de que el empleado pueda operar. |

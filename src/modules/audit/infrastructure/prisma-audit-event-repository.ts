@@ -13,7 +13,11 @@ import type {
   AuditEventQueryFilters,
   AuditEventQueryOptions,
   AuditEventQueryResult,
+  AuditResultCount,
+  AuditResultType,
+  DailyAuditActivity,
 } from "../domain/audit-event-repository";
+import { formatWeekdayLabel } from "../domain/audit-event-repository";
 import type { AuditAction } from "@/shared/ports/audit-port";
 
 export class PrismaAuditEventRepository implements AuditEventRepository {
@@ -101,5 +105,65 @@ export class PrismaAuditEventRepository implements AuditEventRepository {
       metadata: raw.metadata as Record<string, unknown> | null,
       createdAt: raw.createdAt,
     };
+  }
+
+  // =========================================================================
+  // Aggregations
+  // =========================================================================
+
+  async countByResult(
+    filters: { from?: Date; to?: Date },
+  ): Promise<AuditResultCount[]> {
+    const where: Record<string, unknown> = {};
+    if (filters.from || filters.to) {
+      where.createdAt = {};
+      if (filters.from) {
+        (where.createdAt as Record<string, Date>).gte = filters.from;
+      }
+      if (filters.to) {
+        (where.createdAt as Record<string, Date>).lte = filters.to;
+      }
+    }
+
+    const grouped = await this.prisma.auditEvent.groupBy({
+      by: ["result"],
+      _count: { _all: true },
+      where,
+    });
+
+    return grouped.map((row) => ({
+      result: row.result as AuditResultType,
+      count: row._count._all,
+    }));
+  }
+
+  async getDailyActivity(
+    from: Date,
+    to: Date,
+  ): Promise<DailyAuditActivity[]> {
+    const rows: Array<{
+      day: string;
+      success: bigint;
+      failure: bigint;
+      denied: bigint;
+    }> = await this.prisma.$queryRaw`
+      SELECT
+        TO_CHAR("createdAt", 'YYYY-MM-DD') AS day,
+        COUNT(*) FILTER (WHERE result = 'SUCCESS')::bigint AS success,
+        COUNT(*) FILTER (WHERE result = 'FAILURE')::bigint AS failure,
+        COUNT(*) FILTER (WHERE result = 'DENIED')::bigint AS denied
+      FROM audit_event
+      WHERE "createdAt" BETWEEN ${from} AND ${to}
+      GROUP BY TO_CHAR("createdAt", 'YYYY-MM-DD')
+      ORDER BY day
+    `;
+
+    return rows.map((row) => ({
+      date: row.day,
+      label: formatWeekdayLabel(row.day),
+      success: Number(row.success),
+      failure: Number(row.failure),
+      denied: Number(row.denied),
+    }));
   }
 }

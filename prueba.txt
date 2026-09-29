@@ -1,7 +1,7 @@
 Administrador	                        Admin Sistema	                                admin@royalprestige.com	                                        admin123	                        
-Supervisor	                        María García	                                supervisor@royalprestige.com	                                supervisor123	N3
-Vendedor (bajo la supervisora)	        Carlos López	                                seller@royalprestige.com	                                seller123	N1
-Vendedor (independiente)	        Ana Martínez	                                ana@royalprestige.com	                                        seller123	N1
+Supervisor	                           María García	                                supervisor@royalprestige.com	                                  supervisor123	N3
+Vendedor (bajo la supervisora)	      Carlos López	                                seller@royalprestige.com	                                        seller123	N1
+Vendedor (independiente)	            Ana Martínez	                                ana@royalprestige.com	                                           seller123	N1
 
 
 pendiente por hacer: 
@@ -769,3 +769,5 @@ Inconsistencias menores detectadas
 - open-questions.md: versión 0.5 vs historial 0.6
 - permissions-matrix.md: numeración de secciones duplicada (4.6, 4.7 aparecen dos veces)
 - open-questions.md: preguntas Q137-Q142 (Phase 10) no integradas al registro principal
+
+

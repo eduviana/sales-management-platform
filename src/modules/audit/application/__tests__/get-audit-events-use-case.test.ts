@@ -58,6 +58,8 @@ function makeAuditEventRepository(
       page: 1,
       pageSize: 20,
     }),
+    countByResult: vi.fn().mockResolvedValue([{ result: "SUCCESS", count: 1 }]),
+    getDailyActivity: vi.fn().mockResolvedValue([]),
     ...overrides,
   };
 }

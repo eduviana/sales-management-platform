@@ -3,8 +3,8 @@
 **Proyecto:** Royal Prestige — Plataforma de Gestión de Ventas  
 **Tipo:** Aplicación web de uso interno  
 **Estado:** En consolidación  
-**Versión:** 1.0  
-**Última actualización:** 21/09/2026
+**Versión:** 1.19  
+**Última actualización:** 29/09/2026
 
 ---
 
@@ -215,6 +215,15 @@ Dependiendo de los requisitos definitivos, la sección podría incluir:
 > primera versión. No se implementará seguimiento individual de aprendizaje en
 > el alcance actual.
 
+> **Decisión de diseño (configuración por nivel):** la visibilidad del
+> contenido se configura a nivel de material (campo `levelId`), con acceso
+> acumulativo según REG-045: un usuario de nivel N ve los materiales de su
+> nivel y todos los inferiores. El ADMIN dispone de una pantalla de
+> configuración (`/training/configuracion`) que centraliza la asignación del
+> nivel objetivo de cada material, sin modificar el modelo de datos ni la
+> autorización existente. La mayoría del material de capacitación serán
+> archivos PDF descargables; también se admiten documentos, videos y enlaces.
+
 ---
 
 ## 3. Áreas funcionales
@@ -263,6 +272,7 @@ El panel principal deberá adaptarse a la posición y los permisos del usuario.
 
 - Configurados por nivel en tabla `monthly_target`.
 - Para supervisores: objetivo = targetPorVendedor × subordinados directos.
+- Para supervisores: las ventasLogradas del objetivo del equipo cuentan solo las ventas de los subordinados directos (excluyen las ventas propias del supervisor; cada vendedor pertenece a un único equipo).
 - Cálculo de cumplimiento: ventasLogradas / objetivo × 100.
 
 El contenido exacto dependerá de la matriz de permisos y de las reglas definidas para cada nivel.
@@ -516,23 +526,73 @@ El rol ADMIN es una cuenta de super-usuario con acceso global a todo el sistema.
 No realiza ventas ni posee un equipo propio. Su interfaz debe reflejar esta
 naturaleza: una vista de sistema completa, no una vista de vendedor.
 
+> **Decisión (vista de ventas del ADMIN):** la página `/sales` resuelve el
+> alcance según el rol: el ADMIN consulta `sale.readGlobal` y ve todas las
+> ventas de la organización; el resto de los roles ven únicamente sus ventas
+> propias (`sale.readOwn`). Las cards de ventas del dashboard del ADMIN
+> (`/dashboard`) enlazan a `/sales`, que para el ADMIN es la vista global de
+> ventas (permissions-matrix.md §4.4).
+
 #### 3.12.1. Dashboard del ADMIN
 
 El dashboard del ADMIN mostrará una vista de sistema completa, diferente
-a la de los vendedores:
+a la de los vendedores. Su propósito es combinar la **salud del sistema**
+(estadísticas y gráficos de auditoría, alertas críticas) con
+**información relevante de la organización** (resumen de empleados por
+nivel).
 
-- **Métricas globales:** total de ventas, total de vendedores activos,
-  volumen total, distribución por nivel.
-- **Gráficos adaptados:** los gráficos existentes (barras, donut) deberán
-  mostrar datos agregados de toda la organización, no de un vendedor
-  individual.
-- **Tabla de todos los empleados:** listado de todos los vendedores con su
-  nivel, rendimiento y estado. No una tabla de "mi equipo" sino de todos.
-- **Filtros globales:** período, nivel, estado (activo/inactivo).
+La vista incluye:
 
-> **Nota:** los gráficos actuales están pensados para la perspectiva de un
-> vendedor o supervisor. El ADMIN requerirá gráficos diferentes o
-> adaptados que representen la salud general del negocio.
+- **KPIs (salud del sistema + negocio):**
+  - Ventas totales: monto acumulado histórico de todos los vendedores de
+    todos los equipos.
+  - Ventas del mes: monto acumulado del mes actual de todos los vendedores
+    de todos los equipos.
+  - Empleados activos.
+  - Alertas de auditoría: eventos fallidos y denegados del mes.
+- **Gráficos:**
+  - Actividad de auditoría por día (últimos 7 días) con resultado
+    apilado: éxito, denegado, fallo.
+  - Ventas por nivel del mes (donut: monto y % de cada nivel).
+- **Actividad reciente:** feed de los últimos eventos de auditoría con
+  link a la vista completa (`/audit`).
+
+> **Decisión:** el dashboard muestra un resumen de lo más relevante;
+> la información completa se accede desde los links del sidebar
+> (Empleados, Ventas, Auditoría).
+
+> **Decisión (búsqueda de empleados):** el dashboard del ADMIN no incluye
+> un buscador de empleados. La búsqueda de empleados (por nombre, apellido
+> o código) se realiza exclusivamente desde `/employees`, que cuenta con el
+> input de búsqueda y la tabla de empleados completa.
+>
+> **Nota:** se revierte la decisión anterior de eliminar los KPIs de
+> ventas del dashboard del ADMIN: las ventas globales vuelven como
+> indicadores de negocio (montos totales y del mes), combinadas con la
+> salud del sistema (alertas de auditoría).
+
+#### 3.12.1.1. Página de Auditoría (`/audit`)
+
+El ADMIN dispondrá de una página de auditoría completa para explorar el
+registro de eventos:
+
+- **Filtros:** resultado (éxito/fallo/denegado), acción, rango de fechas.
+- **Búsqueda:** por email del actor, referencia del recurso, correlación o
+  acción.
+- **Paginación:** navegación por páginas con total de eventos.
+- **Columnas:** actor, acción (label y código), resultado, recurso y fecha.
+- **Recurso:** la columna muestra una referencia legible del recurso
+  afectado (p. ej. `EMP-7`, `VT-0042`, email de la cuenta) en lugar del
+  UUID; el UUID persiste como fuente de verdad en el evento y se conserva
+  como tooltip de la celda.
+- **Recurso vs actor:** cuando la referencia del recurso coincide con el
+  email del actor (eventos de sesión sobre la propia cuenta, p. ej.
+  `LOGIN`/`LOGOUT`), la columna Recurso muestra solo el tipo del recurso
+  ("Cuenta") para no repetir el email; la referencia queda disponible en
+  el tooltip.
+
+> **Autorización:** solo `ADMIN` con permiso `audit.read`
+> (permissions-matrix.md §4.11). La validación se realiza server-side.
 
 #### 3.12.2. Gestión de datos de empleados
 
@@ -548,6 +608,39 @@ de cualquier empleado:
 > **Regla:** ADMIN puede editar datos de cualquier empleado sin
 > restricción de alcance. La operación qued registrada en auditoría.
 
+**Tabla de empleados (`/employees`):**
+
+- La tabla lista todas las cuentas de empleados salvo la cuenta del
+  sistema `ADMIN` (el empleado sin nivel, `currentLevelId = NULL`),
+  que es una cuenta de plataforma y no un vendedor gestionable.
+- El resto del sistema conserva sus métricas y consultas actuales;
+  la exclusión aplica únicamente a la tabla de gestión.
+- La tabla ofrece búsqueda (nombre, DNI, email o código) y los
+  siguientes filtros:
+  - **Nivel:** mostrar solo empleados de un nivel (N1 a N7).
+  - **Solo listos para ascender:** solo empleados con la barra de
+    progreso al 100 % del umbral actual (accionables con ascenso).
+  - **Incluir inactivos:** por defecto se ocultan los inactivos; con el
+    interruptor activo se los incluye en la lista.
+- Las cabeceras **Nivel**, **Progreso** y **Estado** permiten ordenar la
+  tabla por ese criterio (clic alterna ascendente/descendente).
+
+**Ficha de empleado (`/employees/[id]`):**
+
+- La página de detalle muestra un encabezado con avatar, nombre, estado y
+  las fechas de creación y última actualización del registro, más la acción
+  "Editar Perfil" que hace scroll al formulario de edición. No incluye un
+  botón de registro de ventas (el ADMIN no realiza ventas, §3.12.6).
+- Debajo del encabezado, un ribbon de resumen con: estado, nivel
+  jerárquico (código `Nx` + nombre comercial), código de empleado
+  formateado (`#0002`), supervisor (nombre completo o "— Sin asignar") y
+  fecha de ingreso con antigüedad.
+- El formulario de edición (columna izquierda, 7/12) mantiene los
+  campos personales y de dirección. La columna derecha (5/12) muestra:
+  progreso hacia el siguiente nivel, acción de ascenso (solo cuando la
+  barra alcanza el 100 % del umbral, §3.12.3) y equipo a cargo (solo
+  niveles N3+, con conteo de integrantes).
+
 #### 3.12.3. Gestión de niveles y jerarquía
 
 El ADMIN deberá poder:
@@ -559,9 +652,24 @@ El ADMIN deberá poder:
   - Equipo de María García (N4) → sus N3 → los N1/N2 de cada N3.
   - Cualquier subtree de la organización.
 
+**Ascenso desde la tabla de empleados (`/employees`):**
+
+- Cada fila de la tabla muestra una barra de progreso. Cuando la barra
+  alcanza el 100% del umbral del nivel actual, el ADMIN puede ascender al
+  empleado al nivel siguiente con una acción disponible en la fila.
+- El ascendido se realiza **de un solo nivel a la vez** por el ADMIN de
+  forma manual (N1 → N2, N2 → N3, ...). No se permite subir más de un
+  nivel en una sola operación.
+- El nivel destino se calcula en el servidor a partir del nivel actual;
+  el cliente no decide el nivel al que se asciende.
+- Tras la promoción, el progreso vuelve a 0 % (se mide desde el inicio del
+  nuevo nivel) pero el historial de puntos se conserva.
+
 > **Nota:** el ascenso/descenso por ADMIN es una operación administrativa
 > distinta del reclutamiento normal (REG-019/REG-020). No sigue la
 > escalera automática de reclutamiento.
+
+**Referencia:** business-rules.md REG-082
 
 #### 3.12.4. Creación de empleados
 
@@ -615,14 +723,19 @@ hacia el siguiente nivel. La promoción es manual por parte del ADMIN.
 
 Los puntos se obtienen de 4 fuentes (REG-082):
 
-- **Antigüedad:** 1 punto por mes desde el ingreso.
-- **Visitas completadas:** 2 puntos por visita (COMPLETED/NO_SALE).
-- **Ventas aprobadas:** 5 puntos por venta (APPROVED).
+- **Antigüedad:** 1 punto por mes desde el inicio del nivel actual.
+- **Visitas completadas:** 2 puntos por visita (COMPLETED/NO_SALE) realizada
+  desde el inicio del nivel actual.
+- **Ventas aprobadas:** 5 puntos por venta (APPROVED) realizada desde el
+  inicio del nivel actual.
 - **Objetivo mensual alcanzado:** 10 puntos de bonus cuando las ventas
   del mes superan el objetivo del nivel.
 
-Los puntos se acumulan de por vida. Al ser promovido, el progreso
-vuelve a 0 pero el historial se conserva.
+El progreso hacia el siguiente nivel se mide desde el inicio del nivel
+actual (fecha `startedAt` del registro abierto en `employee_level_history`).
+Al ser promovido, el ADMIN abre un nuevo registro de nivel, la barra vuelve
+a 0 % y comienza a crecer mes a mes; los puntos previos se conservan como
+historial y dejan de contar para el progreso.
 
 #### 3.13.2. Umbrales por nivel
 
@@ -640,6 +753,12 @@ vuelve a 0 pero el historial se conserva.
 - **Tabla de empleados (ADMIN):** barra de progreso con puntos.
 - **Detalle de empleado (ADMIN):** card con desglose por fuente.
 - **Dashboard del vendedor:** card de progreso hacia el siguiente nivel.
+- **Página de progresión personal:** `/dashboard/progression` con desglose de
+  registros por fuente, filtros de período y umbral real del nivel.
+- **Dashboard N3+ (tab "Mi equipo"):** card "Progreso del Objetivo" que enlaza a
+  `/dashboard/progression?scope=team`, con estadísticas agregadas del equipo,
+  tabla de progresión por miembro e historial del período. Autorización:
+  `analytics.viewTeam`.
 
 #### Referencia
 
@@ -769,6 +888,26 @@ Los videos podrán almacenarse dentro de la infraestructura del sistema o median
 
 > **Pendiente:** Definir estrategia de almacenamiento y distribución de archivos y videos.
 
+### 4.7. Formato de fechas y horas
+
+**Estándar aprobado:** todas las horas mostradas al usuario en cualquier
+pantalla del sistema deben formatearse en **formato de 24 horas**, sin AM/PM.
+
+- La date se muestra como `DD/MM/YYYY` y la hora como `HH:MM[:SS]`
+  (p. ej. `25/09/2026, 13:37:10`).
+- El formateo debe forzar `hour12: false` y no depender de la configuración
+  local del navegador.
+- Aplica a fechas y horas visibles (tablas de auditoría y actividad,
+  fechas de detalle de empleados, ventas, visitas, capacitación y cualquier
+  otra vista futura). No aplica a formatos de importación/exportación ni a
+  la capa de datos (ISO 8601).
+
+> **Pendiente de revisión en la revisión completa del sistema:** durante el
+> relevamiento se detectaron pantallas que formatean hora sin forzar
+> `hour12` (dependen de la locale). El detalle de empleado
+> (`employees/[id]`) quedó alineado al estándar 24h; resta alinear la
+> página de equipo (`formatDateTime` en `team/[id]/page.tsx`).
+
 ---
 
 ## 5. Alcance actual
@@ -838,8 +977,8 @@ El objetivo de este documento es registrar la base funcional conocida sin conver
 | Origen inicial de los datos de ventas    | 🚧 Decisión de diseño |
 | Reglas definitivas de comisiones         | ⚠️ Pendiente        |
 | Objetivos y metas                        | ⚠️ Pendiente        |
-| Rol administrativo `ADMIN`               | 🚧 Decisión de diseño (alcance definido en §3.12, UI pendiente) |
-| Requisitos de auditoría                  | ✅ Implementado (retención pendiente) |
+| Rol administrativo `ADMIN`               | ✅ Implementado (dashboard del sistema §3.12.1, empleados §3.12.2-3.12.5) |
+| Requisitos de auditoría                  | ✅ Implementado (dashboard §3.12.1, página `/audit` §3.12.1.1, retención pendiente) |
 | Mecanismo inicial de autenticación       | 🚧 Decisión de diseño |
 | Estrategia de almacenamiento multimedia  | ⚠️ Pendiente        |
 | Integraciones externas iniciales         | 🚧 Decisión de diseño: no hay integración |
@@ -886,3 +1025,21 @@ Las decisiones adoptadas para esta versión deberán documentarse como supuestos
 | 11/09/2026 | 0.9     | Se consolida la carga operativa de cliente, visita, pago, facturación externa y entrega para ventas manuales. |
 | 21/09/2026 | 1.0     | Definición del alcance funcional del rol ADMIN: dashboard global, gestión de empleados, niveles, jerarquía y navegación por perspectiva (§3.12). |
 | 21/09/2026 | 1.1     | Sistema de progresión de nivel (§3.13) y gestión de equipo por ADMIN (§3.14). |
+| 24/09/2026 | 1.3     | Dashboard del ADMIN rediseñado como central de sistema (§3.12.1): KPIs administrativos, gráficos de auditoría, actividad reciente, empleados por nivel y buscador. Nueva página de auditoría `/audit` completa (§3.12.1.1). |
+| 24/09/2026 | 1.2     | Reestructuración de la sección de capacitación: rediseño de UI, pantalla de configuración de niveles por material para ADMIN y botones de acción por tipo de contenido (§2.8). |
+| 23/09/2026 | 1.2     | §2.6: clarificado el cálculo del objetivo del equipo (ventasLogradas = solo subordinados directos). |
+| 24/09/2026 | 1.4     | §3.12.3: ascenso de nivel desde la tabla de empleados cuando la barra de progreso llega al 100%. Ascenso manual por ADMIN de un solo nivel a la vez; el nivel destino se calcula en el servidor. |
+| 24/09/2026 | 1.5     | §3.13.1: el progreso hacia el siguiente nivel se mide desde el inicio del nivel actual (`employee_level_history` abierto), no desde el ingreso. Al ascender la barra vuelve a 0 % y crece mes a mes; los puntos previos se conservan como historial. |
+| 25/09/2026 | 1.6     | §3.12.1: KPIs del dashboard del ADMIN = salud del sistema + negocio. Se revierte la eliminación de los KPIs de ventas globales: ahora muestra ventas totales, ventas del mes, empleados activos y alertas de auditoría (fallos + denegados). |
+| 25/09/2026 | 1.7     | §3.12.1: el gráfico de actividad de auditoría muestra los últimos 7 días en lugar de 30. |
+| 25/09/2026 | 1.9     | §3.12.1: el donut del dashboard del ADMIN pasa de "Resultados (mes)" a "Ventas por nivel (mes)" para no duplicar la información del gráfico de actividad apilado. Se documenta el orden de la leyenda del apilado: éxito, denegado, fallo. |
+| 25/09/2026 | 1.10    | §3.12.1/3.12.2: se retira del dashboard del ADMIN la sección "Empleados por nivel" y de la página `/employees` los badges de cantidad por nivel añadidos en la revisión. La página de empleados queda como estaba; el diseño de esta sección queda pendiente de definición. |
+| 25/09/2026 | 1.11    | §3.12.2: la tabla de empleados (`/employees`) no lista la cuenta del sistema `ADMIN` (empleado sin nivel, `currentLevelId = NULL`). Se excluye solo de la tabla de gestión; el resto del sistema conserva sus métricas y consultas. |
+| 25/09/2026 | 1.12    | §3.12.2: la tabla de empleados suma ordenamiento por Nivel, Progreso y Estado (clic en cabecera) y reemplaza el filtro de estado por: filtro por nivel, "solo listos para ascender" e interruptor "incluir inactivos" (por defecto ocultos). |
+| 25/09/2026 | 1.13    | §3.12.1.1: la página de auditoría muestra en la columna "Recurso" una referencia legible (p. ej. `EMP-7`, `VT-0042`, email) en lugar del UUID, que se conserva como tooltip. Se documenta el orden real de columnas: actor, acción, resultado, recurso y fecha. |
+| 25/09/2026 | 1.14    | §3.12.1.1: cuando la referencia del recurso coincide con el email del actor (eventos de sesión sobre la propia cuenta), la columna "Recurso" muestra solo el tipo del recurso para no repetir el email; la referencia queda en el tooltip. |
+| 25/09/2026 | 1.15    | §4.7 (nuevo): estándar de formato de fechas y horas — todas las horas se muestran en formato 24 horas (sin AM/PM), forzando `hour12: false` independiente de la locale del navegador. Se señalan las pantallas pendientes de alinear (detalle de empleado y página de equipo) para la revisión completa. |
+| 25/09/2026 | 1.16    | §3.12: la página `/sales` resuelve el alcance según el rol — ADMIN consulta `sale.readGlobal` (todas las ventas) y el resto `sale.readOwn` (ventas propias). Las cards de ventas del dashboard del ADMIN enlazan a `/sales`, que para el ADMIN es la vista global de ventas. |
+| 25/09/2026 | 1.17    | §3.12.1: se elimina el buscador de empleados del dashboard del ADMIN. La búsqueda de empleados se realiza exclusivamente desde `/employees` (input de búsqueda y tabla completa). Se eliminan del sistema overview el índice de búsqueda de empleados y el conteo de empleados sin cuenta, que solo consumía esa sección. |
+| 29/09/2026 | 1.18    | §3.12.2: rediseño de la ficha de empleado (`/employees/[id]`) según referencia visual de Stitch: encabezado con avatar/estado/nivel y acción "Editar Perfil", ribbon de resumen (estado, nivel, código, supervisor, ingreso con antigüedad) y layout 7/12-5/12 (formulario / progreso·ascenso·equipo·metadatos). Se omite el botón de registro de ventas (el ADMIN no realiza ventas, §3.12.6). Se alinea el `formatDateTime` del detalle al estándar 24h (§4.7). |
+| 29/09/2026 | 1.19    | §3.12.2: se elimina la sección "Metadatos del Registro" de la columna derecha de la ficha de empleado. Las fechas de creación y última actualización se muestran en el encabezado, reemplazando en el subtítulo al nivel, email y fecha de ingreso. |

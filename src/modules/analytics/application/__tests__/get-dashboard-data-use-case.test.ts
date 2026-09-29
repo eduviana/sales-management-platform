@@ -112,10 +112,10 @@ function createMockAnalyticsRepo(overrides?: Partial<AnalyticsReadRepository>): 
     countPendingReviewSales: vi.fn().mockResolvedValue(3),
     countApprovedSales: vi.fn().mockResolvedValue(12),
     sumAllTimeSales: vi.fn().mockResolvedValue(100000),
+    sumAllTimeSalesForEmployees: vi.fn().mockResolvedValue(250000),
     sumCurrentMonthSales: vi.fn().mockResolvedValue(8000),
     getCommissionPercentage: vi.fn().mockResolvedValue(5),
     getPersonalPerformance: vi.fn().mockResolvedValue(null),
-    getPersonalSalesHistory: vi.fn().mockResolvedValue([]),
     ...overrides,
   };
 }
@@ -287,6 +287,41 @@ describe("GetDashboardDataUseCase", () => {
 
     // Target = 15 × 2 subordinates = 30
     expect(result.kpis.targetTotal).toBe(30);
+  });
+
+  it("should compute team objective using only subordinates' sales (excludes supervisor)", async () => {
+    // First countSales (scope-wide currentSales) = 15; second (objective sales) = 6
+    (analyticsRepo.countSales as ReturnType<typeof vi.fn>)
+      .mockResolvedValueOnce(15)
+      .mockResolvedValueOnce(6);
+    const ctx = makeAuthContext({ levelId: 3 });
+    const result = await useCase.execute({ authContext: ctx });
+
+    // currentSales remains the scope-wide KPI (self + subordinates)
+    expect(result.kpis.currentSales).toBe(15);
+    // Objective progress = 6 / (15 × 2) = 20%
+    expect(result.kpis.targetTotal).toBe(30);
+    expect(result.kpis.targetProgress).toBe(20);
+    // Objective sales must be queried only against subordinates, excluding self
+    expect(analyticsRepo.countSales).toHaveBeenLastCalledWith(
+      ["emp-2", "emp-3"],
+      expect.anything(),
+    );
+  });
+
+  it("should compute team chart daily counts using only subordinates' sales", async () => {
+    const ctx = makeAuthContext({ levelId: 3 });
+    const result = await useCase.execute({ authContext: ctx });
+
+    // Team chart must query daily counts only against subordinates, excluding self
+    expect(analyticsRepo.getMonthlySaleCounts).toHaveBeenLastCalledWith(
+      ["emp-2", "emp-3"],
+      expect.anything(),
+    );
+    expect(result.teamDailySaleCounts).toEqual([
+      { date: "2026-09-01", label: "1", count: 5 },
+      { date: "2026-09-02", label: "2", count: 8 },
+    ]);
   });
 
   it("should calculate target progress percentage", async () => {

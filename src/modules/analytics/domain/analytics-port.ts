@@ -13,7 +13,7 @@ import type {
   DailySaleCount,
   LevelDistribution,
   TeamPerformanceRow,
-  PersonalSalesRow,
+  LevelEmployeeCount,
 } from "./dashboard-metrics";
 
 export interface AnalyticsReadRepository {
@@ -75,11 +75,6 @@ export interface AnalyticsReadRepository {
   getPersonalPerformance(employeeId: string, dateRange: DateRange): Promise<TeamPerformanceRow | null>;
 
   /**
-   * Personal sales history for N1/N2 users (date, buyer, amount, status).
-   */
-  getPersonalSalesHistory(employeeId: string, dateRange: DateRange): Promise<PersonalSalesRow[]>;
-
-  /**
    * Get the monthly sales target for a given level.
    * Returns the target per seller from the monthly_target table.
    */
@@ -92,6 +87,12 @@ export interface AnalyticsReadRepository {
   sumAllTimeSales(employeeId: string): Promise<number>;
 
   /**
+   * Sum of all-time sales for a set of employees (no date filter).
+   * Only counts APPROVED and PENDING_REVIEW sales.
+   */
+  sumAllTimeSalesForEmployees(employeeIds: string[]): Promise<number>;
+
+  /**
    * Sum of personal sales for the current calendar month.
    * Only counts APPROVED and PENDING_REVIEW sales.
    */
@@ -102,4 +103,16 @@ export interface AnalyticsReadRepository {
    * Returns 0 if no rule is found.
    */
   getCommissionPercentage(levelId: number, at: Date): Promise<number>;
+}
+
+// =============================================================================
+// System admin read port (ADMIN dashboard — system health + organization)
+// =============================================================================
+
+export interface SystemAdminReadRepository {
+  /** Total employees with ACTIVE status. */
+  countActiveEmployees(): Promise<number>;
+
+  /** Employee count by level (all statuses). */
+  getLevelEmployeeCounts(): Promise<LevelEmployeeCount[]>;
 }

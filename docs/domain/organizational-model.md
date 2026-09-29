@@ -86,6 +86,10 @@ Empleado
 - Sesiones.
 - Configuración de seguridad.
 
+Todo empleado con estado activo debe poseer una cuenta de usuario asignada
+(REG-086): la cuenta se crea y asigna antes de que el empleado pueda
+comenzar a operar.
+
 Un empleado puede dejar de tener acceso a la aplicación sin que su información histórica deba eliminarse.
 
 Por este motivo:

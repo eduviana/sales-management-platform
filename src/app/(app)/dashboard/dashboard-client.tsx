@@ -7,6 +7,7 @@
  * - Team/personal performance table
  *
  * For N3+ users with a team, shows tabs: "Mis ventas" | "Mi equipo".
+ * For ADMIN, renders the system overview (health + organization).
  *
  * Visual reference: design/stitch/code.html
  */
@@ -15,19 +16,26 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { DollarSign, UserCheck, Users, Target, Clock } from "lucide-react";
+import { DollarSign, Users, Target, Clock } from "lucide-react";
 import { MetricCard } from "@/modules/analytics/presentation/components/MetricCard";
 import { MonthlySalesChart } from "@/modules/analytics/presentation/components/MonthlySalesChart";
 import { LevelDistributionChart } from "@/modules/analytics/presentation/components/LevelDistributionChart";
 import { TeamPerformanceTable } from "@/modules/analytics/presentation/components/TeamPerformanceTable";
-import { PersonalSalesTable } from "@/modules/analytics/presentation/components/PersonalSalesTable";
-import type { DashboardData } from "@/modules/analytics/domain";
+import { SalesTable } from "@/app/(app)/sales/sales-table";
+import type { SalesTableSale } from "@/app/(app)/sales/sales-table";
+import type { DashboardData, SystemOverview } from "@/modules/analytics/domain";
+import { AdminSystemOverview } from "./admin-system-overview";
 
 interface DashboardClientProps {
-  initialData: DashboardData;
+  /** Dashboard data — required for non-ADMIN roles. */
+  initialData?: DashboardData;
+  /** Recent personal sales (same table and source as the "Mis Ventas" page). */
+  recentSales?: SalesTableSale[];
   headerTitle: string;
   headerSubtitle: string;
   isAdmin?: boolean;
+  /** System overview data — required when isAdmin is true. */
+  systemOverview?: SystemOverview | null;
 }
 
 function formatCurrency(amount: number): string {
@@ -37,18 +45,36 @@ function formatCurrency(amount: number): string {
 type TabId = "personal" | "team";
 
 export function DashboardClient({
-  initialData,
+  initialData = undefined,
+  recentSales = [],
   headerTitle,
   headerSubtitle,
   isAdmin = false,
+  systemOverview = null,
 }: DashboardClientProps) {
   const [activeTab, setActiveTab] = useState<TabId>("team");
-  const showTabs = initialData.hasTeam && initialData.personalDashboard;
 
   // ADMIN sees a completely different dashboard
   if (isAdmin) {
-    return <AdminDashboard data={initialData} headerTitle={headerTitle} headerSubtitle={headerSubtitle} />;
+    return (
+      <AdminSystemOverview
+        overview={systemOverview ?? emptySystemOverview()}
+        headerTitle={headerTitle}
+        headerSubtitle={headerSubtitle}
+      />
+    );
   }
+
+  // Non-ADMIN roles require dashboard data
+  if (!initialData) {
+    return (
+      <div className="text-sm text-on-surface-variant">
+        No hay datos disponibles para mostrar.
+      </div>
+    );
+  }
+
+  const showTabs = initialData.hasTeam && initialData.personalDashboard;
 
   return (
     <div className="space-y-6">
@@ -95,30 +121,42 @@ export function DashboardClient({
         <>
           {/* KPI Cards — Team */}
           <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
-            <div className="col-span-1 md:col-span-3">
+            <Link
+              href="/dashboard/sales/all?scope=team"
+              className="col-span-1 md:col-span-3"
+            >
               <MetricCard
                 label="Ventas Totales del Equipo"
                 value={formatCurrency(initialData.kpis.totalSalesAmount)}
                 icon={DollarSign}
               />
-            </div>
-            <div className="col-span-1 md:col-span-3">
+            </Link>
+            <Link
+              href="/dashboard/sales/all?scope=team&status=PENDING_REVIEW"
+              className="col-span-1 md:col-span-3"
+            >
               <MetricCard
                 label="Pendientes de Revisión"
                 value={String(initialData.kpis.pendingReviewCount)}
                 icon={Clock}
                 variant="primary"
               />
-            </div>
-            <div className="col-span-1 md:col-span-3">
+            </Link>
+            <Link
+              href="/team"
+              className="col-span-1 md:col-span-3"
+            >
               <MetricCard
                 label="Vendedores Activos"
                 value={String(initialData.kpis.activeSellerCount)}
                 icon={Users}
                 variant="secondary"
               />
-            </div>
-            <div className="col-span-1 md:col-span-3">
+            </Link>
+            <Link
+              href="/dashboard/progression?scope=team"
+              className="col-span-1 md:col-span-3"
+            >
               <MetricCard
                 label="Progreso del Objetivo"
                 value={`${initialData.kpis.targetProgress}%`}
@@ -126,7 +164,7 @@ export function DashboardClient({
                 variant="tertiary"
                 progress={initialData.kpis.targetProgress}
               />
-            </div>
+            </Link>
           </div>
 
           {/* Charts — Team */}
@@ -135,7 +173,7 @@ export function DashboardClient({
               <h2 className="text-lg font-semibold text-on-surface mb-4">
                 Ventas del Equipo
               </h2>
-              <MonthlySalesChart data={initialData.dailySaleCounts} targetCount={initialData.kpis.targetTotal} />
+              <MonthlySalesChart data={initialData.teamDailySaleCounts} targetCount={initialData.kpis.targetTotal} />
             </div>
             <div className="col-span-1 md:col-span-5 lg:col-span-4 bg-surface border border-outline-variant rounded-xl p-6">
               <h2 className="text-lg font-semibold text-on-surface mb-4">
@@ -187,39 +225,46 @@ export function DashboardClient({
         const chartData = isN1N2 ? initialData.dailySaleCounts : personal!.dailySaleCounts;
         const targetCount = kpis.personalTarget;
 
-        // Table data: use personal salesHistory for N3+, or existing for N1/N2
-        const tableData = isN1N2
-          ? initialData.personalSalesHistory
-          : personal!.salesHistory;
-
         return (
           <>
             {/* KPI Cards — Personal */}
             <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
-              <div className="col-span-1 md:col-span-3">
+              <Link
+                href="/dashboard/sales/all"
+                className="col-span-1 md:col-span-3"
+              >
                 <MetricCard
                   label="Ventas Totales"
                   value={formatCurrency(kpis.totalSalesAllTime)}
                   icon={DollarSign}
                 />
-              </div>
-              <div className="col-span-1 md:col-span-3">
+              </Link>
+              <Link
+                href="/dashboard/sales/month"
+                className="col-span-1 md:col-span-3"
+              >
                 <MetricCard
                   label="Ventas Este Mes"
                   value={formatCurrency(kpis.salesThisMonth)}
                   icon={DollarSign}
                   variant="primary"
                 />
-              </div>
-              <div className="col-span-1 md:col-span-3">
+              </Link>
+              <Link
+                href="/dashboard/commissions"
+                className="col-span-1 md:col-span-3"
+              >
                 <MetricCard
                   label="Comisiones Estimadas"
                   value={formatCurrency(kpis.estimatedCommissions)}
                   icon={DollarSign}
                   variant="secondary"
                 />
-              </div>
-              <div className="col-span-1 md:col-span-3">
+              </Link>
+              <Link
+                href="/dashboard/progression"
+                className="col-span-1 md:col-span-3"
+              >
                 <MetricCard
                   label="Progreso del Objetivo"
                   value={`${kpis.personalTargetProgress}%`}
@@ -227,7 +272,7 @@ export function DashboardClient({
                   variant="tertiary"
                   progress={kpis.personalTargetProgress}
                 />
-              </div>
+              </Link>
             </div>
 
             {/* Chart — Personal */}
@@ -238,14 +283,25 @@ export function DashboardClient({
               <MonthlySalesChart data={chartData} targetCount={targetCount} />
             </div>
 
-            {/* Personal Sales Table */}
+            {/* Recent Sales Table — same table and source as the /sales page */}
             <div className="bg-surface border border-outline-variant rounded-xl overflow-hidden flex flex-col">
-              <div className="p-6 border-b border-outline-variant bg-surface-container-lowest">
+              <div className="p-6 border-b border-outline-variant bg-surface-container-lowest flex items-center justify-between">
                 <h3 className="text-lg font-semibold text-on-surface">
-                  Mis Ventas
+                  Historial Reciente
                 </h3>
+                <Link
+                  href="/sales"
+                  className="px-4 py-2 text-sm font-medium rounded-lg bg-[#27272a] hover:bg-[#323238] text-zinc-300 border border-[#3f3f46] transition-colors"
+                >
+                  Ver todo
+                </Link>
               </div>
-              <PersonalSalesTable data={tableData} />
+              <SalesTable
+                sales={recentSales}
+                showCreateAction={false}
+                showHeader={false}
+                showSearch={false}
+              />
             </div>
           </>
         );
@@ -258,95 +314,18 @@ export function DashboardClient({
 // ADMIN Dashboard — Global system view
 // =============================================================================
 
-function AdminDashboard({
-  data,
-  headerTitle,
-  headerSubtitle,
-}: {
-  data: DashboardData;
-  headerTitle: string;
-  headerSubtitle: string;
-}) {
-  return (
-    <div className="space-y-6">
-      {/* Header */}
-      <header>
-        <h1 className="text-2xl font-semibold text-on-surface mb-1">
-          {headerTitle}
-        </h1>
-        <p className="text-on-surface-variant">
-          {headerSubtitle}
-        </p>
-      </header>
-
-      {/* KPI Cards — Global */}
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
-        <div className="col-span-1 md:col-span-3">
-          <MetricCard
-            label="Ventas Totales"
-            value={formatCurrency(data.kpis.totalSalesAmount)}
-            icon={DollarSign}
-          />
-        </div>
-        <div className="col-span-1 md:col-span-3">
-          <MetricCard
-            label="Vendedores Activos"
-            value={String(data.kpis.activeSellerCount)}
-            icon={Users}
-            variant="secondary"
-          />
-        </div>
-        <div className="col-span-1 md:col-span-3">
-          <MetricCard
-            label="Pendientes de Revisión"
-            value={String(data.kpis.pendingReviewCount)}
-            icon={Clock}
-            variant="primary"
-          />
-        </div>
-        <div className="col-span-1 md:col-span-3">
-          <MetricCard
-            label="Aprobadas"
-            value={String(data.kpis.approvedCount)}
-            icon={UserCheck}
-            variant="tertiary"
-          />
-        </div>
-      </div>
-
-      {/* Charts — Global */}
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
-        <div className="col-span-1 md:col-span-7 lg:col-span-8 bg-surface border border-outline-variant rounded-xl p-6">
-          <h2 className="text-lg font-semibold text-on-surface mb-4">
-            Ventas del Período
-          </h2>
-          <MonthlySalesChart data={data.dailySaleCounts} targetCount={0} />
-        </div>
-        <div className="col-span-1 md:col-span-5 lg:col-span-4 bg-surface border border-outline-variant rounded-xl p-6">
-          <h2 className="text-lg font-semibold text-on-surface mb-4">
-            Distribución por Nivel
-          </h2>
-          <LevelDistributionChart data={data.levelDistribution} />
-        </div>
-      </div>
-
-      {/* All Employees Performance Table */}
-      {data.teamPerformance.length > 0 && (
-        <div className="bg-surface border border-outline-variant rounded-xl overflow-hidden flex flex-col">
-          <div className="p-6 border-b border-outline-variant bg-surface-container-lowest flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-on-surface">
-                  Todos los Empleados
-                </h3>
-                <Link
-                  href="/employees"
-                  className="px-4 py-2 text-sm font-medium rounded-lg bg-[#27272a] hover:bg-[#323238] text-zinc-300 border border-[#3f3f46] transition-colors"
-                >
-                  Ver todo
-                </Link>
-          </div>
-          <TeamPerformanceTable data={data.teamPerformance} />
-        </div>
-      )}
-    </div>
-  );
+function emptySystemOverview(): SystemOverview {
+  const today = new Date();
+  const iso = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+  return {
+    kpis: {
+      totalSalesAmount: 0,
+      monthSalesAmount: 0,
+      activeEmployeeCount: 0,
+      dangerousAuditEventCount: 0,
+    },
+    auditActivity: [{ date: iso, label: String(today.getDate()), success: 0, failure: 0, denied: 0 }],
+    levelDistribution: [],
+    recentEvents: [],
+  };
 }
