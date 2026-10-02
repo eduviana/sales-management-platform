@@ -8,5 +8,5 @@
 export { BcryptPasswordAdapter } from "./bcrypt-password-adapter";
 export { CryptoTokenAdapter } from "./crypto-token-adapter";
 export { createSessionAdapter } from "./iron-session-adapter";
-export { NoopPasswordResetNotifier } from "./noop-password-reset-notifier";
+export { ConsolePasswordResetNotifier } from "./console-password-reset-notifier";
 export { PrismaIdentityRepository } from "./prisma-identity-repository";

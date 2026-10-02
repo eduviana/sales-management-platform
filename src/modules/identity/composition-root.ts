@@ -9,10 +9,11 @@
 
 import { cookies } from "next/headers";
 import { prisma } from "@/infrastructure/prisma/client";
+import { env } from "@/infrastructure/config/env";
 import { BcryptPasswordAdapter } from "@/infrastructure/auth/bcrypt-password-adapter";
 import { CryptoTokenAdapter } from "@/infrastructure/auth/crypto-token-adapter";
 import { createSessionAdapter } from "@/infrastructure/auth/iron-session-adapter";
-import { NoopPasswordResetNotifier } from "@/infrastructure/auth/noop-password-reset-notifier";
+import { ConsolePasswordResetNotifier } from "@/infrastructure/auth/console-password-reset-notifier";
 import { PrismaIdentityRepository } from "@/infrastructure/auth/prisma-identity-repository";
 import { PrismaAuditAdapter } from "@/modules/audit/infrastructure/prisma-audit-adapter";
 import { LoginUseCase } from "./application/login-use-case";
@@ -37,7 +38,7 @@ export async function createIdentityModule() {
   const tokenService = new CryptoTokenAdapter();
   const sessionPort = createSessionAdapter(cookieStore);
   const identityRepository = new PrismaIdentityRepository(prisma);
-  const passwordResetNotifier = new NoopPasswordResetNotifier();
+  const passwordResetNotifier = new ConsolePasswordResetNotifier(env.APP_URL);
   const auditPort = new PrismaAuditAdapter(prisma);
 
   // Use cases

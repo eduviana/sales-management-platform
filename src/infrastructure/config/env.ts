@@ -37,4 +37,7 @@ export const env = {
 
   /** Secret for iron-session encrypted cookies (minimum 32 characters). */
   SESSION_SECRET: requireEnv("SESSION_SECRET"),
+
+  /** Base URL used to build links delivered to users (e.g., password reset). */
+  APP_URL: optionalEnv("APP_URL", "http://localhost:3000"),
 } as const;
