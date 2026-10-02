@@ -4,7 +4,7 @@
  * Returns categories that have at least one course (published for non-ADMIN).
  * For ADMIN: returns all categories.
  *
- * Reference: permissions-matrix.md §4.10, business-rules.md REG-045
+ * Reference: permissions-matrix.md §4.13, business-rules.md REG-045
  */
 
 import type { AuthorizationService, AuthorizationContext } from "@/modules/authorization/domain";

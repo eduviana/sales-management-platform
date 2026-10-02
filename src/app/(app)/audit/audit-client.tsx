@@ -9,7 +9,7 @@
  *
  * All authorization happens server-side (audit.read, ADMIN only).
  *
- * Reference: requirements.md §3.12, permissions-matrix.md §4.11
+ * Reference: requirements.md §3.12, permissions-matrix.md §4.14
  */
 
 "use client";

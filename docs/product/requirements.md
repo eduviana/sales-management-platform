@@ -3,7 +3,7 @@
 **Proyecto:** Royal Prestige — Plataforma de Gestión de Ventas  
 **Tipo:** Aplicación web de uso interno  
 **Estado:** En consolidación  
-**Versión:** 1.19  
+**Versión:** 1.21  
 **Última actualización:** 29/09/2026
 
 ---
@@ -393,6 +393,15 @@ La aplicación deberá proporcionar representaciones numéricas y gráficas de l
 
 Los requisitos específicos de reporting se definirán durante el relevamiento.
 
+**Estado de implementación (versión actual):** se implementan indicadores
+individuales y de equipo, gráficos de rendimiento, objetivos y comisiones
+estimadas, con períodos Hoy / Esta Semana / Este Mes. Las comparaciones entre
+períodos y entre empleados, los rankings, los períodos adicionales (mes
+anterior, año actual, rango personalizado) y la generación/exportación de
+reportes quedan fuera del alcance actual, diferidos hasta resolver Q48–Q54. La
+exportación de reportes en CSV no se implementa por ahora (`report.export` y
+`audit.export` permanecen definidos en la matriz de permisos, sin endpoint).
+
 ### 3.6. Comisiones
 
 El sistema deberá permitir consultar la información relacionada con las comisiones correspondientes al usuario.
@@ -592,7 +601,7 @@ registro de eventos:
   el tooltip.
 
 > **Autorización:** solo `ADMIN` con permiso `audit.read`
-> (permissions-matrix.md §4.11). La validación se realiza server-side.
+> (permissions-matrix.md §4.14). La validación se realiza server-side.
 
 #### 3.12.2. Gestión de datos de empleados
 
@@ -938,7 +947,6 @@ El objetivo de este documento es registrar la base funcional conocida sin conver
 - Matriz definitiva de permisos.
 - Detalles definitivos de ventas, productos, estados y ajustes.
 - Reglas definitivas de comisiones.
-- Objetivos y metas.
 - Detalles operativos del rol administrativo.
 - Reglas adicionales del historial organizacional.
 - Retención de datos de auditoría (cleanup periódico).
@@ -946,7 +954,7 @@ El objetivo de este documento es registrar la base funcional conocida sin conver
 - Proveedor de autenticación y correo, sesiones y 2FA operativo.
 - Detalles adicionales de capacitación y plataforma de video.
 - Estrategia de almacenamiento de archivos y videos.
-- Reporting avanzado.
+- Reporting avanzado (comparaciones, rankings, períodos adicionales y exportación de reportes): diferido; Q48–Q54 pendientes.
 
 ---
 
@@ -975,8 +983,8 @@ El objetivo de este documento es registrar la base funcional conocida sin conver
 | Comportamiento Nivel 6                   | 🚧 Decisión de diseño / validar oficialmente |
 | Comportamiento Nivel 7                   | 🚧 Decisión de diseño / validar oficialmente |
 | Origen inicial de los datos de ventas    | 🚧 Decisión de diseño |
-| Reglas definitivas de comisiones         | ⚠️ Pendiente        |
-| Objetivos y metas                        | ⚠️ Pendiente        |
+| Reglas definitivas de comisiones         | 🔎 Observado (tasas N1–N7 confirmadas; detalles operativos §2.7) |
+| Objetivos y metas                        | ✅ Confirmado (objetivos mensuales REG-055; Q55–Q58) |
 | Rol administrativo `ADMIN`               | ✅ Implementado (dashboard del sistema §3.12.1, empleados §3.12.2-3.12.5) |
 | Requisitos de auditoría                  | ✅ Implementado (dashboard §3.12.1, página `/audit` §3.12.1.1, retención pendiente) |
 | Mecanismo inicial de autenticación       | 🚧 Decisión de diseño |
@@ -1043,3 +1051,5 @@ Las decisiones adoptadas para esta versión deberán documentarse como supuestos
 | 25/09/2026 | 1.17    | §3.12.1: se elimina el buscador de empleados del dashboard del ADMIN. La búsqueda de empleados se realiza exclusivamente desde `/employees` (input de búsqueda y tabla completa). Se eliminan del sistema overview el índice de búsqueda de empleados y el conteo de empleados sin cuenta, que solo consumía esa sección. |
 | 29/09/2026 | 1.18    | §3.12.2: rediseño de la ficha de empleado (`/employees/[id]`) según referencia visual de Stitch: encabezado con avatar/estado/nivel y acción "Editar Perfil", ribbon de resumen (estado, nivel, código, supervisor, ingreso con antigüedad) y layout 7/12-5/12 (formulario / progreso·ascenso·equipo·metadatos). Se omite el botón de registro de ventas (el ADMIN no realiza ventas, §3.12.6). Se alinea el `formatDateTime` del detalle al estándar 24h (§4.7). |
 | 29/09/2026 | 1.19    | §3.12.2: se elimina la sección "Metadatos del Registro" de la columna derecha de la ficha de empleado. Las fechas de creación y última actualización se muestran en el encabezado, reemplazando en el subtítulo al nivel, email y fecha de ingreso. |
+| 29/09/2026 | 1.20    | §6: se actualiza la tabla de estado. "Objetivos y metas" pasa de ⚠️ Pendiente a ✅ Confirmado (objetivos mensuales, REG-055, Q55–Q58). "Reglas definitivas de comisiones" pasa a 🔎 Observado (tasas N1–N7 confirmadas; detalles operativos pendientes, §2.7). En §5 se retira "Objetivos y metas" de los pendientes principales. |
+| 29/09/2026 | 1.21    | §3.5/§5: se registra el estado del reporting. La versión actual implementa indicadores individuales/de equipo, gráficos, objetivos y comisiones estimadas (períodos hoy/semana/mes). Comparaciones, rankings, períodos adicionales y generación/exportación de reportes quedan diferidos (Q48–Q54); la exportación CSV no se implementa por ahora. |

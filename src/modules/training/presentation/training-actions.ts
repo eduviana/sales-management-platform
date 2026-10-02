@@ -5,7 +5,7 @@
  * Read operations require training.read permission.
  * Write operations require training.create/update/delete/publish permissions.
  *
- * Reference: system-architecture.md §10, permissions-matrix.md §4.10
+ * Reference: system-architecture.md §10, permissions-matrix.md §4.13
  */
 
 "use server";

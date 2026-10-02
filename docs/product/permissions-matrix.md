@@ -3,8 +3,8 @@
 **Proyecto:** Royal Prestige — Plataforma de Gestión de Ventas  
 **Documento:** Matriz de permisos  
 **Estado:** En definición / consolidación  
-**Versión:** 0.6  
-**Última actualización:** 07/09/2026
+**Versión:** 0.8  
+**Última actualización:** 29/09/2026
 
 ---
 
@@ -335,7 +335,7 @@ con `sale.readTeam` (o el alcance superior que corresponda).
 > Los referidos se cargan como parte de una venta.
 > `referral.create` requiere `sale.create`.
 
-### 4.6. Estadísticas y reporting
+### 4.9. Estadísticas y reporting
 
 | Permiso                      | Descripción                          |
 |------------------------------|--------------------------------------|
@@ -349,7 +349,15 @@ con `sale.readTeam` (o el alcance superior que corresponda).
 | `report.generate`            | Generar reportes                     |
 | `report.export`              | Exportar reportes                    |
 
-### 4.7. Objetivos
+> **Estado de implementación:** `analytics.viewOwn`, `analytics.viewTeam`,
+> `analytics.viewBranch` y `analytics.viewGlobal` se resuelven por alcance
+> jerárquico en el dashboard. `analytics.comparePeriods`,
+> `analytics.compareEmployees`, `analytics.viewRanking`, `report.generate` y
+> `report.export` están definidos pero no implementados: su funcionalidad está
+> diferida hasta resolver Q48–Q54 (ver requirements.md §3.5). La exportación en
+> CSV no se implementa por ahora.
+
+### 4.10. Objetivos
 
 | Permiso            | Descripción                    |
 |--------------------|--------------------------------|
@@ -364,7 +372,7 @@ con `sale.readTeam` (o el alcance superior que corresponda).
 >
 > Los objetivos todavía no están confirmados como funcionalidad del sistema.
 
-### 4.8. Niveles y jerarquía
+### 4.11. Niveles y jerarquía
 
 | Permiso                  | Descripción                          |
 |--------------------------|--------------------------------------|
@@ -378,7 +386,7 @@ con `sale.readTeam` (o el alcance superior que corresponda).
 
 > Los permisos de modificación deberán estar restringidos a roles con capacidad administrativa.
 
-### 4.9. Comisiones
+### 4.12. Comisiones
 
 | Permiso                      | Descripción                                |
 |------------------------------|--------------------------------------------|
@@ -395,7 +403,7 @@ con `sale.readTeam` (o el alcance superior que corresponda).
 >
 > La necesidad real dependerá de si las comisiones son calculadas internamente o recibidas desde otro sistema.
 
-### 4.10. Capacitación
+### 4.13. Capacitación
 
 | Permiso                    | Descripción                          |
 |----------------------------|--------------------------------------|
@@ -414,7 +422,7 @@ con `sale.readTeam` (o el alcance superior que corresponda).
 >
 > El resto de las capacidades de administración y seguimiento son provisionales.
 
-### 4.11. Auditoría
+### 4.14. Auditoría
 
 | Permiso          | Descripción                          |
 |------------------|--------------------------------------|
@@ -1003,3 +1011,5 @@ que resulte afectado.
 | 03/09/2026 | 0.4     | Sincronización global de estados y decisiones de la matriz. |
 | 03/09/2026 | 0.5     | Exclusión del seguimiento individual de capacitación del alcance actual. |
 | 07/09/2026 | 0.6     | Incorporación de permisos `sale.approve`, `sale.reject` (revisión de ventas) y `catalog.read`, `catalog.create`, `catalog.update` (catálogo de productos). |
+| 29/09/2026 | 0.7     | Corrección de numeración de la sección 4: se elimina la duplicación de §4.6/§4.7/§4.8. Las secciones de Clientes, Visitas y Referidos (Phase 10) conservan §4.6–§4.8; las secciones posteriores se renumeran a §4.9–§4.14. Se actualizan las referencias de trazabilidad en código y documentación. |
+| 29/09/2026 | 0.8     | §4.9: se documenta el estado de implementación de los permisos de estadísticas y reporting. Comparaciones, rankings y generación/exportación de reportes quedan diferidos (Q48–Q54); la exportación CSV no se implementa por ahora. |

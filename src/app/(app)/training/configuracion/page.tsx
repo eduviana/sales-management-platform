@@ -5,7 +5,7 @@
  * so the ADMIN can configure what content each level can see.
  * Access is authorized server-side via training.manage (ADMIN only).
  *
- * Reference: permissions-matrix.md §4.10, requirements.md §2.8
+ * Reference: permissions-matrix.md §4.13, requirements.md §2.8
  */
 
 import Link from "next/link";

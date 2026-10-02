@@ -4,7 +4,7 @@
  * Server Component that gates access to the ADMIN role and renders
  * the client-side explorer (filters, search, pagination).
  *
- * Reference: requirements.md §3.12, permissions-matrix.md §4.11, ADR-009
+ * Reference: requirements.md §3.12, permissions-matrix.md §4.14, ADR-009
  */
 
 import { resolveAuthContext } from "@/modules/sales/presentation/resolve-auth-context";

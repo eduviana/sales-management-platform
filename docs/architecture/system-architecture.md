@@ -2,7 +2,7 @@
 
 **Proyecto:** Royal Prestige — Plataforma de Gestión de Ventas  
 **Estado:** 🚧 DECISIÓN DE DISEÑO  
-**Versión:** 0.6  
+**Versión:** 0.7  
 **Última actualización:** 2026-09-08
 
 ---

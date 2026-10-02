@@ -4,7 +4,7 @@
  * Covers authorization, KPI aggregation, level distribution and
  * activity gap filling for the ADMIN system overview.
  *
- * Reference: requirements.md §3.12.1, permissions-matrix.md §4.11
+ * Reference: requirements.md §3.12.1, permissions-matrix.md §4.14
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";

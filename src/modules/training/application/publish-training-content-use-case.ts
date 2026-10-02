@@ -4,7 +4,7 @@
  * Changes the status of a course or material to PUBLISHED.
  * Requires training.publish permission (ADMIN only).
  *
- * Reference: permissions-matrix.md §4.10
+ * Reference: permissions-matrix.md §4.13
  */
 
 import type { AuthorizationService, AuthorizationContext } from "@/modules/authorization/domain";

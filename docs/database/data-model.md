@@ -1,7 +1,7 @@
 # Modelo de datos
 
 **Estado:** 🚧 DECISIÓN DE DISEÑO  
-**Versión:** 0.7
+**Versión:** 1.2  
 **Última actualización:** 2026-09-25
 
 ---

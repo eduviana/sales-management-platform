@@ -10,9 +10,9 @@
  *
  * Authorization: `audit.read` (ADMIN only). This dashboard is a
  * system-administration exclusive surface; the permission guarantees that
- * only the ADMIN role can execute it (permissions-matrix.md §4.11).
+ * only the ADMIN role can execute it (permissions-matrix.md §4.14).
  *
- * Reference: requirements.md §3.12.1, permissions-matrix.md §4.11
+ * Reference: requirements.md §3.12.1, permissions-matrix.md §4.14
  */
 
 import type { AuthorizationService } from "@/modules/authorization/domain";

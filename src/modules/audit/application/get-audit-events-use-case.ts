@@ -4,7 +4,7 @@
  * Queries audit events with filters and pagination.
  * Requires `audit.read` permission (ADMIN only).
  *
- * Reference: permissions-matrix.md §4.11, ADR-009
+ * Reference: permissions-matrix.md §4.14, ADR-009
  */
 
 import type { AuthorizationService, AuthorizationContext } from "@/modules/authorization/domain";

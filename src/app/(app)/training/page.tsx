@@ -6,7 +6,7 @@
  * ADMIN sees additional management controls and the level configuration screen.
  *
  * Visual reference: design/stitch/DESIGN.md
- * Reference: business-rules.md REG-045, permissions-matrix.md §4.10
+ * Reference: business-rules.md REG-045, permissions-matrix.md §4.13
  */
 
 import Link from "next/link";

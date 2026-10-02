@@ -4,7 +4,7 @@
  * Returns a single category with its published courses.
  * For ADMIN: returns all courses regardless of status.
  *
- * Reference: permissions-matrix.md §4.10
+ * Reference: permissions-matrix.md §4.13
  */
 
 import type { AuthorizationService, AuthorizationContext } from "@/modules/authorization/domain";

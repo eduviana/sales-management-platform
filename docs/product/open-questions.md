@@ -3,8 +3,8 @@
 **Proyecto:** Royal Prestige — Plataforma de Gestión de Ventas  
 **Documento:** Preguntas abiertas  
 **Estado:** En consolidación  
-**Versión:** 0.5  
-**Última actualización:** 03/09/2026
+**Versión:** 0.6  
+**Última actualización:** 08/09/2026
 
 ---
 
@@ -738,4 +738,3 @@ Sí. `buyerName` se conserva por compatibilidad con datos existentes. Se agrega 
 | 03/09/2026 | 0.4     | Consolidación de comisión inicial y descarte del seguimiento individual de capacitación. |
 | 07/09/2026 | 0.5     | Confirmación de las tasas vigentes de comisión N1–N7 y resolución de las preguntas relacionadas con porcentajes y progresión mensual. |
 | 08/09/2026 | 0.6     | Resolución de Q55–Q58: objetivos de ventas confirmados (individuales y por equipo, diferenciados por nivel, con cálculo de cumplimiento). |
-| 03/09/2026 | 0.5     | Comisión inicial vigente N1 → 15 % (50 % queda REEMPLAZADO como antecedente). Cierre de Q26/Q27: contraseña temporal y cambio obligatorio en primer inicio. |

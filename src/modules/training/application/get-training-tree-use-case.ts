@@ -7,7 +7,7 @@
  *
  * Requires training.manage permission (ADMIN only).
  *
- * Reference: permissions-matrix.md §4.10, requirements.md §2.8
+ * Reference: permissions-matrix.md §4.13, requirements.md §2.8
  */
 
 import type { AuthorizationService, AuthorizationContext } from "@/modules/authorization/domain";

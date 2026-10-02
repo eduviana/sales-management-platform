@@ -3,7 +3,7 @@
  *
  * Requires training.create permission (ADMIN only).
  *
- * Reference: permissions-matrix.md §4.10
+ * Reference: permissions-matrix.md §4.13
  */
 
 import type { AuthorizationService, AuthorizationContext } from "@/modules/authorization/domain";

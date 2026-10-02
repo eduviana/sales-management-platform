@@ -4,7 +4,7 @@
  * Handles paginated queries with filters for the audit trail.
  * Requires ADMIN role with audit.read permission.
  *
- * Reference: system-architecture.md §10, permissions-matrix.md §4.11
+ * Reference: system-architecture.md §10, permissions-matrix.md §4.14
  */
 
 "use server";
