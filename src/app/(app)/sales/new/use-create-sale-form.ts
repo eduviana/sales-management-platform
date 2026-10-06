@@ -33,7 +33,6 @@ import {
 
 export interface UseCreateSaleFormProps {
   readonly products: readonly ProductData[];
-  readonly visits: readonly Visit[];
   readonly fixedVisit?: Visit;
 }
 
@@ -133,7 +132,6 @@ function formatValidationErrors(
 
 export function useCreateSaleForm({
   products,
-  visits,
   fixedVisit,
 }: UseCreateSaleFormProps): UseCreateSaleFormReturn {
   const router = useRouter();

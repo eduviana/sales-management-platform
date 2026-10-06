@@ -3,7 +3,7 @@
 **Proyecto:** Royal Prestige — Plataforma de Gestión de Ventas  
 **Estado:** 🚧 DECISIÓN DE DISEÑO  
 **Versión:** 0.3  
-**Última actualización:** 2026-09-03
+**Última actualización:** 2026-10-05
 
 ---
 
@@ -291,6 +291,20 @@ o historial propios, la resolución podrá evolucionar sin propagar detalles de
 persistencia por toda la aplicación.
 
 No se crea ni se define aquí una entidad `Team`.
+
+### Alcance y estado del empleado
+
+> **Estado:** 🚧 DECISIÓN DE DISEÑO
+
+El resolvedor de alcances construye el conjunto `TEAM` y `GLOBAL` con los
+empleados **activos**; `RAMA` incluye a todos los descendientes sin filtrar
+estado. Como `GLOBAL` significa "toda la organización", una decisión denegada
+que lleve un alcance de organización se considera suficiente para el recurso
+(`grantsResourceAccess`): de lo contrario un `ADMIN` no podría leer ni corregir
+el registro de un empleado dado de baja.
+
+Para los alcances limitados (`EQUIPO`, `RAMA`) el comportamiento con empleados
+inactivos no está definido por la matriz y queda pendiente de confirmación.
 
 ### Clasificación
 
@@ -609,8 +623,11 @@ result
 correlationId
 ```
 
-La auditoría puede registrar tanto operaciones autorizadas relevantes como
-intentos denegados, si la política final lo establece.
+La auditoría registra tanto operaciones autorizadas relevantes como intentos
+denegados: toda denegación de autorización se emite como evento
+`AUTHORIZATION_DENIED` con resultado `DENIED` desde el propio servicio de
+autorización (ADR-013, ADR-020 decisión 6). La escritura es best-effort y nunca
+altera la decisión.
 
 Este documento no define el esquema completo de `AuditEvent`, el catálogo
 definitivo de eventos ni la retención. Esos aspectos permanecen pendientes en
@@ -751,3 +768,4 @@ de la jerarquía.
 | 2026-09-02 | 0.1     | Creación de la arquitectura técnica de autenticación y autorización. |
 | 2026-09-03 | 0.2     | Consolidación del mecanismo inicial de autenticación y del estado de cuentas inactivas. |
 | 2026-09-03 | 0.3     | Consolidación de email + contraseña, sesiones y medida de seguridad 2FA. |
+| 2026-10-04 | 0.4     | §6: se documenta que `TEAM` y `GLOBAL` se resuelven sobre empleados activos y que un alcance de organización es suficiente para el recurso (`grantsResourceAccess`). El comportamiento con empleados inactivos en alcances limitados queda pendiente. |

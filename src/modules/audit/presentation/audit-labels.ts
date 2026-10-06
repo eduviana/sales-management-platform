@@ -7,6 +7,12 @@
  * Reference: ADR-009, requirements.md §3.12
  */
 
+import {
+  formatDate,
+  formatDateTimeWithSeconds,
+  formatTime,
+} from "@/shared/presentation/format";
+
 export const ACTION_LABELS: Record<string, string> = {
   LOGIN_SUCCESS: "Inicio de sesión",
   LOGIN_FAILURE: "Login fallido",
@@ -28,6 +34,7 @@ export const ACTION_LABELS: Record<string, string> = {
   COMMISSION_RULE_CREATED: "Regla de comisión creada",
   COMMISSION_GENERATED: "Comisión generada",
   COMMISSION_REVERSED: "Comisión revertida",
+  AUTHORIZATION_DENIED: "Denegación de autorización",
 };
 
 export const RESULT_BADGE: Record<string, string> = {
@@ -49,33 +56,18 @@ export const RESOURCE_TYPE_LABELS: Record<string, string> = {
   CommissionRule: "Regla de comisión",
   CommissionEntry: "Comisión",
   Auth: "Autenticación",
+  Authorization: "Autorización",
   System: "Sistema",
 };
 
 export function formatAuditDateTime(date: Date): string {
-  return date.toLocaleString("es-AR", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-    hour12: false,
-  });
+  return formatDateTimeWithSeconds(date);
 }
 
 export function formatAuditDateShort(date: Date): string {
-  return date.toLocaleDateString("es-AR", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  });
+  return formatDate(date);
 }
 
 export function formatAuditTimeShort(date: Date): string {
-  return date.toLocaleTimeString("es-AR", {
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  });
+  return formatTime(date);
 }

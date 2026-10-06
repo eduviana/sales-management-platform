@@ -8,13 +8,16 @@
  * Reference: business-rules.md §8, §16.1, permissions-matrix.md §4.4
  */
 
-import { notFound } from "next/navigation";
 import Link from "next/link";
-import { prisma } from "@/infrastructure/prisma/client";
-import { createAuthorizationService } from "@/modules/authorization/composition-root";
-import { PrismaOrganizationRepository } from "@/infrastructure/organization/prisma-organization-repository";
+import { handlePageLoadError } from "../../_lib/handle-page-load-error";
 import { createSalesUseCases } from "@/modules/sales/composition-root";
-import { resolveAuthContext } from "@/modules/sales/presentation/resolve-auth-context";
+import { resolveAuthContext } from "@/modules/identity/resolve-auth-context";
+import { formatDate } from "@/shared/presentation/format";
+import {
+  DisplayField as Field,
+  SectionCard,
+} from "@/shared/presentation/components";
+import { SALE_STATUS_LABELS as STATUS_LABELS } from "@/modules/sales/presentation/sale-status";
 import { SaleActions } from "./sale-actions";
 import {
   CreditCard,
@@ -26,14 +29,6 @@ import {
   Users,
 } from "lucide-react";
 
-const STATUS_LABELS: Record<string, string> = {
-  DRAFT: "Borrador",
-  PENDING_REVIEW: "Pend. revisión",
-  APPROVED: "Aprobada",
-  REJECTED: "Rechazada",
-  CANCELLED: "Cancelada",
-};
-
 const STATUS_COLORS: Record<string, { bg: string; text: string; border: string }> = {
   APPROVED: { bg: "bg-[#00df81]/10", text: "text-[#00df81]", border: "border-[#00df81]/20" },
   PENDING_REVIEW: { bg: "bg-amber-400/10", text: "text-amber-400", border: "border-amber-400/20" },
@@ -41,17 +36,6 @@ const STATUS_COLORS: Record<string, { bg: string; text: string; border: string }
   CANCELLED: { bg: "bg-surface-container-high", text: "text-zinc-400", border: "border-outline-variant" },
   DRAFT: { bg: "bg-surface-container-high", text: "text-zinc-400", border: "border-outline-variant" },
 };
-
-function Field({ label, value, mono = false }: { label: string; value: string; mono?: boolean }) {
-  return (
-    <div>
-      <p className="text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider mb-1">
-        {label}
-      </p>
-      <p className={`text-on-surface text-base ${mono ? "font-mono" : "font-medium"}`}>{value}</p>
-    </div>
-  );
-}
 
 function StatusPill({ status }: { status: string }) {
   const config = STATUS_COLORS[status] ?? STATUS_COLORS.DRAFT;
@@ -64,32 +48,6 @@ function StatusPill({ status }: { status: string }) {
   );
 }
 
-function SectionCard({
-  icon,
-  accent,
-  title,
-  children,
-  className = "",
-}: {
-  icon: React.ReactNode;
-  accent: string;
-  title: string;
-  children: React.ReactNode;
-  className?: string;
-}) {
-  return (
-    <section
-      className={`bg-surface-container border border-outline-variant rounded-2xl p-7 ${className}`}
-    >
-      <div className="flex items-center gap-2.5 mb-6">
-        <div className={`p-2 rounded-lg ${accent}`}>{icon}</div>
-        <h2 className="text-sm font-semibold text-on-surface uppercase tracking-wider">{title}</h2>
-      </div>
-      {children}
-    </section>
-  );
-}
-
 export default async function SaleDetailPage({
   params,
 }: {
@@ -97,41 +55,19 @@ export default async function SaleDetailPage({
 }) {
   const { id } = await params;
   const authContext = await resolveAuthContext();
-  const auth = createAuthorizationService(prisma);
-  const orgRepo = new PrismaOrganizationRepository(prisma);
-  const useCases = createSalesUseCases(prisma, auth, orgRepo);
+  const useCases = createSalesUseCases();
 
-  let saleResult;
+  let detail;
   try {
-    saleResult = await useCases.getSale.execute({
+    detail = await useCases.getSaleDetail.execute({
       authContext,
       saleId: id,
     });
-  } catch {
-    notFound();
+  } catch (error) {
+    handlePageLoadError(error);
   }
 
-  const { sale } = saleResult;
-
-  // Load items directly from Prisma
-  const items = await prisma.saleItem.findMany({
-    where: { saleId: sale.id },
-    include: { product: true },
-  });
-
-  // Load referral contacts
-  const referralContacts = await prisma.referralContact.findMany({
-    where: { saleId: sale.id },
-    orderBy: { createdAt: "asc" },
-  });
-
-  // Load commission entries (only for sales that have been processed)
-  const commissionEntries = sale.status === "APPROVED" || sale.status === "CANCELLED"
-    ? await prisma.commissionEntry.findMany({
-        where: { saleId: sale.id },
-        orderBy: { calculatedAt: "asc" },
-      })
-    : [];
+  const { sale, items, referralContacts, commissionEntries } = detail;
 
   // Determine if user is the owner (for edit/submit actions)
   const isOwner = sale.employeeId === authContext.employeeId;
@@ -175,10 +111,10 @@ export default async function SaleDetailPage({
       <section className="bg-surface-container border border-outline-variant rounded-2xl p-7 relative overflow-hidden">
         <div className="absolute -right-10 -bottom-10 w-44 h-44 bg-sky-400/5 rounded-full blur-3xl pointer-events-none" />
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-10 gap-y-6">
-          <Field label="Fecha de venta" value={new Date(sale.saleDate).toLocaleDateString("es-AR")} />
+          <Field label="Fecha de venta" value={formatDate(sale.saleDate)} />
           <Field label="Total" value={`$${sale.totalAmount.toFixed(2)}`} mono />
           <Field label="Estado" value={STATUS_LABELS[sale.status] ?? sale.status} />
-          <Field label="Creada" value={new Date(sale.createdAt).toLocaleDateString("es-AR")} />
+          <Field label="Creada" value={formatDate(sale.createdAt)} />
         </div>
       </section>
 
@@ -386,7 +322,7 @@ export default async function SaleDetailPage({
                       {isEarned ? "Comisión generada" : "Comisión revertida"}
                     </span>
                     <span className="text-sm text-on-surface-variant">
-                      {new Date(entry.calculatedAt).toLocaleDateString("es-AR")}
+                      {formatDate(entry.calculatedAt)}
                     </span>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-10 gap-y-4">

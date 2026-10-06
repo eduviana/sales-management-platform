@@ -57,6 +57,17 @@ export class PrismaCommissionRuleRepository implements CommissionRuleRepository 
     return rules.map(mapRule);
   }
 
+  async findLevelIdsByIds(
+    ruleIds: readonly string[],
+  ): Promise<Array<{ readonly id: string; readonly levelId: number }>> {
+    if (ruleIds.length === 0) return [];
+    const rows = await this.prisma.commissionRule.findMany({
+      where: { id: { in: [...ruleIds] } },
+      select: { id: true, levelId: true },
+    });
+    return rows.map((row) => ({ id: row.id, levelId: row.levelId }));
+  }
+
   async create(input: CreateCommissionRuleInput): Promise<CommissionRuleData> {
     const rule = await this.prisma.commissionRule.create({
       data: {

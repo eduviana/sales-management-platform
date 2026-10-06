@@ -9,6 +9,7 @@
 import type { Client } from "@/modules/visits/domain";
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { formatDate } from "@/shared/presentation/format";
 
 interface ClientsClientProps {
   initialClients: Client[];
@@ -109,7 +110,7 @@ export function ClientsClient({ initialClients }: ClientsClientProps) {
               <td className="py-3 px-4 text-center">{client.email ?? "—"}</td>
               <td className="py-3 px-4 text-center">{client.address ?? "—"}</td>
               <td className="py-3 px-4 text-center">
-                {new Date(client.createdAt).toLocaleDateString("es-AR")}
+                {formatDate(client.createdAt)}
               </td>
             </tr>
           ))}

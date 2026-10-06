@@ -1,10 +1,7 @@
 "use server";
 
-import { prisma } from "@/infrastructure/prisma/client";
-import { PrismaOrganizationRepository } from "@/infrastructure/organization/prisma-organization-repository";
-import { createAuthorizationService } from "@/modules/authorization/composition-root";
 import { createCommissionUseCases } from "@/modules/commissions/composition-root";
-import { resolveAuthContext } from "@/modules/sales/presentation/resolve-auth-context";
+import { resolveAuthContext } from "@/modules/identity/resolve-auth-context";
 
 export async function createCommissionRuleVersion(input: {
   levelId: number;
@@ -13,13 +10,7 @@ export async function createCommissionRuleVersion(input: {
   effectiveTo?: Date | null;
 }) {
   const authContext = await resolveAuthContext();
-  const authorization = createAuthorizationService(prisma);
-  const organizationRepository = new PrismaOrganizationRepository(prisma);
-  const useCases = createCommissionUseCases(
-    prisma,
-    authorization,
-    organizationRepository,
-  );
+  const useCases = createCommissionUseCases();
 
   return useCases.createRuleVersion.execute({
     ...input,

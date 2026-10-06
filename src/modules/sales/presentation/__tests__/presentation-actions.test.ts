@@ -18,7 +18,7 @@ import { AuthenticationError, AuthorizationError, ValidationError } from "@/shar
 
 const mockResolveAuthContext = vi.fn();
 
-vi.mock("@/modules/sales/presentation/resolve-auth-context", () => ({
+vi.mock("@/modules/identity/resolve-auth-context", () => ({
   resolveAuthContext: () => mockResolveAuthContext(),
 }));
 

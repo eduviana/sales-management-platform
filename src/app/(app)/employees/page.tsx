@@ -7,11 +7,9 @@
  * Reference: requirements.md §3.12
  */
 
-import { resolveAuthContext } from "@/modules/sales/presentation/resolve-auth-context";
-import { createAuthorizationService } from "@/modules/authorization/composition-root";
+import { resolveAuthContext } from "@/modules/identity/resolve-auth-context";
 import { createOrganizationModule } from "@/modules/organization/composition-root";
 import { createProgressionModule } from "@/modules/progression/composition-root";
-import { prisma } from "@/infrastructure/prisma/client";
 import { redirect } from "next/navigation";
 import { EmployeesClient } from "./employees-client";
 
@@ -23,9 +21,8 @@ export default async function EmployeesPage() {
     redirect("/dashboard");
   }
 
-  const auth = createAuthorizationService(prisma);
-  const { getAllEmployeesUseCase } = createOrganizationModule(auth);
-  const { getEmployeeProgression, calculateProgression } = createProgressionModule(prisma);
+  const { getAllEmployeesUseCase } = createOrganizationModule();
+  const { getEmployeeProgression, calculateProgression } = createProgressionModule();
 
   const { employees: allEmployees } = await getAllEmployeesUseCase.execute();
 

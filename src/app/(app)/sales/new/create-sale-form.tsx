@@ -1,7 +1,7 @@
 "use client";
 
 import { useCreateSaleForm } from "./use-create-sale-form";
-import { formatVisitDate } from "@/modules/visits/domain";
+import { formatDateOnly } from "@/shared/presentation/format";
 import type { ProductData } from "@/modules/sales/domain";
 import type { Visit } from "@/modules/visits/domain";
 
@@ -41,7 +41,7 @@ export function CreateSaleForm({
   visits,
   fixedVisit,
 }: CreateSaleFormProps) {
-  const form = useCreateSaleForm({ products, visits, fixedVisit });
+  const form = useCreateSaleForm({ products, fixedVisit });
 
   return (
     <form
@@ -87,7 +87,7 @@ export function CreateSaleForm({
               <option value="">Seleccionar visita completada</option>
               {visits.map((visit) => (
                 <option key={visit.id} value={visit.id}>
-                  {formatVisitDate(visit.scheduledDate)} — {visit.id.slice(0, 8)}
+                  {formatDateOnly(visit.scheduledDate)} — {visit.id.slice(0, 8)}
                 </option>
               ))}
             </select>
@@ -105,7 +105,6 @@ export function CreateSaleForm({
 
       {/* 3. Productos vendidos */}
       <ProductsSection
-        register={form.register}
         errors={form.errors}
         submitCount={form.submitCount}
         products={products}

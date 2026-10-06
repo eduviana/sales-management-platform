@@ -29,6 +29,7 @@ export interface ChangeSupervisorInput {
   readonly employeeId: string;
   readonly newSupervisorId: string | null;
   readonly reason?: string;
+  /** Account id of the actor: `audit_event.actorId` is a FK to `UserAccount`. */
   readonly actorId: string;
   readonly actorEmail: string;
 }

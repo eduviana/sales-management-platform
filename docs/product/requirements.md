@@ -4,7 +4,7 @@
 **Tipo:** Aplicación web de uso interno  
 **Estado:** En consolidación  
 **Versión:** 1.21  
-**Última actualización:** 29/09/2026
+**Última actualización:** 05/10/2026
 
 ---
 
@@ -524,8 +524,17 @@ Los supervisores N3+ deben poder ver los integrantes de su equipo.
 - Los supervisores N3+ deben poder ver una tabla con los vendedores de su equipo.
 - La tabla debe mostrar información relevante de cada vendedor.
 - Los supervisores N3+ deben poder asignar clientes a vendedores de su equipo.
+- Desde la ficha de un integrante del equipo (`/team/[id]`) el supervisor debe
+  poder consultar y **editar los datos personales y de contacto** del empleado:
+  nombre, apellido, DNI, email, teléfono, fecha de nacimiento y dirección.
+- La edición se habilita únicamente cuando el supervisor tiene `employee.update`
+  sobre ese empleado (alcance EQUIPO para N3, RAMA para N4–N6,
+  permissions-matrix.md §4.2); el servidor vuelve a validarlo.
+- La pantalla de gestión de empleados del ADMIN (`/employees`) y su ficha
+  (`/employees/[id]`) siguen siendo exclusivas del ADMIN e incluyen las
+  operaciones administrativas (ascenso, reasignación de supervisor).
 
-**Referencia:** REG-069, REG-071
+**Referencia:** REG-069, REG-071, permissions-matrix.md §4.2
 
 ### 3.12. Gestión administrativa de empleados
 
@@ -614,8 +623,12 @@ de cualquier empleado:
 - Dirección completa (calle, número, piso, departamento, ciudad,
   provincia, código postal).
 
-> **Regla:** ADMIN puede editar datos de cualquier empleado sin
-> restricción de alcance. La operación qued registrada en auditoría.
+> **Regla:** la edición se autoriza con el permiso `employee.update` y su
+> alcance (permissions-matrix.md §4.2), no con el rol. El ADMIN edita
+> cualquier empleado (alcance GLOBAL); los supervisores N3+ editan los datos
+> de los empleados que están dentro de su alcance (EQUIPO para N3, RAMA para
+> N4–N6, GLOBAL para N7). La validación se realiza en el servidor sobre el
+> empleado objetivo. La operación queda registrada en auditoría.
 
 **Tabla de empleados (`/employees`):**
 
@@ -840,6 +853,7 @@ Las operaciones relevantes del negocio se rastrean mediante un mecanismo de audi
 | Organización | EMPLOYEE_CREATED, EMPLOYEE_UPDATED, EMPLOYEE_DEACTIVATED, EMPLOYEE_LEVEL_CHANGED, EMPLOYEE_SUPERVISOR_CHANGED |
 | Ventas | SALE_CREATED, SALE_UPDATED, SALE_SUBMITTED, SALE_APPROVED, SALE_REJECTED, SALE_CANCELLED |
 | Comisiones | COMMISSION_RULE_CREATED, COMMISSION_GENERATED, COMMISSION_REVERSED |
+| Autorización | AUTHORIZATION_DENIED |
 
 **Garantías:**
 
@@ -1053,3 +1067,5 @@ Las decisiones adoptadas para esta versión deberán documentarse como supuestos
 | 29/09/2026 | 1.19    | §3.12.2: se elimina la sección "Metadatos del Registro" de la columna derecha de la ficha de empleado. Las fechas de creación y última actualización se muestran en el encabezado, reemplazando en el subtítulo al nivel, email y fecha de ingreso. |
 | 29/09/2026 | 1.20    | §6: se actualiza la tabla de estado. "Objetivos y metas" pasa de ⚠️ Pendiente a ✅ Confirmado (objetivos mensuales, REG-055, Q55–Q58). "Reglas definitivas de comisiones" pasa a 🔎 Observado (tasas N1–N7 confirmadas; detalles operativos pendientes, §2.7). En §5 se retira "Objetivos y metas" de los pendientes principales. |
 | 29/09/2026 | 1.21    | §3.5/§5: se registra el estado del reporting. La versión actual implementa indicadores individuales/de equipo, gráficos, objetivos y comisiones estimadas (períodos hoy/semana/mes). Comparaciones, rankings, períodos adicionales y generación/exportación de reportes quedan diferidos (Q48–Q54); la exportación CSV no se implementa por ahora. |
+| 04/10/2026 | 1.22    | §3.12.2: la edición de datos de empleados se autoriza con el permiso `employee.update` y su alcance, no con el rol. El ADMIN edita cualquier empleado (GLOBAL) y los supervisores N3+ editan dentro de su alcance (Q143). |
+| 04/10/2026 | 1.23    | §3.11: el supervisor N3+ puede editar los datos personales y de contacto de los integrantes de su equipo desde `/team/[id]`, habilitado por `employee.update` con alcance. `/employees` y `/employees/[id]` permanecen exclusivas del ADMIN. |

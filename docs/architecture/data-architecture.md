@@ -3,7 +3,7 @@
 **Proyecto:** Royal Prestige — Plataforma de Gestión de Ventas  
 **Estado:** 🚧 DECISIÓN DE DISEÑO  
 **Versión:** 0.7  
-**Última actualización:** 2026-09-08
+**Última actualización:** 2026-10-05
 
 ---
 
@@ -381,6 +381,14 @@ Todavía no se definen:
 
 No se introduce event sourcing.
 
+> **Hallazgo de implementación (2026-10-02):**
+> `PrismaOrganizationRepository.executeInTransaction` ejecuta el callback con la
+> instancia del repositorio (`this`) en lugar del cliente transaccional de
+> Prisma. Dado que las operaciones internas usan `this.prisma`, no quedan
+> realmente dentro de la transacción. Debe corregirse propagando el cliente
+> transaccional a las operaciones del callback. Es previo a `ADR-020` y queda
+> fuera del alcance P0.
+
 **Clasificación:**
 
 - **DECISIÓN YA TOMADA:** necesidad de consistencia transaccional para cambios
@@ -496,7 +504,7 @@ persisten dentro de la misma transacción (`PrismaTransactionScopedAuditAdapter`
 **Implementado (Fase 7, ADR-013):**
 
 - Tabla `audit_event` con campos: `id`, `actorId`, `actorEmail` (snapshot),
-  `action` (enum `AuditAction` de 20 valores), `resourceType`, `resourceId`,
+  `action` (enum `AuditAction` de 21 valores), `resourceType`, `resourceId`,
   `result`, `correlationId`, `metadata`, `createdAt`.
 - Índices en `(actorId)`, `(resourceType, resourceId)`, `(action)`,
   `(correlationId)`, `(createdAt)`.
@@ -842,3 +850,4 @@ decisión arquitectónica.
 | 2026-09-03 | 0.5     | Comisión inicial vigente N1 → 15 % (la regla de 50 % queda REEMPLAZADA como antecedente). |
 | 2026-09-07 | 0.6     | Tasas N1–N7 confirmadas y consistencia transaccional de aprobación, comisión y reversión documentada. |
 | 2026-09-08 | 0.7     | Fase 7: sección 13 de auditoría actualizada con AuditPort implementado, modelo AuditEvent y semántica best-effort. |
+| 2026-10-02 | 0.8     | Sección 10: hallazgo de implementación sobre `executeInTransaction` (no propaga el cliente transaccional de Prisma). |

@@ -1,18 +1,13 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { prisma } from "@/infrastructure/prisma/client";
-import { createAuthorizationService } from "@/modules/authorization/composition-root";
-import { createOrganizationModule } from "@/modules/organization/composition-root";
 import { createVisitsUseCases } from "@/modules/visits/composition-root";
-import { resolveAuthContext } from "@/modules/sales/presentation/resolve-auth-context";
+import { resolveAuthContext } from "@/modules/identity/resolve-auth-context";
 import { formatClientAddress } from "@/modules/visits/domain/client";
 
 export async function createClient(formData: FormData): Promise<void> {
   const authContext = await resolveAuthContext();
-  const auth = createAuthorizationService(prisma);
-  const { organizationRepository } = createOrganizationModule(auth);
-  const { createClient: createClientUseCase } = createVisitsUseCases(prisma, auth, organizationRepository);
+  const { createClient: createClientUseCase } = createVisitsUseCases();
 
   const name = String(formData.get("name") ?? "").trim();
   const documentNumber = String(formData.get("documentNumber") ?? "").trim();

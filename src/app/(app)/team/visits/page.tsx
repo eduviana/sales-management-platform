@@ -1,8 +1,5 @@
-import { prisma } from "@/infrastructure/prisma/client";
-import { createAuthorizationService } from "@/modules/authorization/composition-root";
-import { createOrganizationModule } from "@/modules/organization/composition-root";
 import { createVisitsUseCases } from "@/modules/visits/composition-root";
-import { resolveAuthContext } from "@/modules/sales/presentation/resolve-auth-context";
+import { resolveAuthContext } from "@/modules/identity/resolve-auth-context";
 import { TeamVisitsClient } from "./team-visits-client";
 import Link from "next/link";
 
@@ -10,9 +7,7 @@ export const dynamic = "force-dynamic";
 
 export default async function TeamVisitsPage() {
   const authContext = await resolveAuthContext();
-  const auth = createAuthorizationService(prisma);
-  const { organizationRepository } = createOrganizationModule(auth);
-  const { getVisitList } = createVisitsUseCases(prisma, auth, organizationRepository);
+  const { getVisitList } = createVisitsUseCases();
   const visits = await getVisitList.execute({ authContext, scope: "TEAM" });
 
   return (

@@ -5,7 +5,7 @@
  */
 
 import type { PrismaClient, VisitStatus as PrismaVisitStatus } from "@prisma/client";
-import type { Visit, VisitStatus, CreateVisitData, UpdateVisitData } from "../domain/visit";
+import type { Visit, VisitStatus, VisitStatusCounts, CreateVisitData, UpdateVisitData } from "../domain/visit";
 import type { VisitRepository } from "../domain/visit-repository";
 
 type ClientAddressFields = {
@@ -57,6 +57,9 @@ function mapDomainStatusToPrisma(status: VisitStatus): PrismaVisitStatus {
   };
   return map[status];
 }
+
+/** Visit statuses that count as a completed visit. */
+const COMPLETED_STATUSES: PrismaVisitStatus[] = ["COMPLETED", "NO_SALE"];
 
 export class PrismaVisitRepository implements VisitRepository {
   constructor(private readonly prisma: PrismaClient) {}
@@ -143,5 +146,62 @@ export class PrismaVisitRepository implements VisitRepository {
     return this.prisma.visit.count({
       where: { sellerId, status: "ASSIGNED" },
     });
+  }
+
+  async countCompletedBySellerIdSince(
+    sellerId: string,
+    since: Date,
+  ): Promise<number> {
+    return this.prisma.visit.count({
+      where: {
+        sellerId,
+        status: { in: COMPLETED_STATUSES },
+        scheduledDate: { gte: since },
+      },
+    });
+  }
+
+  async countCompletedBySellerIdSinceBatch(
+    entries: ReadonlyArray<{ sellerId: string; since: Date }>,
+  ): Promise<Map<string, number>> {
+    const counts = new Map<string, number>();
+    for (const entry of entries) {
+      counts.set(
+        entry.sellerId,
+        await this.countCompletedBySellerIdSince(entry.sellerId, entry.since),
+      );
+    }
+    return counts;
+  }
+
+  async countStatusBySellerIds(
+    sellerIds: readonly string[],
+  ): Promise<Map<string, VisitStatusCounts>> {
+    const counts = new Map<string, VisitStatusCounts>();
+    if (sellerIds.length === 0) return counts;
+
+    const rows = await this.prisma.visit.groupBy({
+      by: ["sellerId", "status"],
+      where: { sellerId: { in: [...sellerIds] } },
+      _count: { _all: true },
+    });
+
+    for (const row of rows) {
+      const current = counts.get(row.sellerId) ?? {
+        total: 0,
+        completed: 0,
+        pending: 0,
+      };
+      const value = row._count._all ?? 0;
+      counts.set(row.sellerId, {
+        total: current.total + value,
+        completed:
+          current.completed +
+          (COMPLETED_STATUSES.includes(row.status) ? value : 0),
+        pending: current.pending + (row.status === "ASSIGNED" ? value : 0),
+      });
+    }
+
+    return counts;
   }
 }

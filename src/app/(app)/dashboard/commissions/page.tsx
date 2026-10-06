@@ -1,18 +1,18 @@
 /**
  * Dashboard — Comisiones generadas del mes actual.
  *
- * Server component that loads commission entries for the authenticated user.
+ * Composition root: it resolves the scope from the URL and hands it to the
+ * commissions read model.
  *
  * Reference: requirements.md §3.2
  */
 
 export const dynamic = "force-dynamic";
 
-import { prisma } from "@/infrastructure/prisma/client";
-import { createAuthorizationService } from "@/modules/authorization/composition-root";
-import { PrismaOrganizationRepository } from "@/infrastructure/organization/prisma-organization-repository";
-import { resolveAuthContext } from "@/modules/sales/presentation/resolve-auth-context";
-import { AuthorizationError } from "@/shared/errors";
+import { createCommissionUseCases } from "@/modules/commissions/composition-root";
+import type { CommissionScope } from "@/modules/commissions/application";
+import { resolveAuthContext } from "@/modules/identity/resolve-auth-context";
+import { formatMonthYear } from "@/shared/presentation/format";
 import { CommissionsClient } from "./commissions-client";
 
 export default async function DashboardCommissionsPage({
@@ -22,55 +22,14 @@ export default async function DashboardCommissionsPage({
 }) {
   const params = await searchParams;
   const isTeam = params.scope === "team";
+  const scope: CommissionScope = isTeam ? "TEAM" : "OWN";
 
   const authContext = await resolveAuthContext();
-  const auth = createAuthorizationService(prisma);
-  const orgRepo = new PrismaOrganizationRepository(prisma);
+  const { getMonthlyOverview } = createCommissionUseCases();
 
-  // Determine employee IDs based on scope — authorize first
-  let employeeIds: string[];
-  if (isTeam) {
-    const decision = await auth.authorize(authContext, { permission: "sale.readTeam" });
-    if (!decision.allowed) {
-      throw new AuthorizationError(decision.reason ?? "No tienes permisos para ver comisiones del equipo.");
-    }
-    const subordinates = await orgRepo.getDirectSubordinates(authContext.employeeId);
-    employeeIds = [authContext.employeeId, ...subordinates.map((e) => e.id)];
-  } else {
-    employeeIds = [authContext.employeeId];
-  }
+  const overview = await getMonthlyOverview.execute({ authContext, scope });
 
-  // Current month range
-  const now = new Date();
-  const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
-  const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
-
-  // Fetch commission entries with sale data
-  const entries = await prisma.commissionEntry.findMany({
-    where: {
-      employeeId: { in: employeeIds },
-      type: "EARNED",
-      saleDate: { gte: firstDay, lte: lastDay },
-    },
-    include: {
-      sale: {
-        select: {
-          saleNumber: true,
-          totalAmount: true,
-        },
-      },
-      employee: {
-        select: {
-          firstName: true,
-          lastName: true,
-        },
-      },
-    },
-    orderBy: { saleDate: "desc" },
-  });
-
-  const monthName = now.toLocaleDateString("es-AR", { month: "long", year: "numeric" });
-  const totalCommissions = entries.reduce((sum, e) => sum + Number(e.amount), 0);
+  const monthName = formatMonthYear(overview.referenceDate);
   const title = isTeam ? "Comisiones del Equipo" : "Comisiones Generadas";
   const subtitle = isTeam
     ? `Comisiones del equipo generadas en ${monthName}`
@@ -78,16 +37,16 @@ export default async function DashboardCommissionsPage({
 
   return (
     <CommissionsClient
-      entries={entries.map((e) => ({
-        id: e.id,
-        saleNumber: e.sale.saleNumber,
-        saleDate: e.saleDate.toISOString(),
-        baseAmount: Number(e.baseAmount),
-        percentage: Number(e.percentage),
-        amount: Number(e.amount),
-        employeeName: isTeam ? `${e.employee.firstName} ${e.employee.lastName}` : undefined,
+      entries={overview.entries.map((entry) => ({
+        id: entry.id,
+        saleNumber: entry.saleNumber,
+        saleDate: entry.saleDate.toISOString(),
+        baseAmount: entry.baseAmount,
+        percentage: entry.percentage,
+        amount: entry.amount,
+        employeeName: entry.employeeName,
       }))}
-      totalCommissions={totalCommissions}
+      totalCommissions={overview.totalAmount}
       title={title}
       subtitle={subtitle}
       showEmployee={isTeam}

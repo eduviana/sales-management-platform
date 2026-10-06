@@ -6,7 +6,7 @@
 
 "use client";
 
-import type { UseFormRegister, FieldErrors } from "react-hook-form";
+import type { FieldErrors } from "react-hook-form";
 import type { ProductData } from "@/modules/sales/domain";
 import type { CreateSaleFormValues, SaleItem } from "../create-sale-form-schema";
 import {
@@ -17,7 +17,6 @@ import {
 } from "../form-styles";
 
 interface ProductsSectionProps {
-  register: UseFormRegister<CreateSaleFormValues>;
   errors: FieldErrors<CreateSaleFormValues>;
   submitCount: number;
   products: readonly ProductData[];
@@ -34,7 +33,6 @@ interface ProductsSectionProps {
 }
 
 export function ProductsSection({
-  register,
   errors,
   submitCount,
   products,

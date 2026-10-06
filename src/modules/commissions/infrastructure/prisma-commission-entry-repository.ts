@@ -63,4 +63,45 @@ export class PrismaCommissionEntryRepository implements CommissionEntryRepositor
     });
     return entries.map(mapEntry);
   }
+
+  async findEarnedByEmployeeIds(
+    employeeIds: readonly string[],
+    period?: { readonly from: Date; readonly to: Date },
+  ): Promise<CommissionEntryData[]> {
+    if (employeeIds.length === 0) return [];
+    const entries = await this.prisma.commissionEntry.findMany({
+      where: {
+        employeeId: { in: [...employeeIds] },
+        type: "EARNED",
+        ...(period ? { saleDate: { gte: period.from, lte: period.to } } : {}),
+      },
+      orderBy: { saleDate: "desc" },
+    });
+    return entries.map(mapEntry);
+  }
+
+  async findSaleIdsByIds(
+    entryIds: readonly string[],
+  ): Promise<Array<{ readonly id: string; readonly saleId: string }>> {
+    if (entryIds.length === 0) return [];
+    const rows = await this.prisma.commissionEntry.findMany({
+      where: { id: { in: [...entryIds] } },
+      select: { id: true, saleId: true },
+    });
+    return rows.map((row) => ({ id: row.id, saleId: row.saleId }));
+  }
+
+  async findEarnedAmountsBySaleIds(
+    saleIds: readonly string[],
+  ): Promise<Array<{ readonly saleId: string; readonly amount: number }>> {
+    if (saleIds.length === 0) return [];
+    const entries = await this.prisma.commissionEntry.findMany({
+      where: { saleId: { in: [...saleIds] }, type: "EARNED" },
+      select: { saleId: true, amount: true },
+    });
+    return entries.map((entry) => ({
+      saleId: entry.saleId,
+      amount: Number(entry.amount),
+    }));
+  }
 }

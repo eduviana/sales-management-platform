@@ -4,18 +4,13 @@
  * Reference: business-rules.md REG-069
  */
 
-import { resolveAuthContext } from "@/modules/sales/presentation/resolve-auth-context";
-import { createAuthorizationService } from "@/modules/authorization/composition-root";
-import { createOrganizationModule } from "@/modules/organization/composition-root";
+import { resolveAuthContext } from "@/modules/identity/resolve-auth-context";
 import { createVisitsUseCases } from "@/modules/visits/composition-root";
-import { prisma } from "@/infrastructure/prisma/client";
 import { ClientsClient } from "./clients-client";
 
 export default async function ClientsPage() {
   const authContext = await resolveAuthContext();
-  const auth = createAuthorizationService(prisma);
-  const { organizationRepository } = createOrganizationModule(auth);
-  const { getClientList } = createVisitsUseCases(prisma, auth, organizationRepository);
+  const { getClientList } = createVisitsUseCases();
 
   const clients = await getClientList.execute({ authContext });
 

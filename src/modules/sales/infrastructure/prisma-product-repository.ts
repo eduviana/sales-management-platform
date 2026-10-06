@@ -51,6 +51,20 @@ export class PrismaProductRepository implements ProductRepository {
     }
   }
 
+  async findByIds(ids: readonly string[]): Promise<ProductRecord[]> {
+    if (ids.length === 0) return [];
+    try {
+      const products = await this.prisma.product.findMany({
+        where: { id: { in: [...ids] } },
+      });
+      return products.map(mapProduct);
+    } catch (error) {
+      throw new DatabaseError("Failed to find products.", {
+        cause: error as Error,
+      });
+    }
+  }
+
   async findByCode(code: string): Promise<ProductRecord | null> {
     try {
       const product = await this.prisma.product.findUnique({

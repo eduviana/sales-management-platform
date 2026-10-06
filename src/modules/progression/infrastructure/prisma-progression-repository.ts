@@ -19,6 +19,17 @@ export class PrismaProgressionRepository implements ProgressionRepository {
     return entries.map((e) => this.mapEntry(e));
   }
 
+  async getEntriesByEmployees(
+    employeeIds: readonly string[],
+  ): Promise<ProgressEntry[]> {
+    if (employeeIds.length === 0) return [];
+    const entries = await this.prisma.employeeProgress.findMany({
+      where: { employeeId: { in: [...employeeIds] } },
+      orderBy: { createdAt: "desc" },
+    });
+    return entries.map((e) => this.mapEntry(e));
+  }
+
   async getEntriesByPeriod(employeeId: string, period: string): Promise<ProgressEntry[]> {
     const entries = await this.prisma.employeeProgress.findMany({
       where: { employeeId, period },

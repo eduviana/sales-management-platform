@@ -13,11 +13,8 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { prisma } from "@/infrastructure/prisma/client";
-import { createAuthorizationService } from "@/modules/authorization/composition-root";
-import { PrismaOrganizationRepository } from "@/infrastructure/organization/prisma-organization-repository";
 import { createSalesUseCases } from "@/modules/sales/composition-root";
-import { resolveAuthContext } from "./resolve-auth-context";
+import { resolveAuthContext } from "@/modules/identity/resolve-auth-context";
 import {
   AuthenticationError,
   AuthorizationError,
@@ -31,9 +28,7 @@ import {
 // =============================================================================
 
 function getUseCases() {
-  const auth = createAuthorizationService(prisma);
-  const orgRepo = new PrismaOrganizationRepository(prisma);
-  return createSalesUseCases(prisma, auth, orgRepo);
+  return createSalesUseCases();
 }
 
 function handleActionError(error: unknown): { error: string } {

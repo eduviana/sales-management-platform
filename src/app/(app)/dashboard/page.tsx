@@ -11,12 +11,10 @@
  * Reference: requirements.md §2.4–§2.6, §3.2, §3.12.1
  */
 
-import { resolveAuthContext } from "@/modules/sales/presentation/resolve-auth-context";
-import { createAuthorizationService } from "@/modules/authorization/composition-root";
+import { resolveAuthContext } from "@/modules/identity/resolve-auth-context";
 import { createAnalyticsUseCases } from "@/modules/analytics/composition-root";
 import { createSalesUseCases } from "@/modules/sales/composition-root";
-import { PrismaOrganizationRepository } from "@/infrastructure/organization/prisma-organization-repository";
-import { prisma } from "@/infrastructure/prisma/client";
+import { createCommissionUseCases } from "@/modules/commissions/composition-root";
 import { DashboardClient } from "./dashboard-client";
 
 /** Number of recent personal sales shown in the dashboard "Historial Reciente" table. */
@@ -24,8 +22,7 @@ const RECENT_SALES_LIMIT = 10;
 
 export default async function DashboardPage() {
   const authContext = await resolveAuthContext();
-  const auth = createAuthorizationService(prisma);
-  const { getDashboardData, getSystemOverview } = createAnalyticsUseCases(prisma, auth);
+  const { getDashboardData, getSystemOverview } = createAnalyticsUseCases();
 
   const isAdmin = authContext.role === "ADMIN";
 
@@ -43,8 +40,8 @@ export default async function DashboardPage() {
     );
   }
 
-  const orgRepo = new PrismaOrganizationRepository(prisma);
-  const salesUseCases = createSalesUseCases(prisma, auth, orgRepo);
+  const salesUseCases = createSalesUseCases();
+  const { getSaleAmounts } = createCommissionUseCases();
 
   const data = await getDashboardData.execute({
     authContext,
@@ -61,15 +58,10 @@ export default async function DashboardPage() {
     pageSize: RECENT_SALES_LIMIT,
   });
 
-  // Fetch commission entries for the recent sales in a single query
-  const recentSaleIds = recentSalesResult.sales.map((s) => s.id);
-  const recentCommissionEntries = await prisma.commissionEntry.findMany({
-    where: { saleId: { in: recentSaleIds }, type: "EARNED" },
-    select: { saleId: true, amount: true },
+  // Earned commission of each recent sale, for the commission column
+  const commissionAmounts = await getSaleAmounts.execute({
+    saleIds: recentSalesResult.sales.map((s) => s.id),
   });
-  const recentCommissionMap = new Map(
-    recentCommissionEntries.map((e) => [e.saleId, Number(e.amount)]),
-  );
 
   const recentSales = recentSalesResult.sales.map((s) => ({
     id: s.id,
@@ -78,7 +70,7 @@ export default async function DashboardPage() {
     buyerName: s.buyerName,
     totalAmount: s.totalAmount,
     status: s.status,
-    commissionAmount: recentCommissionMap.get(s.id) ?? null,
+    commissionAmount: commissionAmounts.get(s.id) ?? null,
   }));
 
   const headerTitle = data.hasTeam

@@ -12,6 +12,8 @@ import { useActionState } from "react";
 import { startTransition, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { EmployeeRecord } from "@/modules/organization/domain/organization-repository";
+import { formatLevelCode } from "@/shared/presentation/format";
+import { toActionErrorMessage } from "@/shared/presentation/action-error";
 import { reassignEmployee } from "./actions";
 
 interface ReassignButtonProps {
@@ -19,16 +21,6 @@ interface ReassignButtonProps {
   employeeName: string;
   potentialSupervisors: EmployeeRecord[];
 }
-
-const LEVEL_LABELS: Record<number, string> = {
-  1: "N1",
-  2: "N2",
-  3: "N3",
-  4: "N4",
-  5: "N5",
-  6: "N6",
-  7: "N7",
-};
 
 export function ReassignButton({
   employeeId,
@@ -45,7 +37,7 @@ export function ReassignButton({
         await reassignEmployee(formData);
         return null;
       } catch (e) {
-        return e instanceof Error ? e.message : "Error al reasignar.";
+        return toActionErrorMessage(e, "Error al reasignar.");
       }
     },
     null,
@@ -93,7 +85,7 @@ export function ReassignButton({
                 <option value="">Seleccionar supervisor...</option>
                 {potentialSupervisors.map((sup) => (
                   <option key={sup.id} value={sup.id}>
-                    {sup.firstName} {sup.lastName} ({sup.currentLevelId ? LEVEL_LABELS[sup.currentLevelId] ?? `N${sup.currentLevelId}` : "—"})
+                    {sup.firstName} {sup.lastName} ({sup.currentLevelId ? formatLevelCode(sup.currentLevelId) : "—"})
                   </option>
                 ))}
               </select>

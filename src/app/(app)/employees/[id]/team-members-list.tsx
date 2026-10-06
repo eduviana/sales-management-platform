@@ -9,6 +9,7 @@
 
 import { Users } from "lucide-react";
 import type { EmployeeRecord } from "@/modules/organization/domain/organization-repository";
+import { formatLevelCode } from "@/shared/presentation/format";
 import { ReassignButton } from "./reassign-button";
 
 interface TeamMembersListProps {
@@ -17,16 +18,6 @@ interface TeamMembersListProps {
   subordinates: EmployeeRecord[];
   allEmployees: EmployeeRecord[];
 }
-
-const LEVEL_LABELS: Record<number, string> = {
-  1: "N1",
-  2: "N2",
-  3: "N3",
-  4: "N4",
-  5: "N5",
-  6: "N6",
-  7: "N7",
-};
 
 function initials(firstName: string, lastName: string): string {
   return `${firstName[0] ?? ""}${lastName[0] ?? ""}`.toUpperCase();
@@ -81,7 +72,7 @@ export function TeamMembersList({
                     </div>
                     <div className="text-[10px] text-on-surface-variant flex items-center gap-1.5">
                       <span className="font-mono text-on-surface font-semibold">
-                        {sub.currentLevelId ? LEVEL_LABELS[sub.currentLevelId] ?? `N${sub.currentLevelId}` : "—"}
+                        {sub.currentLevelId ? formatLevelCode(sub.currentLevelId) : "—"}
                       </span>
                       <span className="text-on-surface-variant">•</span>
                       <span className={sub.status === "ACTIVE" ? "text-secondary" : "text-tertiary"}>

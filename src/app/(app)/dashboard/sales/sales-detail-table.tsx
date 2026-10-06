@@ -12,6 +12,11 @@
 import { useState, useMemo } from "react";
 import Link from "next/link";
 import { ArrowUpDown, ArrowUp, ArrowDown, ChevronLeft } from "lucide-react";
+import { formatDate } from "@/shared/presentation/format";
+import {
+  SALE_STATUS_BADGE as STATUS_BADGE,
+  SALE_STATUS_LABELS as STATUS_LABELS,
+} from "@/modules/sales/presentation/sale-status";
 
 interface SaleRow {
   id: string;
@@ -38,22 +43,6 @@ function SortIcon({ field, sortField, sortDir }: { field: SortField; sortField: 
     ? <ArrowUp size={14} className="text-primary" />
     : <ArrowDown size={14} className="text-primary" />;
 }
-
-const STATUS_LABELS: Record<string, string> = {
-  DRAFT: "Borrador",
-  PENDING_REVIEW: "Pend. revisión",
-  APPROVED: "Aprobada",
-  REJECTED: "Rechazada",
-  CANCELLED: "Cancelada",
-};
-
-const STATUS_BADGE: Record<string, string> = {
-  DRAFT: "badge-neutral",
-  PENDING_REVIEW: "badge-warning",
-  APPROVED: "badge-success",
-  REJECTED: "badge-error",
-  CANCELLED: "badge-error",
-};
 
 export function SalesDetailTable({ sales, title, subtitle }: SalesDetailTableProps) {
   const [search, setSearch] = useState("");
@@ -184,7 +173,7 @@ export function SalesDetailTable({ sales, title, subtitle }: SalesDetailTablePro
                       VT-{String(sale.saleNumber).padStart(4, "0")}
                     </td>
                     <td className="py-3 px-4 text-center font-mono-data">
-                      {new Date(sale.saleDate).toLocaleDateString("es-AR")}
+                      {formatDate(sale.saleDate)}
                     </td>
                     <td className="py-3 px-4 text-center">
                       {sale.buyerName ?? "—"}

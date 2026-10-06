@@ -9,12 +9,11 @@
  */
 
 import Link from "next/link";
-import { notFound, redirect } from "next/navigation";
-import { resolveAuthContext } from "@/modules/sales/presentation/resolve-auth-context";
-import { createAuthorizationService } from "@/modules/authorization/composition-root";
+import { redirect } from "next/navigation";
+import { handlePageLoadError } from "../../_lib/handle-page-load-error";
+import { resolveAuthContext } from "@/modules/identity/resolve-auth-context";
 import { createOrganizationModule } from "@/modules/organization/composition-root";
 import { createProgressionModule } from "@/modules/progression/composition-root";
-import { prisma } from "@/infrastructure/prisma/client";
 import { getLevelName } from "@/modules/organization/domain/level";
 import { EmployeeDetailClient } from "./employee-detail-client";
 import { ProgressCard } from "@/modules/progression/presentation/components/ProgressCard";
@@ -22,6 +21,12 @@ import { TeamMembersList } from "./team-members-list";
 import { PromoteButton } from "./promote-button";
 import { LEVEL_THRESHOLDS } from "@/modules/progression/domain";
 import { CheckCircle2, Crown, Pencil, User } from "lucide-react";
+import {
+  formatDate,
+  formatDateTime,
+  formatEmployeeCode,
+  formatLevelCode,
+} from "@/shared/presentation/format";
 
 const STATUS_LABELS: Record<string, string> = {
   ACTIVE: "Activo",
@@ -31,16 +36,6 @@ const STATUS_LABELS: Record<string, string> = {
 const STATUS_COLORS: Record<string, string> = {
   ACTIVE: "bg-secondary/10 text-secondary border-secondary/20",
   INACTIVE: "bg-tertiary/10 text-tertiary border-tertiary/20",
-};
-
-const LEVEL_CODES: Record<number, string> = {
-  1: "N1",
-  2: "N2",
-  3: "N3",
-  4: "N4",
-  5: "N5",
-  6: "N6",
-  7: "N7",
 };
 
 function StatusPill({ status }: { status: "ACTIVE" | "INACTIVE" }) {
@@ -71,30 +66,6 @@ function RibbonCard({
       <div className="mt-1.5">{children}</div>
     </div>
   );
-}
-
-function formatDate(date: Date): string {
-  return new Intl.DateTimeFormat("es-AR", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  }).format(new Date(date));
-}
-
-function formatDateTime(date: Date): string {
-  return new Intl.DateTimeFormat("es-AR", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  }).format(new Date(date));
-}
-
-/** "#0002" style employee code used in the summary ribbon. */
-function formatEmployeeCode(code: number): string {
-  return `#${String(code).padStart(4, "0")}`;
 }
 
 /** Human-readable tenure since the hire date, e.g. "3 años" / "2 meses". */
@@ -128,9 +99,8 @@ export default async function EmployeeDetailPage({
     redirect("/dashboard");
   }
 
-  const auth = createAuthorizationService(prisma);
-  const { getEmployeeByIdUseCase, organizationRepository } = createOrganizationModule(auth);
-  const { getEmployeeProgression, calculateProgression } = createProgressionModule(prisma);
+  const { getEmployeeByIdUseCase, organizationRepository } = createOrganizationModule();
+  const { getEmployeeProgression, calculateProgression } = createProgressionModule();
 
   let employee;
   try {
@@ -138,8 +108,8 @@ export default async function EmployeeDetailPage({
       authContext,
       employeeId: id,
     });
-  } catch {
-    notFound();
+  } catch (error) {
+    handlePageLoadError(error);
   }
 
   // Calculate and record progression (only target bonuses are persisted)
@@ -169,7 +139,7 @@ export default async function EmployeeDetailPage({
   const isAdmin = employee.currentLevelId === null;
   const levelCode = isAdmin
     ? "ADMIN"
-    : (LEVEL_CODES[employee.currentLevelId!] ?? `N${employee.currentLevelId}`);
+    : formatLevelCode(employee.currentLevelId!);
   const levelName = isAdmin
     ? "Administrador"
     : getLevelName(employee.currentLevelId!);

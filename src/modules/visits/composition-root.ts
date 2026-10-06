@@ -4,12 +4,11 @@
  * Wires domain, infrastructure, and application layers.
  */
 
-import type { PrismaClient } from "@prisma/client";
-import type { AuthorizationService } from "@/modules/authorization/domain";
-import type { OrganizationRepository } from "@/modules/organization/domain";
+import { prisma } from "@/infrastructure/prisma/client";
+import { createAuthorizationService } from "@/modules/authorization/composition-root";
+import { PrismaOrganizationRepository } from "@/infrastructure/organization/prisma-organization-repository";
 import { PrismaClientRepository } from "./infrastructure/prisma-client-repository";
 import { PrismaVisitRepository } from "./infrastructure/prisma-visit-repository";
-import { PrismaReferralContactRepository } from "./infrastructure/prisma-referral-contact-repository";
 import { GetClientListUseCase } from "./application/get-client-list-use-case";
 import { CreateClientUseCase } from "./application/create-client-use-case";
 import { GetVisitListUseCase } from "./application/get-visit-list-use-case";
@@ -26,15 +25,11 @@ export interface VisitsUseCases {
   readonly getTeamList: GetTeamListUseCase;
 }
 
-export function createVisitsUseCases(
-  prisma: PrismaClient,
-  authorizationService: AuthorizationService,
-  organizationRepository: OrganizationRepository,
-): VisitsUseCases {
+export function createVisitsUseCases(): VisitsUseCases {
+  const authorizationService = createAuthorizationService();
+  const organizationRepository = new PrismaOrganizationRepository(prisma);
   const clientRepository = new PrismaClientRepository(prisma);
   const visitRepository = new PrismaVisitRepository(prisma);
-  // referralContactRepository will be used when referral use cases are implemented
-  void new PrismaReferralContactRepository(prisma);
 
   return {
     getClientList: new GetClientListUseCase(authorizationService, clientRepository),

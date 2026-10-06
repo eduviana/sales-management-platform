@@ -101,6 +101,22 @@ export interface CreateEmployeeData {
   readonly postalCode: string;
 }
 
+export interface UpdateEmployeeData {
+  readonly firstName: string;
+  readonly lastName: string;
+  readonly dni: string | null;
+  readonly email: string | null;
+  readonly phone: string | null;
+  readonly dateOfBirth: Date | null;
+  readonly street: string | null;
+  readonly streetNumber: string | null;
+  readonly floor: string | null;
+  readonly apartment: string | null;
+  readonly city: string | null;
+  readonly province: string | null;
+  readonly postalCode: string | null;
+}
+
 export interface CreateLevelHistoryData {
   readonly employeeId: string;
   readonly levelId: number;
@@ -129,6 +145,12 @@ export interface OrganizationRepository {
 
   /** Create a new employee. */
   createEmployee(data: CreateEmployeeData): Promise<EmployeeRecord>;
+
+  /** Update an employee's editable personal data. */
+  updateEmployee(
+    employeeId: string,
+    data: UpdateEmployeeData,
+  ): Promise<void>;
 
   /** Update an employee's current level. */
   updateEmployeeLevel(
@@ -159,10 +181,38 @@ export interface OrganizationRepository {
   // Level History
   // -------------------------------------------------------------------------
 
+  /**
+   * Display names of several employees (seller column on sales lists).
+   */
+  findNamesByIds(
+    employeeIds: readonly string[],
+  ): Promise<Array<{
+    readonly id: string;
+    readonly firstName: string;
+    readonly lastName: string;
+  }>>;
+
+  /**
+   * Employee codes of several employees (label lookup for audit events).
+   */
+  findEmployeeCodesByIds(
+    employeeIds: readonly string[],
+  ): Promise<Array<{ readonly id: string; readonly employeeCode: number }>>;
+
   /** Find the open (current) level history record for an employee. */
   findOpenLevelHistory(
     employeeId: string,
   ): Promise<LevelHistoryRecord | null>;
+
+  /**
+   * Find the open level history records for several employees.
+   *
+   * Consumed by the progression module to compute points, so it reads the
+   * level history table through this port instead of querying it directly.
+   */
+  findOpenLevelHistories(
+    employeeIds: readonly string[],
+  ): Promise<LevelHistoryRecord[]>;
 
   /** Close a level history record by setting endedAt. */
   closeLevelHistory(

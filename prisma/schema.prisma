@@ -85,6 +85,9 @@ enum AuditAction {
   COMMISSION_GENERATED
   COMMISSION_REVERSED
 
+  // Authorization
+  AUTHORIZATION_DENIED
+
   @@map("audit_action")
 }
 

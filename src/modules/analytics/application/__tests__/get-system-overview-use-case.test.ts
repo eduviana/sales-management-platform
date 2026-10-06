@@ -7,7 +7,7 @@
  * Reference: requirements.md §3.12.1, permissions-matrix.md §4.14
  */
 
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { GetSystemOverviewUseCase } from "../get-system-overview-use-case";
 import type { AuthorizationService } from "@/modules/authorization/domain";
 import type { AuthorizationContext } from "@/modules/authorization/domain";
@@ -23,6 +23,16 @@ import { AuditAction } from "@/shared/ports/audit-port";
 // =============================================================================
 // Mocks
 // =============================================================================
+
+/**
+ * Reloj fijo para todo el archivo.
+ *
+ * La ventana de actividad del caso de uso termina en "hoy" (7 días hacia
+ * atrás), así que el test sólo es reproducible si el sistema tiene congelado
+ * el tiempo: con `NOW` fijado al 2026-09-24 la fila mockeada de
+ * `getDailyActivity` cae siempre dentro de la ventana.
+ */
+const NOW = new Date(2026, 8, 24, 12, 0, 0);
 
 function makeAuthContext(overrides?: Partial<AuthorizationContext>): AuthorizationContext {
   return {
@@ -89,6 +99,8 @@ function makeAuditRepo(overrides?: Partial<AuditEventRepository>): AuditEventRep
       { result: "FAILURE", count: 10 },
       { result: "DENIED", count: 10 },
     ]),
+    // Sólo el último día de la ventana (NOW) tiene actividad; el resto de los
+    // puntos debe rellenarlos el caso de uso con ceros.
     getDailyActivity: vi.fn().mockResolvedValue([
       { date: "2026-09-24", label: formatWeekdayLabel("2026-09-24"), success: 5, failure: 1, denied: 0 },
     ]),
@@ -109,6 +121,8 @@ describe("GetSystemOverviewUseCase", () => {
   let useCase: GetSystemOverviewUseCase;
 
   beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(NOW);
     auth = makeAllowAuth();
     orgRepo = {
       getActiveEmployeeIds: vi.fn().mockResolvedValue(["emp-1", "emp-2", "emp-3"]),
@@ -131,6 +145,10 @@ describe("GetSystemOverviewUseCase", () => {
       systemRepo,
       auditRepo,
     );
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   // =========================================================================

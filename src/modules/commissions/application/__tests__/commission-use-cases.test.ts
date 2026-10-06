@@ -58,6 +58,7 @@ function makeRuleRepository(rule = makeRule()): CommissionRuleRepository {
   return {
     findApplicable: vi.fn().mockResolvedValue(rule),
     findOverlapping: vi.fn().mockResolvedValue([]),
+    findLevelIdsByIds: vi.fn().mockResolvedValue([]),
     create: vi.fn(),
     closeAt: vi.fn(),
   };
@@ -66,6 +67,9 @@ function makeRuleRepository(rule = makeRule()): CommissionRuleRepository {
 function makeEntryRepository(overrides?: Partial<CommissionEntryRepository>): CommissionEntryRepository {
   return {
     findEarnedBySaleId: vi.fn().mockResolvedValue(null),
+    findEarnedByEmployeeIds: vi.fn().mockResolvedValue([]),
+    findSaleIdsByIds: vi.fn().mockResolvedValue([]),
+    findEarnedAmountsBySaleIds: vi.fn().mockResolvedValue([]),
     findReversalByParentId: vi.fn().mockResolvedValue(null),
     create: vi.fn().mockImplementation(async (input) => ({
       ...makeEntry(),

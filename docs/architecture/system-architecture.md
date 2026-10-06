@@ -2,8 +2,8 @@
 
 **Proyecto:** Royal Prestige — Plataforma de Gestión de Ventas  
 **Estado:** 🚧 DECISIÓN DE DISEÑO  
-**Versión:** 0.7  
-**Última actualización:** 2026-09-08
+**Versión:** 0.9  
+**Última actualización:** 2026-10-05
 
 ---
 
@@ -233,9 +233,15 @@ Reglas:
 
 Las interfaces de repositorio no deben ocultar consultas arbitrarias. Deben expresar necesidades del caso de uso y aplicar el alcance autorizado.
 
+Estas reglas, su aplicación a rutas, Server Actions y contexto de autenticación,
+el manejo seguro de errores y el plan de remediación se detallan en `ADR-020`.
+
 **Clasificación:**
 
 - **DECISIÓN YA TOMADA:** dependencias hacia adentro y puertos/adaptadores.
+- **DECISIÓN YA TOMADA (ADR-020):** acceso a datos sólo vía puertos; rutas como
+  composition root sin reglas ni view models; Server Actions delgadas; contexto de
+  autenticación expuesto por el módulo `identity`; aislamiento entre módulos.
 - **PENDIENTE:** definir contratos concretos entre módulos durante el diseño de casos de uso.
 
 ---
@@ -629,7 +635,7 @@ Un evento de auditoría contiene:
 ```text
 actorId        — ID del usuario que realizó la acción
 actorEmail     — Snapshot del email al momento del evento
-action         — Tipo de acción (enum AuditAction, 20 valores)
+action         — Tipo de acción (enum AuditAction, 21 valores)
 resourceType   — Tipo de recurso afectado
 resourceId     — ID del recurso afectado
 result         — SUCCESS, FAILURE o DENIED
@@ -659,7 +665,7 @@ La aplicación deberá contemplar inicialmente logs estructurados, correlation/r
 No se registrarán contraseñas, tokens, URLs firmadas ni datos comerciales o personales innecesarios.
 
 - **DECISIÓN DERIVABLE:** operaciones críticas y seguridad requieren trazabilidad.
-- **DECISIÓN YA TOMADA (ADR-013):** auditoría desde casos de uso mediante AuditPort, 20 eventos tipados, lectura restringida a ADMIN.
+- **DECISIÓN YA TOMADA (ADR-013):** auditoría desde casos de uso mediante AuditPort, 21 eventos tipados, lectura restringida a ADMIN.
 - **PENDIENTE:** retención, exportación, cleanup periódico.
 
 ---
@@ -887,13 +893,19 @@ src/
 └── shared/
     ├── config/
     ├── errors/
+    ├── presentation/
     ├── validation/
     └── types/
 ```
 
 No es necesario crear todas las carpetas desde el inicio. La estructura debe crecer junto con los casos de uso reales y no convertirse en una jerarquía vacía o artificial.
 
+`shared/presentation/` es el kernel de presentación compartido: utilidades y componentes de interfaz reutilizables entre módulos (formato, componentes genéricos y hooks de presentación). No puede depender de `modules/` ni de infraestructura, y ninguna capa de dominio o aplicación puede depender de ella. La interfaz propia de un módulo de negocio vive en `modules/<módulo>/presentation/`; solo lo genuinamente transversal se ubica en `shared/presentation/`.
+
+Las rutas de `app/` actúan como **composition root**: resuelven el contexto de autenticación y componen módulos, casos de uso, adaptadores y componentes, pero no contienen reglas de negocio ni escriben directamente en persistencia por fuera de los casos de uso o Server Actions del módulo. Ver `ADR-019`.
+
 - **DECISIÓN YA TOMADA:** separar rutas Next.js, módulos de negocio e infraestructura.
+- **DECISIÓN YA TOMADA:** `app/` compone, `modules/` contiene la interfaz y las reglas, `shared/` provee utilidades transversales sin depender de módulos.
 - **PENDIENTE:** ajustar la estructura a los primeros casos de uso y a las convenciones efectivas del código.
 
 ---
@@ -1007,3 +1019,5 @@ La arquitectura no reemplaza los requisitos, reglas de negocio, permisos ni el m
 | 2026-09-03 | 0.5     | Comisión inicial vigente N1 → 15 % (la regla de 50 % queda REEMPLAZADA como antecedente). |
 | 2026-09-08 | 0.6     | Fase 7: sección de auditoría actualizada con AuditPort implementado, 20 eventos tipados, semántica best-effort y lectura restringida. |
 | 2026-09-08 | 0.7     | Fase 9: sección 16 de analytics actualizada con módulo implementado, GetDashboardDataUseCase, MonthlyTarget y Recharts. |
+| 2026-10-02 | 0.8     | ADR-019: kernel de presentación compartido (`shared/presentation`) y regla de composition root en las rutas. |
+| 2026-10-02 | 0.9     | ADR-020: fronteras de capas en rutas, Server Actions y módulos; acceso a datos sólo vía puertos, contexto de autenticación en `identity`, manejo seguro de errores y roadmap de remediación. |

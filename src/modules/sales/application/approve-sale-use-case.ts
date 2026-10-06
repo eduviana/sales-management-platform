@@ -91,7 +91,7 @@ export class ApproveSaleUseCase {
 
         // Record SALE_APPROVED audit event
         await this.auditPort.log({
-          actorId: input.authContext.employeeId,
+          actorId: input.authContext.userId,
           actorEmail: input.authContext.userEmail,
           action: AuditAction.SALE_APPROVED,
           resourceType: "Sale",
@@ -109,7 +109,7 @@ export class ApproveSaleUseCase {
 
         // Record COMMISSION_GENERATED audit event (same correlationId)
         await this.auditPort.log({
-          actorId: input.authContext.employeeId,
+          actorId: input.authContext.userId,
           actorEmail: input.authContext.userEmail,
           action: AuditAction.COMMISSION_GENERATED,
           resourceType: "CommissionEntry",
@@ -168,7 +168,7 @@ export class ApproveSaleUseCase {
 
     // 5. Record SALE_APPROVED audit event
     await this.auditPort.log({
-      actorId: input.authContext.employeeId,
+      actorId: input.authContext.userId,
       actorEmail: input.authContext.userEmail,
       action: AuditAction.SALE_APPROVED,
       resourceType: "Sale",

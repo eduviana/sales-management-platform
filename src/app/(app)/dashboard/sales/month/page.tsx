@@ -8,11 +8,10 @@
 
 export const dynamic = "force-dynamic";
 
-import { prisma } from "@/infrastructure/prisma/client";
-import { createAuthorizationService } from "@/modules/authorization/composition-root";
 import { createSalesUseCases } from "@/modules/sales/composition-root";
-import { PrismaOrganizationRepository } from "@/infrastructure/organization/prisma-organization-repository";
-import { resolveAuthContext } from "@/modules/sales/presentation/resolve-auth-context";
+import { createCommissionUseCases } from "@/modules/commissions/composition-root";
+import { resolveAuthContext } from "@/modules/identity/resolve-auth-context";
+import { formatMonthYear } from "@/shared/presentation/format";
 import { SalesDetailTable } from "../sales-detail-table";
 
 export default async function DashboardSalesMonthPage({
@@ -24,9 +23,7 @@ export default async function DashboardSalesMonthPage({
   const isTeam = params.scope === "team";
 
   const authContext = await resolveAuthContext();
-  const auth = createAuthorizationService(prisma);
-  const orgRepo = new PrismaOrganizationRepository(prisma);
-  const useCases = createSalesUseCases(prisma, auth, orgRepo);
+  const useCases = createSalesUseCases();
 
   // Current month range
   const now = new Date();
@@ -44,15 +41,12 @@ export default async function DashboardSalesMonthPage({
     return d >= firstDay && d <= lastDay;
   });
 
-  // Fetch commission entries for filtered sales
   const saleIds = monthSales.map((s) => s.id);
-  const commissionEntries = await prisma.commissionEntry.findMany({
-    where: { saleId: { in: saleIds }, type: "EARNED" },
-    select: { saleId: true, amount: true },
-  });
-  const commissionMap = new Map(commissionEntries.map((e) => [e.saleId, Number(e.amount)]));
 
-  const monthName = now.toLocaleDateString("es-AR", { month: "long", year: "numeric" });
+  const { getSaleAmounts } = createCommissionUseCases();
+  const commissionMap = await getSaleAmounts.execute({ saleIds });
+
+  const monthName = formatMonthYear(now);
   const title = isTeam ? "Ventas del Mes del Equipo" : "Ventas del Mes";
   const subtitle = isTeam
     ? `Ventas del equipo realizadas en ${monthName}`

@@ -2,14 +2,16 @@
  * Calculate and record progression use case.
  *
  * Calculates points from existing data (seniority, visits, sales, targets).
- * - Seniority, visits, and sales are calculated in real-time from source tables.
+ * - Seniority, visits, and sales are calculated in real-time from the owning
+ *   modules' read ports.
  * - Monthly target bonuses are recorded in employee_progress (idempotent).
  *
  * Reference: business-rules.md REG-082
  */
 
-import type { PrismaClient } from "@prisma/client";
 import type { ProgressionRepository } from "../domain/progression-repository";
+import type { OrganizationRepository } from "@/modules/organization/domain";
+import type { SaleRepository } from "@/modules/sales/domain";
 import { POINT_VALUES } from "../domain";
 
 export interface CalculateProgressionInput {
@@ -20,8 +22,9 @@ export interface CalculateProgressionInput {
 
 export class CalculateProgressionUseCase {
   constructor(
-    private readonly prisma: PrismaClient,
     private readonly progressionRepository: ProgressionRepository,
+    private readonly organizationRepository: OrganizationRepository,
+    private readonly saleRepository: SaleRepository,
   ) {}
 
   async execute(input: CalculateProgressionInput): Promise<void> {
@@ -35,7 +38,9 @@ export class CalculateProgressionUseCase {
     // Only record monthly target bonuses earned within the current level
     // (checks for duplicates, idempotent).
     const levelStartDate = await this.getLevelStartDate(employeeId, joinedAt);
-    const monthlyTargets = await this.getMonthlyTargets(currentLevelId);
+    const monthlyTargets = await this.saleRepository.getMonthlyTarget(
+      currentLevelId,
+    );
     const monthsToCheck = Math.min(this.monthsBetween(levelStartDate, now), 12);
 
     const newBonuses: Array<{
@@ -59,13 +64,11 @@ export class CalculateProgressionUseCase {
       const monthStart = new Date(targetDate.getFullYear(), targetDate.getMonth(), 1);
       const monthEnd = new Date(targetDate.getFullYear(), targetDate.getMonth() + 1, 0, 23, 59, 59);
 
-      const salesInMonth = await this.prisma.sale.count({
-        where: {
-          employeeId,
-          status: "APPROVED",
-          saleDate: { gte: monthStart, lte: monthEnd },
-        },
-      });
+      const salesInMonth = await this.saleRepository.countApprovedInPeriod(
+        employeeId,
+        monthStart,
+        monthEnd,
+      );
 
       if (monthlyTargets > 0 && salesInMonth >= monthlyTargets) {
         newBonuses.push({
@@ -94,18 +97,8 @@ export class CalculateProgressionUseCase {
     employeeId: string,
     joinedAt: Date,
   ): Promise<Date> {
-    const openHistory = await this.prisma.employeeLevelHistory.findFirst({
-      where: { employeeId, endedAt: null },
-      orderBy: { startedAt: "desc" },
-      select: { startedAt: true },
-    });
+    const openHistory =
+      await this.organizationRepository.findOpenLevelHistory(employeeId);
     return openHistory?.startedAt ?? joinedAt;
-  }
-
-  private async getMonthlyTargets(levelId: number): Promise<number> {
-    const target = await this.prisma.monthlyTarget.findUnique({
-      where: { levelId },
-    });
-    return target?.targetSales ?? 0;
   }
 }

@@ -1,15 +1,18 @@
 /**
- * Shared helper to resolve auth context for Presentation layer.
+ * Authentication context resolver — Identity module public contract.
  *
- * Resolves the current user's identity from session and builds
- * the AuthorizationContext needed by use cases.
+ * Resolves the current user's identity from the session and builds the
+ * AuthorizationContext needed by use cases. It belongs to the Identity module
+ * (not to another module's presentation layer) so that routes and Server
+ * Actions of any module depend on this contract instead of on each other's
+ * presentation code.
  *
  * Must be called from server-side code only (Server Actions, Server Components).
  *
- * Reference: authorization.md §4, system-architecture.md §11
+ * Reference: authorization.md §4, system-architecture.md §11, ADR-020
  */
 
-import { createIdentityModule } from "@/modules/identity/composition-root";
+import { createIdentityModule } from "./composition-root";
 import { AuthenticationError } from "@/shared/errors";
 import type { AuthorizationContext } from "@/modules/authorization/domain";
 

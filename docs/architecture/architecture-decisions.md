@@ -1,8 +1,8 @@
 # Decisiones de arquitectura
 
 **Estado:** 🚧 DECISIÓN DE DISEÑO  
-**Versión:** 0.12
-**Última actualización:** 2026-09-11
+**Versión:** 0.26
+**Última actualización:** 2026-10-05
 
 ---
 
@@ -1138,7 +1138,7 @@ Se implementa un mecanismo de auditoría con las siguientes características:
 
 2. **AuditPort transaccional:** Para operaciones que requieren atomicidad (aprobación de venta + generación de comisión), se utiliza un `PrismaTransactionScopedAuditAdapter` que recibe el mismo cliente de transacción que los repositorios de negocio.
 
-3. **Acción tipada:** Se define un enum `AuditAction` con 20 valores que representan eventos de negocio específicos.
+3. **Acción tipada:** Se define un enum `AuditAction` con 21 valores que representan eventos de negocio específicos.
 
 4. **Snapshot de email:** El campo `actorEmail` almacena una snapshot del email del actor al momento del evento, preservando legibilidad cuando la cuenta es desactivada.
 
@@ -1154,6 +1154,7 @@ Se implementa un mecanismo de auditoría con las siguientes características:
 | Organización | EMPLOYEE_CREATED, EMPLOYEE_UPDATED, EMPLOYEE_DEACTIVATED, EMPLOYEE_LEVEL_CHANGED, EMPLOYEE_SUPERVISOR_CHANGED |
 | Ventas | SALE_CREATED, SALE_UPDATED, SALE_SUBMITTED, SALE_APPROVED, SALE_REJECTED, SALE_CANCELLED |
 | Comisiones | COMMISSION_RULE_CREATED, COMMISSION_GENERATED, COMMISSION_REVERSED |
+| Autorización | AUTHORIZATION_DENIED |
 
 #### Modelo de datos
 
@@ -1429,6 +1430,425 @@ técnico interno y no se muestra como referencia principal en la interfaz.
 
 ---
 
+### ADR-019 — Kernel de presentación compartido y composition root en rutas
+
+> **Estado:** ✅ ACEPTADA COMO DECISIÓN DE DISEÑO
+> **Fecha:** 2026-10-02
+
+#### Contexto
+
+La revisión de calidad de código sobre la implementación reveló que la lógica de
+presentación reutilizable (formato de fechas, moneda, códigos, componentes de
+estado, tablas y hooks de listado) estaba duplicada en múltiples rutas de
+`src/app/`, y que algunas rutas mezclaban composición, acceso a datos y
+presentación. La arquitectura general (`system-architecture.md` §25) definía
+`src/shared/` para utilidades transversales, pero no contemplaba una capa de
+presentación compartida ni una regla explícita sobre el rol de las rutas de
+Next.js.
+
+#### Decisión
+
+1. Se crea `src/shared/presentation/` como **kernel de presentación
+   compartido**, con utilidades y componentes de interfaz reutilizables entre
+   módulos (formato, componentes genéricos y hooks de presentación).
+   - `shared/presentation/` no puede depender de `src/modules/` ni de
+     infraestructura (Prisma, adaptadores concretos).
+   - El dominio y la aplicación no pueden depender de
+     `shared/presentation/`.
+2. La interfaz propia de un módulo de negocio vive en
+   `src/modules/<módulo>/presentation/`. Solo lo genuinamente transversal se
+   ubica en `shared/presentation/`.
+3. Las rutas de `src/app/` actúan como **composition root**: resuelven el
+   contexto de autenticación y componen módulos, casos de uso, adaptadores y
+   componentes. No contienen reglas de negocio ni escriben directamente en
+   persistencia por fuera de los casos de uso o Server Actions del módulo.
+4. Se mantiene la organización **feature-first / domain-first** a nivel de
+   módulos y la **arquitectura por capas (hexagonal)** dentro de cada módulo.
+
+#### Alternativas consideradas
+
+- Ubicar los componentes compartidos dentro de `src/app/`: se descarta porque
+  acopla la interfaz transversal al árbol de rutas y dificulta su reutilización.
+- Crear una carpeta global `src/components/` sin capa declarada: se descarta por
+  mezclar responsabilidades y no respetar los límites entre módulos.
+- Adoptar Feature-Sliced Design de forma estricta: se descarta por introducir una
+  taxonomía de capas global más pesada que la necesaria para el proyecto.
+
+#### Consecuencias
+
+- Se elimina duplicación de formato y componentes, y el resultado visible queda
+  consistente entre pantallas.
+- La lógica de presentación extraída a archivos `.ts` puede cubrirse con pruebas
+  sin depender de componentes visuales.
+- Las rutas permanecen delgadas y delegan en los módulos.
+- Introduce una convención de dependencia (`shared` no depende de `modules`) que
+  debe respetarse y verificarse en la revisión de código.
+- La migración del código existente es gradual; no implica cambios de
+  comportamiento funcional ni de reglas de negocio.
+
+---
+
+### ADR-020 — Fronteras de capas: acceso a datos, contexto de autenticación y manejo de errores
+
+> **Estado:** ✅ ACEPTADA COMO DECISIÓN DE DISEÑO
+> **Fecha:** 2026-10-02
+
+#### Contexto
+
+Una revisión arquitectónica sobre la implementación posterior a ADR-019 detectó
+que las reglas de dependencia de `system-architecture.md` §7 y el rol de
+composition root de `app/` (§25, ADR-019) no se cumplen de forma homogénea:
+
+- Rutas de `app/` ejecutan consultas Prisma directas y construyen view models de
+  negocio (p. ej. `dashboard/progression/page.tsx`).
+- La capa `Application` del módulo `progression` depende de `PrismaClient` en vez
+  de sus puertos.
+- Server Actions y helpers de `modules/*/presentation` importan Prisma,
+  instancian adaptadores concretos y arman el grafo de dependencias por acción
+  (p. ej. `training-actions.ts`, `resolve-resource-labels.ts`).
+- Un helper transversal de autenticación (`resolveAuthContext`) vive en
+  `modules/sales/presentation` y es importado por 39 archivos de rutas y de otros
+  módulos, acoplando sus capas de presentación.
+- Mutaciones de empleados se escriben con Prisma directo, saltando casos de uso y
+  el `AuditAction.EMPLOYEE_UPDATED`, que existe declarado y nunca se emite.
+- Varias Server Actions devuelven `error.message` crudo al cliente y 7 rutas
+  convierten cualquier error en `notFound()`.
+- `domain` contiene conceptos de presentación (colores y formatos de la interfaz
+  de visitas).
+
+Estas desviaciones afectan seguridad, trazabilidad y mantenibilidad, y no están
+cubiertas por ninguna decisión registrada.
+
+#### Decisión
+
+1. **Acceso a datos solo en Infrastructure, a través de puertos.** Ninguna ruta
+   de `app/`, ningún archivo de `modules/*/presentation` ni de
+   `modules/*/application` importa `@/infrastructure/prisma/client` ni ejecuta
+   consultas Prisma. `Application` depende de puertos de repositorio/servicios de
+   consulta; `Infrastructure` los implementa.
+2. **Las rutas de `app/` son composition root.** Resuelven el contexto de
+   autenticación y componen módulos, casos de uso, adaptadores y componentes. No
+   agregan datos, no construyen view models de negocio y no contienen reglas. Los
+   read models que hoy viven en rutas se mueven a **servicios de consulta de
+   Application** del módulo correspondiente.
+3. **Server Actions delgadas.** Una Server Action valida la forma de la entrada,
+   resuelve el contexto y delega en un caso de uso. No instancia adaptadores, no
+   importa Prisma y no arma el grafo de dependencias: lo obtiene del composition
+   root de su módulo.
+4. **Contexto de autenticación transversal.** `resolveAuthContext` deja de vivir
+   en `modules/sales/presentation`. La resolución de la identidad autenticada y
+   del `AuthorizationContext` se expone desde el módulo `identity` como contrato
+   de autenticación para rutas y acciones. Queda prohibido importar la capa
+   `presentation` de un módulo desde otro módulo.
+5. **Aislamiento entre módulos.** Un módulo no lee ni escribe tablas de otro. La
+   resolución de etiquetas de auditoría se resuelve con servicios de consulta de
+   los módulos dueños (`organization`, `sales`, `commissions`, `identity`), no con
+   Prisma dentro de `audit/presentation`.
+6. **Manejo de errores.** Los adaptadores de Next.js mapean errores tipados. No
+   se expone `error.message` de Prisma ni de infraestructura al cliente. Por
+   política anti-enumeración, las lecturas con scope pueden mapear
+   `NotFoundError` y `AuthorizationError` a `notFound()`; los errores de
+   infraestructura **no** se convierten en 404: se registran y se elevan al
+   `error.tsx` de la ruta. Toda denegación de autorización se registra.
+7. **Auditoría de mutaciones.** Las mutaciones relevantes —incluida la
+   actualización de empleados— pasan por caso de uso y emiten el `AuditAction`
+   correspondiente. `EMPLOYEE_UPDATED` deja de estar declarado sin emisor.
+8. **Pureza del dominio.** Colores, etiquetas y formatos de fecha no pertenecen a
+   `domain`; se ubican en `presentation` (patrón de
+   `sales/presentation/sale-status.ts`) o en `shared/presentation/format`.
+9. **Enforcement.** Una vez migradas las violaciones, se incorporan reglas ESLint
+   de fronteras entre capas para impedir regresiones. La regla no se habilita
+   antes de completar la migración, para no romper el build.
+
+#### Alternativas consideradas
+
+- **Dejar la implementación como está:** se descarta porque mantiene mutaciones
+  sin auditoría, fuga de detalles internos y acoplamiento entre capas.
+- **Reescritura masiva en un solo cambio:** se descarta por riesgo sobre
+  comportamiento y autorización ya validados.
+- **Habilitar sólo las reglas ESLint sin migrar:** se descarta porque produciría
+  cientos de errores y no corrige los problemas de fondo.
+
+#### Consecuencias
+
+- La migración es **incremental y preserva comportamiento**; cada ruta o acción
+  refactorizada debe verificarse con `tsc`, `eslint`, tests y `build`.
+- Se prioriza por riesgo: primero seguridad y trazabilidad, luego integridad de
+  capas, luego consistencia, y al final el enforcement.
+- Los read models extraídos a `Application` pueden cubrirse con pruebas de caso
+  de uso sin depender de componentes visuales.
+- Las rutas quedan delgadas y delegan en los módulos.
+- Se agrega trabajo de diseño de puertos y servicios de consulta en los módulos
+  `progression`, `analytics`, `sales`, `commissions`, `audit` y `organization`.
+
+**Roadmap de remediación (priorizado):**
+
+- **P0 — Seguridad y trazabilidad:** `updateEmployee` por caso de uso con
+  auditoría; eliminar la fuga de `error.message` en Server Actions; distinguir
+  `NotFoundError`/`AuthorizationError` de errores de infraestructura en las rutas;
+  centralizar la resolución de contexto de autenticación.
+- **P1 — Integridad de capas:** `Application` de `progression` detrás de sus
+  puertos; extraer los read models de `dashboard/progression`, `dashboard`,
+  `commissions`, `sales/[id]` a servicios de consulta; mover
+  `resolve-resource-labels` a servicios de consulta de los módulos dueños.
+- **P2 — Consistencia:** Server Actions sin composition root inline; pureza del
+  `domain` de visitas; composición homogénea de los `composition-root`.
+- **P3 — Enforcement:** reglas ESLint de fronteras y pruebas de casos negativos
+  de autorización.
+
+**Estado de implementación (2026-10-02):**
+
+- **P0 completado, preservando comportamiento:**
+  - El contexto de autenticación se movió a
+    `src/modules/identity/resolve-auth-context.ts` y se actualizaron sus
+    importadores; se eliminó `sales/presentation/resolve-auth-context.ts`.
+  - `updateEmployee` se ejecuta a través de `UpdateEmployeeUseCase`, persiste vía
+    el puerto `OrganizationRepository.updateEmployee` y emite
+    `AuditAction.EMPLOYEE_UPDATED`.
+  - El saneamiento de errores de Server Actions se centralizó en
+    `src/shared/presentation/action-error.ts`. Las rutas usan
+    `src/app/(app)/_lib/handle-page-load-error.ts` para distinguir
+    `NotFoundError`/`AuthorizationError` de los errores de infraestructura, y se
+    agregó `src/app/(app)/error.tsx` como boundary de la aplicación.
+- **Hallazgos abiertos registrados:**
+  - `PrismaOrganizationRepository.executeInTransaction` ejecuta el callback con
+    `this` en lugar del cliente transaccional de Prisma, por lo que las
+    operaciones internas no quedan realmente dentro de la transacción. Se
+    registró en `data-architecture.md` §10. Es previo a ADR-020 y queda fuera del
+    alcance P0.
+  - `GetEmployeeByIdUseCase` autorizaba `employee.read` sin `resource` (hallazgo
+    cerrado el 2026-10-04, ver decisiones complementarias).
+  - `HierarchyScopeResolver` resuelve TEAM y GLOBAL únicamente sobre empleados
+    **activos**, mientras que BRANCH incluye descendientes sin filtrar estado.
+    Como `GLOBAL` significa "toda la organización" (permissions-matrix.md §2.2),
+    un alcance conectado se considera suficiente aunque el empleado esté
+    inactivo (`grantsResourceAccess`). Si un supervisor debe leer o editar a un
+    subordinado dado de baja con alcance TEAM, la matriz deberá definirlo.
+
+**Estado de implementación (2026-10-04) — P1 completado, preservando
+comportamiento:**
+
+- **`Application` de `progression` detrás de sus puertos.**
+  `CalculateProgressionUseCase` y `GetEmployeeProgressionUseCase` dejaron de
+  importar Prisma y ahora dependen de `SaleRepository`, `VisitRepository`,
+  `OrganizationRepository` y `ProgressionRepository`. Las consultas de venta y
+  visita pasaron a adaptadores propios de `sales/infrastructure` y
+  `visits/infrastructure`, y los historiales de nivel a
+  `infrastructure/organization`.
+- **Read models extraídos a servicios de consulta de Application:**
+  - `dashboard/progression` → `progression/domain/read-models.ts` con
+    `GetPersonalProgressionUseCase` y `GetTeamProgressionUseCase` (este último
+    exige `analytics.viewTeam`).
+  - `dashboard/commissions` → `GetMonthlyCommissionOverviewUseCase`
+    (`sale.readTeam` sólo para alcance `TEAM`).
+  - `dashboard` (historial reciente) → `GetSaleCommissionAmountsUseCase`,
+    que delega la autorización en la lectura de ventas ya autorizada.
+  - `sales/[id]` → `sales/application/read-models.ts` con
+    `GetSaleDetailUseCase`, que delega en `GetSaleUseCase` y enriquece los
+    ítems con producto, contactos de referido y comisiones.
+- **Resolución de etiquetas de auditoría.**
+  `audit/presentation/resolve-resource-labels.ts` ya no consulta Prisma:
+  agrupa los `resourceId` por tipo de recurso e invoca servicios de consulta
+  de los módulos dueños, que la Server Action inyecta como resolvers —
+  `GetEmployeeLabelsUseCase` (organization), `GetSaleLabelsUseCase` (sales),
+  `GetAccountLabelsUseCase` (identity), `GetCommissionEntryLabelsUseCase` y
+  `GetCommissionRuleLabelsUseCase` (commissions). Los módulos dueños
+  exponen consultas de lote en sus puertos (`findEmployeeCodesByIds`,
+  `findSummariesByIds`, `findAccountEmailsByIds`, `findSaleIdsByIds`,
+  `findLevelIdsByIds`); `audit` no lee tablas ajenas y conserva su agrupación
+  de ids como lógica de presentación.
+- Las rutas `dashboard/progression`, `dashboard`, `dashboard/commissions` y
+  `sales/[id]` quedan como composition roots delgados: componen módulos,
+  casos de uso y adaptadores y adaptan el resultado a contratos de
+  presentación, sin acceso a datos ni reglas de negocio. `prisma` sólo se
+  usa como argumento de esos composition roots, en línea con el punto 2 de
+  la decisión.
+
+**Estado de implementación (2026-10-04) — P2 completado, preservando
+comportamiento:**
+
+- **Composition roots homogéneos.** Los diez composition roots del proyecto
+  (`analytics`, `audit`, `authorization`, `commissions`, `identity`,
+  `organization`, `progression`, `sales`, `training`, `visits`) resuelven
+  internamente el cliente `prisma`, el `AuthorizationService` y los
+  repositorios que necesitan de otros módulos, y **ya no reciben parámetros
+  de infraestructura**. `createAuthorizationService()` tampoco recibe
+  `prisma`. Esta homogeneidad es lo que permite que una Server Action delegue
+  sin importar infraestructura (decisión 3) y que una ruta se limite a
+  componer módulos (decisión 2).
+- **Server Actions sin Prisma ni grafo inline.** Ninguna Server Action
+  importa `@/infrastructure/prisma/client` ni instancia adaptadores: valida
+  la entrada, resuelve el contexto con `resolveAuthContext` y delega en el
+  composition root de su módulo. Las dos acciones que ejecutaban
+  `prisma.employee.findUnique` (`promoteToNextLevel` y `promoteEmployee`)
+  ahora leen a través de `OrganizationRepository.findEmployeeById`.
+- **Consultas de ruta trasladadas a servicios de consulta.** Las siete
+  consultas Prisma que ejecutaban páginas de `app/` quedaron detrás de los
+  módulos dueños:
+  - montos de comisión en `/sales`, `/team/sales`, `/dashboard/sales/all` y
+    `/dashboard/sales/month` → `GetSaleCommissionAmountsUseCase`;
+  - nombres de vendedor en `/team/sales` → `GetEmployeeNamesUseCase`
+    (nuevo; lote en `OrganizationRepository.findNamesByIds`), que no
+    declara permiso propio porque la lectura de ventas ya fue autorizada;
+  - ítems con producto en `/sales/[id]/edit` → `GetSaleDetailUseCase`, con
+    `SaleDetailItem` ampliado para exponer `productId`;
+  - detalle de producto en `/catalog/products/[id]/edit` →
+    `GetProductByIdUseCase` (nuevo, autoriza `catalog.read`).
+- **Pureza del dominio de visits.** `VISIT_STATUS_LABELS` y
+  `VISIT_STATUS_COLORS` pasaron a `visits/presentation/visit-status.ts`
+  (patrón de `sales/presentation/sale-status.ts`) y `formatVisitDate` al
+  kernel `shared/presentation/format` como `formatDateOnly`, conservando la
+  fijación en UTC para no desplazar el día calendario según la timezone del
+  navegador. `domain/visit.ts` conserva sólo el tipo y los estados.
+- **Hallazgo registrado:** `formatClientAddress` permanece en
+  `visits/domain/client.ts` porque construye el campo `address` que se
+  persiste en el cliente; no es una presentación de pantalla. Y
+  `/catalog/products/[id]/edit` verifica `catalog.update` en la página para
+  redirigir al usuario: la mutación sigue autorizada en el servidor por
+  `UpdateProductUseCase`, pero la condición de navegación duplica esa regla.
+
+**Estado de implementación (2026-10-04) — P3 completado, preservando
+comportamiento:**
+
+- **Reglas ESLint de fronteras entre capas** (`eslint.config.mjs`, decisión 9).
+  Seis bloques de `@typescript-eslint/no-restricted-imports` —misma sintaxis que
+  la regla del núcleo, con `allowTypeImports`, usando el plugin que
+  `eslint-config-next` ya registra, **sin dependencias nuevas**— restringen, por
+  capa: `domain` no importa infraestructura, Prisma, `shared/presentation` ni
+  `application`/`presentation` de módulos; `application` no importa
+  infraestructura, Prisma ni `shared/presentation` ni `presentation`;
+  `presentation` no importa Prisma/infraestructura ni la `presentation` de otro
+  módulo; `app/` no importa infraestructura ni valores de `application`; el
+  kernel `shared` no importa infraestructura ni módulos; la infraestructura no
+  importa `presentation`. Las reglas se habilitaron **después de comprobar que
+  el código actual ya cumplía todas las fronteras** y se verificaron con
+  archivos sonda descartados, tal como exige la decisión 9.
+  - `audit-actions.ts` ahora importa `resolve-resource-labels` con ruta
+    relativa: era el único `presentation → presentation` del proyecto y, al ser
+    del propio módulo, la regla de módulos cruzados no debe capturarlo.
+  - **Reforzamiento (2026-10-05): `app/` → `application` sólo como tipo.** La
+    patrón lleva `allowTypeImports: true`: las 6 importaciones existentes de
+    `app/` sobre `application` son `import type` de read models (contratos
+    servidor→cliente) y pasan; cualquier **valor** (p. ej. la clase de un caso
+    de uso o un helper) queda bloqueado, de modo que el grafo se sigue armando
+    en los composition roots. Antes esta fronteras no se restringía porque la
+    regla del núcleo no distingue importaciones de tipo.
+  - **Reforzamiento (2026-10-05): imports relativos entre módulos.** Los
+    patrones sólo cubren el alias `@/`; un import relativo cruzado escapaba a
+    las reglas. Se agregó la regla local
+    `boundaries/no-cross-module-relative-imports` (en `eslint.config.mjs`, sin
+    dependencias): resuelve el specifier contra la ubicación del archivo y
+    compara `src/modules/<A>` con `src/modules/<B>`, por lo que funciona a
+    cualquier profundidad y cubre `import`, `import()` dinámico y
+    `export … from`. Verificada con sondas descartadas (cruce en depth-1 y
+    desde `__tests__`, mismo módulo en depth-1) y el código actual no tiene
+    ningún cruce (0 hoy).
+  - **Límite residual conocido:** un import relativo **dentro** de un mismo
+    módulo que violara capas (p. ej. `domain` → `../application`) no lo detecta
+    ninguna regla, porque los patrones de capa sólo cubren el alias `@/` y la
+    regla local sólo jura fronteras de módulo. Hoy no existe ninguno en el
+    código (verificado); se deja registrado en lugar de duplicar la matriz de
+    capas en una regla propia.
+  - `module A/application → module B/application` sigue permitido
+    (composición de casos de uso, p. ej. las aprobaciones de venta que invocan
+    comisiones).
+- **Pruebas de casos negativos de autorización.** Cinco archivos
+  `authorization-negative.test.ts` en `sales`, `commissions`, `analytics`,
+  `visits` y `training` (37 tests): cuando el `AuthorizationService` deniega, el
+  caso de uso lanza `AuthorizationError` **antes** de tocar un repositorio o el
+  `AuditPort`, y se cubren los chequeos que van más allá del permiso: recurso
+  `sale` con `ownerId` (anti-IDOR) al enviar a revisión, asignación de visita a
+  un vendedor fuera del equipo, actualización de una visita ajena y alcance
+  `TEAM` sin resolutor. El módulo `visits` pasó de cero pruebas de autorización
+  a cubrir `visit.create`, `visit.update` y `visit.view`.
+- **Cobertura de autorización negativa — cerrada (2026-10-05).** Se completaron
+  los 18 casos que quedaban sin prueba negativa: las 12 mutaciones restantes de
+  `training` (crear, actualizar y eliminar categoría, curso, material y módulo;
+  archivar y publicar contenido), `CreateClientUseCase`,
+  `GetClientListUseCase` y `GetTeamListUseCase` de `visits`, y
+  `CreateCommissionRuleVersionUseCase`, `GetApplicableCommissionRuleUseCase` y
+  `GetCommissionEntriesForSaleUseCase` de `commissions`. En este último se
+  cubre la escalera de alcances global → branch → team → own: la denegación
+  llega tras las cuatro llamadas y la lectura ocurre en cuanto se concede un
+  alcance. El barrido de todos los `*-use-case.ts` con `.authorize(` confirma
+  que **los 49 casos de uso que autorizan tienen una prueba negativa**; los que
+  no viven en un archivo `authorization-negative` están en los tests de su
+  propio caso de uso (p. ej. `UpdateEmployeeUseCase` con mensaje en español y
+  `GetTeamProgressionUseCase` con `rejects.toBeInstanceOf(AuthorizationError)`).
+- **Hallazgo de denegaciones sin registrar — cerrado (2026-10-05).** La decisión 6
+  exige que "toda denegación de autorización se registra" y hasta ahora ningún
+  emisor generaba eventos `DENIED`. Se resolvió con la acción tipada
+  `AUTHORIZATION_DENIED` (catálogo de ADR-013, ahora de 21 valores; migración
+  `20261005140644_add_audit_action_authorization_denied`) emitida desde
+  `AuthorizationServiceImpl`: todo `deny()` pasa por un único punto que registra
+  actor, permiso, recurso y motivo con `result: "DENIED"` y semántica
+  best-effort (un fallo de auditoría nunca altera la decisión). El composition
+  root inyecta `PrismaAuditAdapter` sin crear ciclos, porque depende de la
+  infraestructura de auditoría y no de su composition root. Limitación conocida:
+  el evento conserva el `permission` pero no la acción de negocio intentada; si
+  el dashboard necesita agrupar por acción, podrá enriquecerse sin cambiar este
+  mecanismo.
+- **Hallazgo de `actorId` apuntando a un empleado — cerrado (2026-10-05).**
+  `audit_event.actorId` es FK a `user_account.id`, pero los casos de uso emitían
+  `authContext.employeeId` (y `recruit-employee`, `input.recruiterId`): como
+  ningún `employee.id` coincide con una cuenta, `PrismaAuditAdapter` tragaba la
+  violación de FK y **el evento se perdía en silencio** (verificado
+  empíricamente: 0 eventos persistidos con `actorId` de empleado; los 24
+  existentes eran de sesión porque `identity` sí usaba `userAccount.id`). Se
+  corrigieron las 13 emisiones de 9 casos de uso (`create-sale`, `update-sale`,
+  `submit-sale-for-review`, `approve-sale`, `reject-sale`, `cancel-sale`,
+  `update-employee`, `create-commission-rule-version` y `recruit-employee`, este
+  último con un nuevo campo `actorId` en su input) más los 2 callers de
+  `employees/[id]/actions.ts` (`change-supervisor` y `change-level`), y se dejó
+  explícito el contrato del campo `actorId` en los inputs de `change-level`,
+  `change-supervisor` y `deactivate-employee`. La regresión queda cubierta por
+  el test de `update-employee`.
+
+#### Decisiones complementarias (2026-10-04)
+
+- **Autorización de `employee.update` dentro del caso de uso.**
+  `UpdateEmployeeUseCase` recibe el `AuthorizationContext` y delega en
+  `AuthorizationService.authorize` con `permission: "employee.update"` y el
+  recurso del empleado objetivo (`ownerId` = el propio empleado). La Server
+  Action deja de comprobar `role === "ADMIN"`. Motivo: la autorización no puede
+  depender del punto de entrada (ADR-009, PERM-PRINCIPLE-005) y el permiso ya
+  estaba definido en la matriz. Requiere `authContext` como dato de entrada, en
+  línea con los casos de uso del módulo `sales`.
+- **Alcance GLOBAL por encima del filtro de empleados activos.** Cuando la
+  decisión es denegada pero el alcance conectado es GLOBAL, la operación se
+  permite: `GLOBAL` cubre toda la organización, incluido el personal inactivo
+  que el resolutor de alcance omite. Sin esta excepción, el ADMIN perdería la
+  posibilidad de corregir los datos de un empleado dado de baja.
+- **Superficie de edición del supervisor: `/team/[id]`.** La regla de negocio es
+  que cada persona edita a sus subordinados: el supervisor N3+ edita a los
+  vendedores de su equipo y el ADMIN edita a los N3+. La ficha de supervisor
+  (`/team/[id]`) es la vista ya existente para `employee.read` con alcance
+  EQUIPO, por lo que el formulario se habilita allí cuando la misma decisión de
+  autorización concede `employee.update`. `/employees` y `/employees/[id]`
+  permanecen exclusivas del ADMIN: abrirlas a N3+ expondría el listado completo
+  de empleados (`getAllEmployees`) y operaciones administrativas (ascenso,
+  reasignación de supervisor) que la matriz no les otorga.
+- **Acción `updateEmployee` en el módulo.** Al servir a dos rutas, la Server
+  Action pasa de `app/(app)/employees/[id]/actions.ts` a
+  `modules/organization/presentation/employee-actions.ts`, siguiendo la
+  convención de los módulos `sales`, `training` y `audit`. Los campos
+  editables se extrajeron a
+  `modules/organization/presentation/components/employee-profile-fields.tsx`
+  para no duplicar los trece campos entre ambas superficies; el layout de las
+  tarjetas sigue siendo propio de cada vista.
+- **`employee.read` se verifica sobre el empleado solicitado.**
+  `GetEmployeeByIdUseCase` ahora autoriza con `resource: { type: "employee",
+  id }`. Antes sólo comprobaba el permiso, de modo que cualquier N3+ podía
+  abrir `/team/<cualquier-empleado>` por URL conociendo su id. La denegación se
+  traduce a `notFound()` mediante `handlePageLoadError`, con lo que tampoco se
+  revela si el registro existe.
+- **Helper `grantsResourceAccess`.** La compensación por el filtro de empleados
+  activos del resolutor de alcance quedó centralizada en el dominio de
+  autorización (`authorization-decision.ts`) y la comparten `GetEmployeeByIdUseCase`
+  y `UpdateEmployeeUseCase`, en lugar de repetir la condición en cada caso de uso.
+
+---
+
 ## 5. Decisiones pendientes
 
 Todavía no se deben fijar en este documento decisiones definitivas sobre:
@@ -1468,3 +1888,16 @@ Estas decisiones se documentarán cuando exista suficiente información para jus
 | 0.11    | 2026-09-11 | ADR-015 sobre numeración secuencial global de ventas: secuencia PostgreSQL, formato VT-NNNN, unicidad y mutabilidad. |
 | 0.12    | 2026-09-11 | ADR-016 sobre snapshots de cliente, referencias externas de pago/facturación, entrega y protección de datos sensibles. |
 | 0.13    | 2026-09-11 | ADR-017 sobre separación explícita entre ventas propias y ventas del equipo. |
+| 0.14    | 2026-10-02 | ADR-019 sobre el kernel de presentación compartido (`src/shared/presentation/`) y el rol de composition root de las rutas. Se registra también ADR-018 en el historial (identificador operativo secuencial para visitas). |
+| 0.15    | 2026-10-02 | ADR-020 sobre fronteras de capas: acceso a datos sólo vía puertos, rutas como composition root sin reglas ni view models, Server Actions delgadas, contexto de autenticación en el módulo `identity`, aislamiento entre módulos, manejo seguro de errores, auditoría de mutaciones y pureza del dominio. Incluye roadmap de remediación priorizado. |
+| 0.16    | 2026-10-02 | ADR-020: estado de implementación P0 (contexto de autenticación en `identity`, `updateEmployee` por caso de uso con auditoría, saneamiento de errores y boundary de error) y registro de hallazgos abiertos (`employee.update` N3–N7 vs. ADMIN, transacción efectiva de `executeInTransaction`). |
+| 0.17    | 2026-10-04 | ADR-020: `employee.update` se autoriza en `UpdateEmployeeUseCase` por permiso y alcance (resuelve Q143); tratamiento del alcance GLOBAL sobre empleados inactivos; se registran los hallazgos sobre `employee.read` sin `resource` y el filtro de empleados activos del resolutor de alcance. |
+| 0.18    | 2026-10-04 | ADR-020: decisiones sobre la superficie de edición del supervisor (`/team/[id]`) y la ubicación de la acción y de los campos compartidos de edición de empleados. |
+| 0.19    | 2026-10-04 | ADR-020: `employee.read` se verifica sobre el empleado solicitado (cierra el acceso horizontal por URL en la ficha de supervisor) y la compensación por alcance GLOBAL se centraliza en `grantsResourceAccess`. |
+| 0.20    | 2026-10-04 | ADR-020: estado de implementación P1 (puertos de `progression`, read models a servicios de consulta de `dashboard/progression`, `dashboard`, `commissions` y `sales/[id]`, y etiquetas de auditoría resueltas por servicios de los módulos dueños). |
+| 0.21    | 2026-10-04 | ADR-020: estado de implementación P2 (composition roots sin parámetros de infraestructura, Server Actions sin Prisma, consultas de ruta trasladadas a servicios de consulta y pureza del dominio de visits). |
+| 0.22    | 2026-10-04 | ADR-020: estado de implementación P3 (reglas ESLint de fronteras entre capas y pruebas de casos negativos de autorización); se registra el hallazgo de las denegaciones sin emisor `DENIED`. |
+| 0.23    | 2026-10-05 | ADR-020: se cierra el hallazgo de denegaciones con `AUTHORIZATION_DENIED` emitido desde `AuthorizationServiceImpl` (ADR-013 pasa a 21 eventos, con migración del enum `audit_action`). |
+| 0.24    | 2026-10-05 | ADR-020: se cierra el hallazgo de `actorId`: las 15 emisiones de auditoría usan ahora el id de cuenta (FK a `user_account`) en lugar del id de empleado, con lo que los eventos de mutación pasan a persistirse. |
+| 0.25    | 2026-10-05 | ADR-020: se cierra la cobertura de autorización negativa: los 18 casos de uso que faltaban (`training`, `visits` y `commissions`) tienen prueba, y el barrido de los 49 casos que autorizan confirma cobertura completa. |
+| 0.26    | 2026-10-05 | ADR-020: refuerzo del enforcement (decisión 9): las seis fronteras pasan a `@typescript-eslint/no-restricted-imports` con `allowTypeImports` (plugin ya provisto por `eslint-config-next`, sin dependencias nuevas), `app/` queda restringido a importaciones de tipo desde `application`, y la regla local `boundaries/no-cross-module-relative-imports` cierra el límite de imports relativos entre módulos; se documenta el límite residual de imports relativos intra-módulo. |

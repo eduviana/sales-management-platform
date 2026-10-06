@@ -49,6 +49,9 @@ export class HierarchyScopeResolver implements ScopeResolver {
   /**
    * TEAM scope: direct subordinates only (not all descendants).
    *
+   * Note: inactive subordinates are excluded. When a decision must cover them,
+   * `grantsResourceAccess` treats an organization-wide scope as sufficient.
+   *
    * Reference: permissions-matrix.md §2.2, authorization.md §6
    */
   private async resolveTeam(
@@ -79,6 +82,9 @@ export class HierarchyScopeResolver implements ScopeResolver {
 
   /**
    * GLOBAL scope: all active employees in the organization.
+   *
+   * Note: inactive employees are excluded, so an organization-wide decision
+   * may deny an inactive record; `grantsResourceAccess` covers that case.
    *
    * Reference: permissions-matrix.md §2.2
    */

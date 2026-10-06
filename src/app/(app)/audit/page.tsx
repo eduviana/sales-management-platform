@@ -7,7 +7,7 @@
  * Reference: requirements.md §3.12, permissions-matrix.md §4.14, ADR-009
  */
 
-import { resolveAuthContext } from "@/modules/sales/presentation/resolve-auth-context";
+import { resolveAuthContext } from "@/modules/identity/resolve-auth-context";
 import { redirect } from "next/navigation";
 import { AuditClient } from "./audit-client";
 

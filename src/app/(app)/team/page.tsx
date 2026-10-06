@@ -7,17 +7,14 @@
  * Reference: business-rules.md REG-069, REG-071
  */
 
-import { resolveAuthContext } from "@/modules/sales/presentation/resolve-auth-context";
-import { createAuthorizationService } from "@/modules/authorization/composition-root";
+import { resolveAuthContext } from "@/modules/identity/resolve-auth-context";
 import { createAnalyticsUseCases } from "@/modules/analytics/composition-root";
-import { prisma } from "@/infrastructure/prisma/client";
 import Link from "next/link";
 import { TeamPerformanceClient } from "./team-performance-client";
 
 export default async function TeamPage() {
   const authContext = await resolveAuthContext();
-  const auth = createAuthorizationService(prisma);
-  const { getTeamPerformance } = createAnalyticsUseCases(prisma, auth);
+  const { getTeamPerformance } = createAnalyticsUseCases();
 
   const { teamPerformance } = await getTeamPerformance.execute({
     authContext,

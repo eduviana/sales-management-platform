@@ -11,6 +11,7 @@
 import { useState, useMemo } from "react";
 import Link from "next/link";
 import { ChevronLeft, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { formatDate } from "@/shared/presentation/format";
 
 interface CommissionEntry {
   id: string;
@@ -193,7 +194,7 @@ export function CommissionsClient({
                       </td>
                     )}
                     <td className="py-3 px-4 text-center font-mono-data">
-                      {new Date(entry.saleDate).toLocaleDateString("es-AR")}
+                      {formatDate(entry.saleDate)}
                     </td>
                     <td className="py-3 px-4 text-center font-mono-data">
                       ${entry.baseAmount.toFixed(2)}

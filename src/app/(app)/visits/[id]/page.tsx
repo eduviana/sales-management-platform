@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { prisma } from "@/infrastructure/prisma/client";
-import { createAuthorizationService } from "@/modules/authorization/composition-root";
-import { createOrganizationModule } from "@/modules/organization/composition-root";
 import { createVisitsUseCases } from "@/modules/visits/composition-root";
-import { resolveAuthContext } from "@/modules/sales/presentation/resolve-auth-context";
-import { VISIT_STATUS_COLORS, VISIT_STATUS_LABELS, formatVisitDate } from "@/modules/visits/domain";
+import { resolveAuthContext } from "@/modules/identity/resolve-auth-context";
+import {
+  VISIT_STATUS_COLORS,
+  VISIT_STATUS_LABELS,
+} from "@/modules/visits/presentation/visit-status";
+import { formatDateOnly } from "@/shared/presentation/format";
 import type { VisitStatus } from "@/modules/visits/domain";
 import {
   CalendarDays,
@@ -16,6 +17,10 @@ import {
   User,
   XCircle,
 } from "lucide-react";
+import {
+  DisplayField as Field,
+  SectionCard,
+} from "@/shared/presentation/components";
 
 /**
  * Visit detail page.
@@ -26,17 +31,6 @@ import {
  * Visual reference: design/stitch/DESIGN.md
  * Reference: business-rules.md REG-066, REG-067
  */
-
-function Field({ label, value, mono = false }: { label: string; value: string; mono?: boolean }) {
-  return (
-    <div>
-      <p className="text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider mb-1">
-        {label}
-      </p>
-      <p className={`text-on-surface text-base ${mono ? "font-mono" : "font-medium"}`}>{value}</p>
-    </div>
-  );
-}
 
 function StatusPill({ status }: { status: VisitStatus }) {
   const config = VISIT_STATUS_COLORS[status];
@@ -51,32 +45,6 @@ function StatusPill({ status }: { status: VisitStatus }) {
   );
 }
 
-function SectionCard({
-  icon,
-  accent,
-  title,
-  children,
-  className = "",
-}: {
-  icon: React.ReactNode;
-  accent: string;
-  title: string;
-  children: React.ReactNode;
-  className?: string;
-}) {
-  return (
-    <section
-      className={`bg-surface-container border border-outline-variant rounded-2xl p-7 ${className}`}
-    >
-      <div className="flex items-center gap-2.5 mb-6">
-        <div className={`p-2 rounded-lg ${accent}`}>{icon}</div>
-        <h2 className="text-sm font-semibold text-on-surface uppercase tracking-wider">{title}</h2>
-      </div>
-      {children}
-    </section>
-  );
-}
-
 export default async function VisitDetailPage({
   params,
 }: {
@@ -84,9 +52,7 @@ export default async function VisitDetailPage({
 }) {
   const { id } = await params;
   const authContext = await resolveAuthContext();
-  const auth = createAuthorizationService(prisma);
-  const { organizationRepository } = createOrganizationModule(auth);
-  const { getVisitList } = createVisitsUseCases(prisma, auth, organizationRepository);
+  const { getVisitList } = createVisitsUseCases();
   const ownVisits = await getVisitList.execute({ authContext });
   const teamVisits = authContext.levelId !== null && authContext.levelId >= 3
     ? await getVisitList.execute({ authContext, scope: "TEAM" })
@@ -119,7 +85,7 @@ export default async function VisitDetailPage({
               Visita VS-{String(visit.visitNumber).padStart(4, "0")}
             </h1>
             <p className="text-sm text-on-surface-variant mt-0.5">
-              {visit.clientName ?? "Cliente sin nombre"} · Programada el {formatVisitDate(visit.scheduledDate)}
+              {visit.clientName ?? "Cliente sin nombre"} · Programada el {formatDateOnly(visit.scheduledDate)}
             </p>
           </div>
         </div>
@@ -131,8 +97,8 @@ export default async function VisitDetailPage({
         <div className="absolute -right-10 -bottom-10 w-44 h-44 bg-sky-400/5 rounded-full blur-3xl pointer-events-none" />
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-10 gap-y-6">
           <Field label="Estado" value={VISIT_STATUS_LABELS[visit.status]} />
-          <Field label="Fecha programada" value={formatVisitDate(visit.scheduledDate)} />
-          <Field label="Fecha realizada" value={visit.completedDate ? formatVisitDate(visit.completedDate) : "Pendiente"} />
+          <Field label="Fecha programada" value={formatDateOnly(visit.scheduledDate)} />
+          <Field label="Fecha realizada" value={visit.completedDate ? formatDateOnly(visit.completedDate) : "Pendiente"} />
         </div>
       </section>
 

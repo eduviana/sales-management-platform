@@ -21,15 +21,12 @@ import {
   formatAuditDateShort,
   formatAuditTimeShort,
 } from "@/modules/audit/presentation/audit-labels";
+import { formatCurrency } from "@/shared/presentation/format";
 
 interface AdminSystemOverviewProps {
   overview: SystemOverview;
   headerTitle: string;
   headerSubtitle: string;
-}
-
-function formatCurrency(amount: number): string {
-  return `$${amount.toLocaleString("es-AR")}`;
 }
 
 export function AdminSystemOverview({

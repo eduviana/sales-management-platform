@@ -16,6 +16,8 @@ export {
 export type {
   SaleData,
   SaleItemData,
+  SaleStatusRow,
+  SaleSummary,
   CreateSaleInput,
   UpdateSaleInput,
   RejectSaleInput,

@@ -3,6 +3,11 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Eye } from "lucide-react";
+import { formatDate } from "@/shared/presentation/format";
+import {
+  SALE_STATUS_BADGE as STATUS_BADGE,
+  SALE_STATUS_LABELS as STATUS_LABELS,
+} from "@/modules/sales/presentation/sale-status";
 
 interface Sale {
   id: string;
@@ -26,22 +31,6 @@ interface SalesTableProps {
   /** When true (default), renders the search input. */
   showSearch?: boolean;
 }
-
-const STATUS_LABELS: Record<string, string> = {
-  DRAFT: "Borrador",
-  PENDING_REVIEW: "Pend. revisión",
-  APPROVED: "Aprobada",
-  REJECTED: "Rechazada",
-  CANCELLED: "Cancelada",
-};
-
-const STATUS_BADGE: Record<string, string> = {
-  DRAFT: "badge-neutral",
-  PENDING_REVIEW: "badge-warning",
-  APPROVED: "badge-success",
-  REJECTED: "badge-error",
-  CANCELLED: "badge-error",
-};
 
 export type { Sale as SalesTableSale };
 
@@ -171,7 +160,7 @@ export function SalesTable({
                       </span>
                     </td>
                     <td className="py-3 px-4 text-center font-mono-data">
-                      {new Date(sale.saleDate).toLocaleDateString("es-AR")}
+                      {formatDate(sale.saleDate)}
                     </td>
                     <td className="py-3 px-4 text-center">
                       <Link

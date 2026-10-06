@@ -1,13 +1,14 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { prisma } from "@/infrastructure/prisma/client";
-import { createAuthorizationService } from "@/modules/authorization/composition-root";
-import { createOrganizationModule } from "@/modules/organization/composition-root";
 import { createVisitsUseCases } from "@/modules/visits/composition-root";
-import { resolveAuthContext } from "@/modules/sales/presentation/resolve-auth-context";
+import { resolveAuthContext } from "@/modules/identity/resolve-auth-context";
 import { recordVisitWithoutSale, completeVisitAndContinue } from "../../visit-actions";
-import { formatVisitDate } from "@/modules/visits/domain";
+import { formatDateOnly } from "@/shared/presentation/format";
 import { Ban, MapPin, ShoppingBag } from "lucide-react";
+import {
+  DisplayField as Field,
+  SectionCard,
+} from "@/shared/presentation/components";
 
 /**
  * Visit result page.
@@ -19,43 +20,6 @@ import { Ban, MapPin, ShoppingBag } from "lucide-react";
  * Reference: business-rules.md REG-066, REG-067
  */
 
-function Field({ label, value }: { label: string; value: string }) {
-  return (
-    <div>
-      <p className="text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider mb-1">
-        {label}
-      </p>
-      <p className="text-on-surface text-base font-medium">{value}</p>
-    </div>
-  );
-}
-
-function SectionCard({
-  icon,
-  accent,
-  title,
-  children,
-  className = "",
-}: {
-  icon: React.ReactNode;
-  accent: string;
-  title: string;
-  children: React.ReactNode;
-  className?: string;
-}) {
-  return (
-    <section
-      className={`bg-surface-container border border-outline-variant rounded-2xl p-7 ${className}`}
-    >
-      <div className="flex items-center gap-2.5 mb-6">
-        <div className={`p-2 rounded-lg ${accent}`}>{icon}</div>
-        <h2 className="text-sm font-semibold text-on-surface uppercase tracking-wider">{title}</h2>
-      </div>
-      {children}
-    </section>
-  );
-}
-
 export default async function VisitResultPage({
   params,
 }: {
@@ -63,9 +27,7 @@ export default async function VisitResultPage({
 }) {
   const { id } = await params;
   const authContext = await resolveAuthContext();
-  const auth = createAuthorizationService(prisma);
-  const { organizationRepository } = createOrganizationModule(auth);
-  const { getVisitList } = createVisitsUseCases(prisma, auth, organizationRepository);
+  const { getVisitList } = createVisitsUseCases();
   const visit = (await getVisitList.execute({ authContext })).find((item) => item.id === id);
 
   if (!visit || visit.status !== "assigned") {
@@ -100,7 +62,7 @@ export default async function VisitResultPage({
       <section className="bg-surface-container border border-outline-variant rounded-2xl p-7 relative overflow-hidden">
         <div className="absolute -right-10 -bottom-10 w-44 h-44 bg-sky-400/5 rounded-full blur-3xl pointer-events-none" />
         <div className="grid grid-cols-1 md:grid-cols-3 gap-x-10 gap-y-6">
-          <Field label="Fecha programada" value={formatVisitDate(visit.scheduledDate)} />
+          <Field label="Fecha programada" value={formatDateOnly(visit.scheduledDate)} />
           <Field label="Cliente" value={visit.clientName ?? "Cliente sin nombre"} />
           <div>
             <p className="text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider mb-1">

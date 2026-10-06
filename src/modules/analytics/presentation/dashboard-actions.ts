@@ -9,10 +9,8 @@
 
 "use server";
 
-import { prisma } from "@/infrastructure/prisma/client";
-import { createAuthorizationService } from "@/modules/authorization/composition-root";
 import { createAnalyticsUseCases } from "@/modules/analytics/composition-root";
-import { resolveAuthContext } from "@/modules/sales/presentation/resolve-auth-context";
+import { resolveAuthContext } from "@/modules/identity/resolve-auth-context";
 import type { DashboardPeriod, DashboardData } from "@/modules/analytics/domain";
 import { AuthenticationError, AuthorizationError } from "@/shared/errors";
 
@@ -21,8 +19,7 @@ export async function getDashboardData(
 ): Promise<{ data: DashboardData | null; error: string | null }> {
   try {
     const authContext = await resolveAuthContext();
-    const auth = createAuthorizationService(prisma);
-    const { getDashboardData } = createAnalyticsUseCases(prisma, auth);
+    const { getDashboardData } = createAnalyticsUseCases();
 
     const data = await getDashboardData.execute({
       authContext,

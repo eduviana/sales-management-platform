@@ -57,7 +57,7 @@ export class CreateCommissionRuleVersionUseCase {
 
     // Record audit event
     await this.auditPort.log({
-      actorId: input.authContext.employeeId,
+      actorId: input.authContext.userId,
       actorEmail: input.authContext.userEmail,
       action: AuditAction.COMMISSION_RULE_CREATED,
       resourceType: "CommissionRule",

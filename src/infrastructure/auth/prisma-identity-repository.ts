@@ -18,6 +18,17 @@ import type { AccountStatus } from "@/modules/identity/domain";
 export class PrismaIdentityRepository implements IdentityRepository {
   constructor(private readonly prisma: PrismaClient) {}
 
+  async findAccountEmailsByIds(
+    userIds: readonly string[],
+  ): Promise<Array<{ readonly id: string; readonly email: string | null }>> {
+    if (userIds.length === 0) return [];
+    const rows = await this.prisma.userAccount.findMany({
+      where: { id: { in: [...userIds] } },
+      select: { id: true, email: true },
+    });
+    return rows.map((row) => ({ id: row.id, email: row.email }));
+  }
+
   async findByEmail(email: string): Promise<IdentityRecord | null> {
     const account = await this.prisma.userAccount.findFirst({
       where: { email: { equals: email, mode: "insensitive" } },

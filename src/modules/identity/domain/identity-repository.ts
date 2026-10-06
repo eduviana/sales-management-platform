@@ -57,6 +57,13 @@ export interface PasswordResetTokenRecord {
 
 export interface IdentityRepository {
   /**
+   * Email of several user accounts (label lookup for audit events).
+   */
+  findAccountEmailsByIds(
+    userIds: readonly string[],
+  ): Promise<Array<{ readonly id: string; readonly email: string | null }>>;
+
+  /**
    * Find a UserAccount by email (case-insensitive).
    * Returns null if not found.
    */

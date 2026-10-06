@@ -220,6 +220,15 @@ A continuación se definen los permisos conceptuales que se utilizarán como bas
 | `employee.assignLevel`       | Asignar o modificar nivel                  |
 | `employee.assignTeam`        | Asignar o cambiar equipo                   |
 
+> **Alcance de `employee.read` y `employee.update`:** `employee.read` sigue el
+> alcance del actor (EQUIPO para N3, RAMA para N4–N6, GLOBAL para N7 y ADMIN) y
+> se verifica sobre el empleado solicitado, de modo que un supervisor no puede
+> abrir por URL la ficha de alguien fuera de su alcance. `employee.update` no
+> es un permiso exclusivo del ADMIN: EQUIPO para N3, RAMA para N4–N6 y GLOBAL
+> para N7 y ADMIN. En ambos casos la validación se realiza server-side sobre el
+> empleado objetivo; la interfaz no constituye autorización por sí misma
+> (PERM-PRINCIPLE-005).
+
 ### 4.3. Equipos
 
 | Permiso                | Descripción                          |
@@ -1013,3 +1022,4 @@ que resulte afectado.
 | 07/09/2026 | 0.6     | Incorporación de permisos `sale.approve`, `sale.reject` (revisión de ventas) y `catalog.read`, `catalog.create`, `catalog.update` (catálogo de productos). |
 | 29/09/2026 | 0.7     | Corrección de numeración de la sección 4: se elimina la duplicación de §4.6/§4.7/§4.8. Las secciones de Clientes, Visitas y Referidos (Phase 10) conservan §4.6–§4.8; las secciones posteriores se renumeran a §4.9–§4.14. Se actualizan las referencias de trazabilidad en código y documentación. |
 | 29/09/2026 | 0.8     | §4.9: se documenta el estado de implementación de los permisos de estadísticas y reporting. Comparaciones, rankings y generación/exportación de reportes quedan diferidos (Q48–Q54); la exportación CSV no se implementa por ahora. |
+| 04/10/2026 | 0.10    | §4.2: se documenta el alcance de `employee.read` (se verifica sobre el empleado solicitado, sin acceso horizontal por URL) y de `employee.update` (no exclusivo del ADMIN: EQUIPO N3, RAMA N4–N6, GLOBAL N7 y ADMIN), validado server-side (Q143). |

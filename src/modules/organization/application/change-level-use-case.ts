@@ -34,6 +34,7 @@ export interface ChangeLevelInput {
   readonly employeeId: string;
   readonly targetLevelId: number;
   readonly reason?: string;
+  /** Account id of the actor: `audit_event.actorId` is a FK to `UserAccount`. */
   readonly actorId: string;
   readonly actorEmail: string;
 }

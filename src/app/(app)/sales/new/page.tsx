@@ -9,12 +9,9 @@
 
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { prisma } from "@/infrastructure/prisma/client";
-import { createAuthorizationService } from "@/modules/authorization/composition-root";
-import { PrismaOrganizationRepository } from "@/infrastructure/organization/prisma-organization-repository";
 import { createSalesUseCases } from "@/modules/sales/composition-root";
 import { createVisitsUseCases } from "@/modules/visits/composition-root";
-import { resolveAuthContext } from "@/modules/sales/presentation/resolve-auth-context";
+import { resolveAuthContext } from "@/modules/identity/resolve-auth-context";
 import { CreateSaleForm } from "./create-sale-form";
 
 export default async function NewSalePage({
@@ -28,10 +25,8 @@ export default async function NewSalePage({
     redirect("/visits");
   }
   const authContext = await resolveAuthContext();
-  const auth = createAuthorizationService(prisma);
-  const orgRepo = new PrismaOrganizationRepository(prisma);
-  const useCases = createSalesUseCases(prisma, auth, orgRepo);
-  const visitsUseCases = createVisitsUseCases(prisma, auth, orgRepo);
+  const useCases = createSalesUseCases();
+  const visitsUseCases = createVisitsUseCases();
 
   const productsResult = await useCases.listProducts.execute({ authContext });
 

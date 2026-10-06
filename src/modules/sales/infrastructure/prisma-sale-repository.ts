@@ -14,6 +14,8 @@ import type {
   SaleListFilter,
   PaginationOptions,
   SaleListResult,
+  SaleStatusRow,
+  SaleSummary,
 } from "@/modules/sales/domain";
 import type { SaleStatus } from "@/modules/sales/domain";
 import { DatabaseError } from "@/shared/errors";
@@ -394,5 +396,138 @@ export class PrismaSaleRepository implements SaleRepository {
         cause: error as Error,
       });
     }
+  }
+
+  async countApprovedSince(employeeId: string, since: Date): Promise<number> {
+    return this.prisma.sale.count({
+      where: {
+        employeeId,
+        status: "APPROVED",
+        saleDate: { gte: since },
+      },
+    });
+  }
+
+  async countApprovedInPeriod(
+    employeeId: string,
+    from: Date,
+    to: Date,
+  ): Promise<number> {
+    return this.prisma.sale.count({
+      where: {
+        employeeId,
+        status: "APPROVED",
+        saleDate: { gte: from, lte: to },
+      },
+    });
+  }
+
+  async countApprovedSinceByEmployee(
+    entries: ReadonlyArray<{ employeeId: string; since: Date }>,
+  ): Promise<Map<string, number>> {
+    const counts = new Map<string, number>();
+    for (const entry of entries) {
+      counts.set(
+        entry.employeeId,
+        await this.countApprovedSince(entry.employeeId, entry.since),
+      );
+    }
+    return counts;
+  }
+
+  async getMonthlyTarget(levelId: number): Promise<number> {
+    const target = await this.prisma.monthlyTarget.findUnique({
+      where: { levelId },
+      select: { targetSales: true },
+    });
+    return target?.targetSales ?? 0;
+  }
+
+  async countInPeriodByEmployee(
+    employeeIds: readonly string[],
+    from: Date,
+    to: Date,
+    statuses: readonly SaleStatus[],
+  ): Promise<Map<string, number>> {
+    if (employeeIds.length === 0) return new Map();
+    const rows = await this.prisma.sale.groupBy({
+      by: ["employeeId"],
+      where: {
+        employeeId: { in: [...employeeIds] },
+        saleDate: { gte: from, lte: to },
+        status: { in: [...statuses] },
+      },
+      _count: { _all: true },
+    });
+    return new Map(rows.map((r) => [r.employeeId, r._count._all ?? 0]));
+  }
+
+  async countInPeriodForEmployees(
+    employeeIds: readonly string[],
+    from: Date,
+    to: Date,
+    statuses: readonly SaleStatus[],
+  ): Promise<number> {
+    if (employeeIds.length === 0) return 0;
+    return this.prisma.sale.count({
+      where: {
+        employeeId: { in: [...employeeIds] },
+        saleDate: { gte: from, lte: to },
+        status: { in: [...statuses] },
+      },
+    });
+  }
+
+  async findApprovedByEmployeeId(employeeId: string): Promise<SaleRecord[]> {
+    const sales = await this.prisma.sale.findMany({
+      where: { employeeId, status: "APPROVED" },
+      orderBy: { saleDate: "asc" },
+    });
+    return sales.map((sale) => mapSale(sale));
+  }
+
+  async findByVisitIds(visitIds: readonly string[]): Promise<SaleRecord[]> {
+    if (visitIds.length === 0) return [];
+    const sales = await this.prisma.sale.findMany({
+      where: { visitId: { in: [...visitIds] } },
+      include: { items: true },
+    });
+    return sales.map((sale) => mapSale(sale));
+  }
+
+  async findStatusRowsByEmployeeIds(
+    employeeIds: readonly string[],
+  ): Promise<SaleStatusRow[]> {
+    if (employeeIds.length === 0) return [];
+    const rows = await this.prisma.sale.findMany({
+      where: { employeeId: { in: [...employeeIds] } },
+      select: { saleDate: true, status: true },
+      orderBy: { saleDate: "desc" },
+    });
+    return rows.map((r) => ({ saleDate: r.saleDate, status: r.status }));
+  }
+
+  async findSummariesByIds(saleIds: readonly string[]): Promise<SaleSummary[]> {
+    if (saleIds.length === 0) return [];
+    const rows = await this.prisma.sale.findMany({
+      where: { id: { in: [...saleIds] } },
+      select: { id: true, saleNumber: true, totalAmount: true },
+    });
+    return rows.map((row) => ({
+      id: row.id,
+      saleNumber: row.saleNumber,
+      totalAmount: Number(row.totalAmount),
+    }));
+  }
+
+  async getMonthlyTargetsByLevelIds(
+    levelIds: readonly number[],
+  ): Promise<Map<number, number>> {
+    if (levelIds.length === 0) return new Map();
+    const targets = await this.prisma.monthlyTarget.findMany({
+      where: { levelId: { in: [...levelIds] } },
+      select: { levelId: true, targetSales: true },
+    });
+    return new Map(targets.map((t) => [t.levelId, t.targetSales]));
   }
 }

@@ -92,6 +92,9 @@ function transactionContext(saleStatus: SaleRecord["status"]): {
     findEarnedBySaleId: vi.fn().mockResolvedValue(
       saleStatus === "APPROVED" ? entry : null,
     ),
+    findEarnedByEmployeeIds: vi.fn().mockResolvedValue([]),
+    findSaleIdsByIds: vi.fn().mockResolvedValue([]),
+    findEarnedAmountsBySaleIds: vi.fn().mockResolvedValue([]),
     findReversalByParentId: vi.fn().mockResolvedValue(null),
     create: createEntry,
     findBySaleId: vi.fn().mockResolvedValue([]),
@@ -99,6 +102,7 @@ function transactionContext(saleStatus: SaleRecord["status"]): {
   const commissionRuleRepository: CommissionRuleRepository = {
     findApplicable: vi.fn().mockResolvedValue(rule),
     findOverlapping: vi.fn(),
+    findLevelIdsByIds: vi.fn().mockResolvedValue([]),
     create: vi.fn(),
     closeAt: vi.fn(),
   };

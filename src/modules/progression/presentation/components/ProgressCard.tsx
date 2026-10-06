@@ -8,17 +8,8 @@
  */
 
 import { TrendingUp } from "lucide-react";
+import { formatLevelCode } from "@/shared/presentation/format";
 import type { EmployeeProgression } from "../../domain";
-
-const LEVEL_NAMES: Record<number, string> = {
-  1: "N1",
-  2: "N2",
-  3: "N3",
-  4: "N4",
-  5: "N5",
-  6: "N6",
-  7: "N7",
-};
 
 export function ProgressCard({
   progression,
@@ -30,8 +21,8 @@ export function ProgressCard({
   const { currentLevelId, currentPoints, pointsToNextLevel, percentage, breakdown } = progression;
   const isMaxLevel = currentLevelId === null || currentLevelId >= 7;
 
-  const currentLevelName = currentLevelId ? LEVEL_NAMES[currentLevelId] ?? `N${currentLevelId}` : "ADMIN";
-  const nextLevelName = currentLevelId ? LEVEL_NAMES[currentLevelId + 1] ?? `N${currentLevelId + 1}` : null;
+  const currentLevelName = currentLevelId ? formatLevelCode(currentLevelId) : "ADMIN";
+  const nextLevelName = currentLevelId ? formatLevelCode(currentLevelId + 1) : null;
 
   return (
     <section className={`bg-surface-container border border-outline-variant rounded-2xl p-7 flex flex-col ${className}`}>

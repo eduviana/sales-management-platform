@@ -1,7 +1,8 @@
 "use server";
 
-import { prisma } from "@/infrastructure/prisma/client";
-import { resolveAuthContext } from "@/modules/sales/presentation/resolve-auth-context";
+import { createOrganizationModule } from "@/modules/organization/composition-root";
+import { resolveAuthContext } from "@/modules/identity/resolve-auth-context";
+import { toActionErrorMessage } from "@/shared/presentation/action-error";
 import { promoteEmployee } from "./[id]/actions";
 
 export interface PromoteResult {
@@ -27,10 +28,8 @@ export async function promoteToNextLevel(employeeId: string): Promise<PromoteRes
     return { ok: false, error: "No autorizado." };
   }
 
-  const employee = await prisma.employee.findUnique({
-    where: { id: employeeId },
-    select: { currentLevelId: true },
-  });
+  const { organizationRepository } = createOrganizationModule();
+  const employee = await organizationRepository.findEmployeeById(employeeId);
 
   if (!employee) {
     return { ok: false, error: "Empleado no encontrado." };
@@ -56,7 +55,7 @@ export async function promoteToNextLevel(employeeId: string): Promise<PromoteRes
   } catch (e) {
     return {
       ok: false,
-      error: e instanceof Error ? e.message : "Error al ascender.",
+      error: toActionErrorMessage(e, "Error al ascender."),
     };
   }
 }

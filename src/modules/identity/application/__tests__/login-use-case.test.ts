@@ -12,6 +12,7 @@ function createMocks() {
   const identityRepository: IdentityRepository = {
     findByEmail: vi.fn(),
     findById: vi.fn(),
+    findAccountEmailsByIds: vi.fn().mockResolvedValue([]),
     updateLastLogin: vi.fn(),
     updatePassword: vi.fn(),
     updateStatus: vi.fn(),

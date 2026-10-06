@@ -113,7 +113,7 @@ export class UpdateSaleUseCase {
 
     // 7. Record audit event
     await this.auditPort.log({
-      actorId: input.authContext.employeeId,
+      actorId: input.authContext.userId,
       actorEmail: input.authContext.userEmail,
       action: AuditAction.SALE_UPDATED,
       resourceType: "Sale",

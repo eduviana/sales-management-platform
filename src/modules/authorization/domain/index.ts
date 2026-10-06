@@ -17,7 +17,7 @@ export type { AuthorizationRole } from "./authorization-context";
 export type { AuthorizationContext } from "./authorization-context";
 
 export type { AuthorizationDecision } from "./authorization-decision";
-export { allow, deny } from "./authorization-decision";
+export { allow, deny, grantsResourceAccess } from "./authorization-decision";
 
 // Ports (interfaces)
 export type { PermissionEvaluationResult } from "./permission-evaluator";

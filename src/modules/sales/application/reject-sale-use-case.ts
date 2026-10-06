@@ -76,7 +76,7 @@ export class RejectSaleUseCase {
 
     // 6. Record audit event
     await this.auditPort.log({
-      actorId: input.authContext.employeeId,
+      actorId: input.authContext.userId,
       actorEmail: input.authContext.userEmail,
       action: AuditAction.SALE_REJECTED,
       resourceType: "Sale",

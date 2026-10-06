@@ -4,7 +4,7 @@
 **Documento:** Reglas de negocio  
 **Estado:** En consolidación  
 **Versión:** 1.5  
-**Última actualización:** 25/09/2026
+**Última actualización:** 05/10/2026
 
 ---
 
@@ -837,6 +837,7 @@ Se auditadan las siguientes categorías de operaciones:
 - **Organización:** EMPLOYEE_CREATED, EMPLOYEE_UPDATED, EMPLOYEE_DEACTIVATED, EMPLOYEE_LEVEL_CHANGED, EMPLOYEE_SUPERVISOR_CHANGED.
 - **Ventas:** SALE_CREATED, SALE_UPDATED, SALE_SUBMITTED, SALE_APPROVED, SALE_REJECTED, SALE_CANCELLED.
 - **Comisiones:** COMMISSION_RULE_CREATED, COMMISSION_GENERATED, COMMISSION_REVERSED.
+- **Autorización:** AUTHORIZATION_DENIED (toda denegación de autorización, ADR-020 decisión 6).
 
 La lista completa de eventos y su modelo de datos se define en `ADR-013` y en
 el schema de Prisma.

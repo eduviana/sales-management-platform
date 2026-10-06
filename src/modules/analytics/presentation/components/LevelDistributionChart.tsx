@@ -9,6 +9,7 @@
 "use client";
 
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
+import { formatCurrency } from "@/shared/presentation/format";
 import type { LevelDistribution } from "../../domain";
 
 const COLORS = [
@@ -33,7 +34,7 @@ function CustomTooltip({ active, payload }: {
 
   return (
     <div className="bg-surface-container-highest text-on-surface text-xs py-1 px-2 rounded">
-      {payload[0].name}: ${payload[0].value.toLocaleString("es-AR")} ({payload[0].payload.percentage}%)
+      {payload[0].name}: {formatCurrency(payload[0].value)} ({payload[0].payload.percentage}%)
     </div>
   );
 }

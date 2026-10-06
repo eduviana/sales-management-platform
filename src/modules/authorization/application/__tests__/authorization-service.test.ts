@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import { AuthorizationServiceImpl } from "../authorization-service";
 import { ScopeType } from "@/modules/authorization/domain";
+import { AuditAction } from "@/shared/ports/audit-port";
 import type {
   AuthorizationContext,
   PermissionEvaluator,
@@ -299,6 +300,119 @@ describe("AuthorizationServiceImpl", () => {
         ctx,
         ScopeType.OWN,
       );
+    });
+  });
+
+  // =========================================================================
+  // Denied events are recorded (ADR-020 decision 6)
+  // =========================================================================
+
+  describe("Denied events are recorded", () => {
+    function createMockAuditPort() {
+      return { log: vi.fn().mockResolvedValue(undefined) };
+    }
+
+    it("logs AUTHORIZATION_DENIED when the permission is not granted", async () => {
+      const permEval = createMockPermissionEvaluator(false);
+      const scopeResolver = createMockScopeResolver([]);
+      const auditPort = createMockAuditPort();
+      const service = new AuthorizationServiceImpl(
+        permEval,
+        scopeResolver,
+        undefined,
+        auditPort,
+      );
+
+      const ctx = createContext();
+      await service.authorize(ctx, { permission: "employee.read" });
+
+      expect(auditPort.log).toHaveBeenCalledTimes(1);
+      expect(auditPort.log).toHaveBeenCalledWith(
+        expect.objectContaining({
+          action: AuditAction.AUTHORIZATION_DENIED,
+          result: "DENIED",
+          actorId: "user-1",
+          actorEmail: "user@example.com",
+          resourceType: "Authorization",
+          resourceId: null,
+          metadata: expect.objectContaining({
+            permission: "employee.read",
+          }),
+        }),
+      );
+    });
+
+    it("logs the denied resource when it falls outside the scope", async () => {
+      const permEval = createMockPermissionEvaluator(true, ScopeType.TEAM);
+      const scopeResolver = createMockScopeResolver(["sub-1"]);
+      const auditPort = createMockAuditPort();
+      const service = new AuthorizationServiceImpl(
+        permEval,
+        scopeResolver,
+        undefined,
+        auditPort,
+      );
+
+      const ctx = createContext();
+      await service.authorize(ctx, {
+        permission: "sale.update",
+        resource: { type: "sale", id: "sale-99", ownerId: "emp-999" },
+      });
+
+      expect(auditPort.log).toHaveBeenCalledWith(
+        expect.objectContaining({
+          action: AuditAction.AUTHORIZATION_DENIED,
+          result: "DENIED",
+          resourceType: "Sale",
+          resourceId: "sale-99",
+          metadata: expect.objectContaining({
+            permission: "sale.update",
+            scope: ScopeType.TEAM,
+          }),
+        }),
+      );
+    });
+
+    it("does not log anything when the decision is allowed", async () => {
+      const permEval = createMockPermissionEvaluator(true);
+      const scopeResolver = createMockScopeResolver([]);
+      const auditPort = createMockAuditPort();
+      const service = new AuthorizationServiceImpl(
+        permEval,
+        scopeResolver,
+        undefined,
+        auditPort,
+      );
+
+      const ctx = createContext();
+      const decision = await service.authorize(ctx, {
+        permission: "employee.read",
+      });
+
+      expect(decision.allowed).toBe(true);
+      expect(auditPort.log).not.toHaveBeenCalled();
+    });
+
+    it("never lets an audit failure break the decision", async () => {
+      const permEval = createMockPermissionEvaluator(false);
+      const scopeResolver = createMockScopeResolver([]);
+      const auditPort = {
+        log: vi.fn().mockRejectedValue(new Error("audit store is down")),
+      };
+      const service = new AuthorizationServiceImpl(
+        permEval,
+        scopeResolver,
+        undefined,
+        auditPort,
+      );
+
+      const ctx = createContext();
+      const decision = await service.authorize(ctx, {
+        permission: "employee.read",
+      });
+
+      expect(auditPort.log).toHaveBeenCalledTimes(1);
+      expect(decision.allowed).toBe(false);
     });
   });
 });

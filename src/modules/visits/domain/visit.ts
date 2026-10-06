@@ -9,6 +9,20 @@
 
 export type VisitStatus = "assigned" | "completed" | "no_sale" | "cancelled";
 
+/**
+ * Aggregated visit counts for one seller.
+ *
+ * - `total`: every visit ever assigned to the seller (any status). Team
+ *   dashboards label this figure as "visitas asignadas".
+ * - `completed`: visits performed (COMPLETED + NO_SALE).
+ * - `pending`: visits still pending (ASSIGNED).
+ */
+export interface VisitStatusCounts {
+  readonly total: number;
+  readonly completed: number;
+  readonly pending: number;
+}
+
 export interface Visit {
   id: string;
   visitNumber: number;
@@ -57,22 +71,3 @@ export interface UpdateVisitData {
   status?: VisitStatus;
   notes?: string;
 }
-
-export const VISIT_STATUS_LABELS: Record<VisitStatus, string> = {
-  assigned: "Pendiente",
-  completed: "Completada",
-  no_sale: "Sin venta",
-  cancelled: "Cancelada",
-};
-
-/** Formats a date-only visit value without applying the browser's timezone. */
-export function formatVisitDate(date: Date | string): string {
-  return new Intl.DateTimeFormat("es-AR", { timeZone: "UTC" }).format(new Date(date));
-}
-
-export const VISIT_STATUS_COLORS: Record<VisitStatus, { bg: string; text: string; border: string }> = {
-  assigned: { bg: "bg-primary/10", text: "text-primary", border: "border-primary/20" },
-  completed: { bg: "bg-secondary/10", text: "text-secondary", border: "border-secondary/20" },
-  no_sale: { bg: "bg-tertiary/10", text: "text-tertiary", border: "border-tertiary/20" },
-  cancelled: { bg: "bg-surface-container-high", text: "text-on-surface-variant", border: "border-outline-variant" },
-};

@@ -14,17 +14,9 @@
 import { useActionState } from "react";
 import { startTransition, useState } from "react";
 import { useRouter } from "next/navigation";
+import { formatLevelCode } from "@/shared/presentation/format";
+import { toActionErrorMessage } from "@/shared/presentation/action-error";
 import { promoteEmployee } from "./actions";
-
-const LEVEL_NAMES: Record<number, string> = {
-  1: "N1",
-  2: "N2",
-  3: "N3",
-  4: "N4",
-  5: "N5",
-  6: "N6",
-  7: "N7",
-};
 
 interface PromoteButtonProps {
   employeeId: string;
@@ -52,7 +44,7 @@ export function PromoteButton({
         await promoteEmployee(fd);
         return null;
       } catch (e) {
-        return e instanceof Error ? e.message : "Error al ascender.";
+        return toActionErrorMessage(e, "Error al ascender.");
       }
     },
     null,
@@ -69,8 +61,8 @@ export function PromoteButton({
     router.refresh();
   };
 
-  const currentName = LEVEL_NAMES[currentLevelId] ?? `N${currentLevelId}`;
-  const nextName = LEVEL_NAMES[nextLevelId] ?? `N${nextLevelId}`;
+  const currentName = formatLevelCode(currentLevelId);
+  const nextName = formatLevelCode(nextLevelId);
 
   if (!showConfirm) {
     return (

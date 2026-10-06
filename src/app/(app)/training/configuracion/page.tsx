@@ -9,11 +9,9 @@
  */
 
 import Link from "next/link";
-import { notFound } from "next/navigation";
-import { prisma } from "@/infrastructure/prisma/client";
-import { createAuthorizationService } from "@/modules/authorization/composition-root";
+import { handlePageLoadError } from "../../_lib/handle-page-load-error";
 import { createTrainingModule } from "@/modules/training/composition-root";
-import { resolveAuthContext } from "@/modules/sales/presentation/resolve-auth-context";
+import { resolveAuthContext } from "@/modules/identity/resolve-auth-context";
 import { MaterialLevelSelect } from "@/modules/training/presentation/components";
 
 const TYPE_LABELS: Record<string, string> = {
@@ -37,14 +35,13 @@ const STATUS_COLORS: Record<string, { bg: string; text: string; border: string }
 
 export default async function TrainingConfigPage() {
   const authContext = await resolveAuthContext();
-  const authorizationService = createAuthorizationService(prisma);
-  const { getTrainingTree } = createTrainingModule(authorizationService);
+  const { getTrainingTree } = createTrainingModule();
 
   let tree;
   try {
     tree = await getTrainingTree.execute({ authContext });
-  } catch {
-    notFound();
+  } catch (error) {
+    handlePageLoadError(error);
   }
 
   const totalMaterials = tree.categories.reduce(

@@ -36,6 +36,7 @@ export type {
   EmployeeCommissionContext,
   EmployeeCommissionContextPort,
   CreateEmployeeData,
+  UpdateEmployeeData,
   CreateLevelHistoryData,
   CreateSupervisorHistoryData,
   OrganizationRepository,

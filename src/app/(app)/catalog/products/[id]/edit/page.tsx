@@ -8,11 +8,9 @@
  */
 
 import { notFound, redirect } from "next/navigation";
-import { prisma } from "@/infrastructure/prisma/client";
 import { createAuthorizationService } from "@/modules/authorization/composition-root";
-import { PrismaOrganizationRepository } from "@/infrastructure/organization/prisma-organization-repository";
 import { createSalesUseCases } from "@/modules/sales/composition-root";
-import { resolveAuthContext } from "@/modules/sales/presentation/resolve-auth-context";
+import { resolveAuthContext } from "@/modules/identity/resolve-auth-context";
 import { UpdateProductForm } from "./update-product-form";
 
 export default async function EditProductPage({
@@ -22,9 +20,8 @@ export default async function EditProductPage({
 }) {
   const { id } = await params;
   const authContext = await resolveAuthContext();
-  const auth = createAuthorizationService(prisma);
-  const orgRepo = new PrismaOrganizationRepository(prisma);
-  const useCases = createSalesUseCases(prisma, auth, orgRepo);
+  const auth = createAuthorizationService();
+  const useCases = createSalesUseCases();
 
   // Authorization check: catalog.update required
   const decision = await auth.authorize(authContext, { permission: "catalog.update" });
@@ -32,8 +29,11 @@ export default async function EditProductPage({
     redirect("/catalog");
   }
 
-  // Load product directly from Prisma (product detail)
-  const product = await prisma.product.findUnique({ where: { id } });
+  // Load product through the catalog query service
+  const product = await useCases.getProductById.execute({
+    authContext,
+    productId: id,
+  });
   if (!product) {
     notFound();
   }

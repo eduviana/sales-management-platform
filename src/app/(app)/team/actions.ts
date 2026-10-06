@@ -1,15 +1,12 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { prisma } from "@/infrastructure/prisma/client";
-import { createAuthorizationService } from "@/modules/authorization/composition-root";
 import { createOrganizationModule } from "@/modules/organization/composition-root";
-import { resolveAuthContext } from "@/modules/sales/presentation/resolve-auth-context";
+import { resolveAuthContext } from "@/modules/identity/resolve-auth-context";
 
 export async function recruitEmployee(formData: FormData): Promise<void> {
   const authContext = await resolveAuthContext();
-  const auth = createAuthorizationService(prisma);
-  const { recruitEmployeeUseCase } = createOrganizationModule(auth);
+  const { recruitEmployeeUseCase } = createOrganizationModule();
 
   const recruiterId = authContext.employeeId;
 
@@ -45,6 +42,7 @@ export async function recruitEmployee(formData: FormData): Promise<void> {
     lastName,
     joinedAt,
     actorEmail: authContext.userEmail,
+    actorId: authContext.userId,
     dni,
     email,
     phone,

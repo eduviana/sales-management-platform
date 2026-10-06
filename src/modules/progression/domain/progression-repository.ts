@@ -12,6 +12,11 @@ export interface ProgressionRepository {
   /** Get all progress entries for an employee, ordered by date. */
   getEntriesByEmployee(employeeId: string): Promise<ProgressEntry[]>;
 
+  /** Get progress entries for several employees (batch). */
+  getEntriesByEmployees(
+    employeeIds: readonly string[],
+  ): Promise<ProgressEntry[]>;
+
   /** Get progress entries for a specific period. */
   getEntriesByPeriod(employeeId: string, period: string): Promise<ProgressEntry[]>;
 

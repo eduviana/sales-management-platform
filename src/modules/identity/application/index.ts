@@ -21,3 +21,6 @@ export { ResetPasswordUseCase } from "./reset-password-use-case";
 export type { ResetPasswordInput } from "./reset-password-use-case";
 
 export { ResolveIdentityUseCase } from "./resolve-identity-use-case";
+
+export { GetAccountLabelsUseCase } from "./get-account-labels-use-case";
+export type { GetAccountLabelsInput } from "./get-account-labels-use-case";

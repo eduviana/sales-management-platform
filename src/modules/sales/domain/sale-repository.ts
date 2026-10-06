@@ -7,7 +7,7 @@
  * Reference: system-architecture.md §6, ADR-008
  */
 
-import type { SaleData, SaleItemData } from "./sale";
+import type { SaleData, SaleItemData, SaleStatusRow, SaleSummary } from "./sale";
 import type { SaleStatus } from "./sale-status";
 
 // =============================================================================
@@ -27,6 +27,8 @@ export interface SaleRecord extends SaleData {
 export interface SaleItemRecord extends SaleItemData {
   readonly id: string;
   readonly saleId: string;
+  /** quantity × unitPrice, as stored by the sale write use cases. */
+  readonly subtotal: number;
   readonly createdAt: Date;
   readonly updatedAt: Date;
 }
@@ -199,4 +201,73 @@ export interface SaleRepository {
     filter: SaleListFilter,
     pagination: PaginationOptions,
   ): Promise<SaleListResult>;
+
+  // -------------------------------------------------------------------------
+  // Aggregate reads
+  //
+  // Consumed by the progression module to compute points, so it reads the
+  // sales table through this port instead of querying it directly.
+  // -------------------------------------------------------------------------
+
+  /** Count approved sales of an employee on or after `since`. */
+  countApprovedSince(employeeId: string, since: Date): Promise<number>;
+
+  /** Count approved sales of an employee within an inclusive date range. */
+  countApprovedInPeriod(
+    employeeId: string,
+    from: Date,
+    to: Date,
+  ): Promise<number>;
+
+  /** Count approved sales per employee, each with its own lower bound. */
+  countApprovedSinceByEmployee(
+    entries: ReadonlyArray<{ employeeId: string; since: Date }>,
+  ): Promise<Map<string, number>>;
+
+  /** Monthly sales objective configured for a level, 0 when not configured. */
+  getMonthlyTarget(levelId: number): Promise<number>;
+
+  /**
+   * Count sales in a period, grouped by employee.
+   *
+   * Consumes the status filter given by the caller so each read model keeps its
+   * own semantics (progression counts APPROVED only; dashboards also count
+   * PENDING_REVIEW). Employees without sales in the period are absent from the map.
+   */
+  countInPeriodByEmployee(
+    employeeIds: readonly string[],
+    from: Date,
+    to: Date,
+    statuses: readonly SaleStatus[],
+  ): Promise<Map<string, number>>;
+
+  /** Count sales in a period for several employees. */
+  countInPeriodForEmployees(
+    employeeIds: readonly string[],
+    from: Date,
+    to: Date,
+    statuses: readonly SaleStatus[],
+  ): Promise<number>;
+
+  /** Approved sales of an employee, oldest first. */
+  findApprovedByEmployeeId(employeeId: string): Promise<SaleRecord[]>;
+
+  /** Sales linked to the given visits, whatever their status. */
+  findByVisitIds(visitIds: readonly string[]): Promise<SaleRecord[]>;
+
+  /** Date + status rows of several employees' sales, newest first. */
+  findStatusRowsByEmployeeIds(
+    employeeIds: readonly string[],
+  ): Promise<SaleStatusRow[]>;
+
+  /** Sale numbers and totals of several sales (commission labels). */
+  findSummariesByIds(saleIds: readonly string[]): Promise<SaleSummary[]>;
+
+  /**
+   * Monthly sales objectives configured for the given levels.
+   * Levels without a configured objective are absent from the map.
+   */
+  getMonthlyTargetsByLevelIds(
+    levelIds: readonly number[],
+  ): Promise<Map<number, number>>;
 }

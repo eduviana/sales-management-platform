@@ -66,6 +66,24 @@ export interface SaleData {
 }
 
 /**
+ * Minimal sale row for period-filtered status listings (date + status only).
+ */
+export interface SaleStatusRow {
+  readonly saleDate: Date;
+  readonly status: SaleStatus;
+}
+
+/**
+ * Minimal sale projection used to label commission entries (sale number and
+ * total only).
+ */
+export interface SaleSummary {
+  readonly id: string;
+  readonly saleNumber: number;
+  readonly totalAmount: number;
+}
+
+/**
  * Input data for creating a new sale.
  */
 export interface CreateSaleInput {

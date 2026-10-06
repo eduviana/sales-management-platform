@@ -22,6 +22,7 @@ import { ChangePasswordUseCase } from "./application/change-password-use-case";
 import { RequestPasswordResetUseCase } from "./application/request-password-reset-use-case";
 import { ResetPasswordUseCase } from "./application/reset-password-use-case";
 import { ResolveIdentityUseCase } from "./application/resolve-identity-use-case";
+import { GetAccountLabelsUseCase } from "./application/get-account-labels-use-case";
 
 /**
  * Create all Identity module dependencies and return use cases.
@@ -76,6 +77,8 @@ export async function createIdentityModule() {
     identityRepository,
   );
 
+  const getAccountLabels = new GetAccountLabelsUseCase(identityRepository);
+
   return {
     loginUseCase,
     logoutUseCase,
@@ -83,6 +86,7 @@ export async function createIdentityModule() {
     requestPasswordResetUseCase,
     resetPasswordUseCase,
     resolveIdentityUseCase,
+    getAccountLabels,
     sessionPort,
   };
 }

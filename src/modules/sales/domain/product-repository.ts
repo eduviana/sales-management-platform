@@ -50,6 +50,11 @@ export interface ProductRepository {
   findById(id: string): Promise<ProductRecord | null>;
 
   /**
+   * Find products by ID (batch read for sale items).
+   */
+  findByIds(ids: readonly string[]): Promise<ProductRecord[]>;
+
+  /**
    * Find a product by code.
    */
   findByCode(code: string): Promise<ProductRecord | null>;

@@ -1,17 +1,12 @@
 import Link from "next/link";
-import { prisma } from "@/infrastructure/prisma/client";
-import { createAuthorizationService } from "@/modules/authorization/composition-root";
-import { createOrganizationModule } from "@/modules/organization/composition-root";
 import { createVisitsUseCases } from "@/modules/visits/composition-root";
-import { resolveAuthContext } from "@/modules/sales/presentation/resolve-auth-context";
+import { resolveAuthContext } from "@/modules/identity/resolve-auth-context";
 import { assignVisit } from "./actions";
 import { AssignVisitForm } from "./assign-visit-form";
 
 export default async function AssignVisitPage() {
   const authContext = await resolveAuthContext();
-  const auth = createAuthorizationService(prisma);
-  const { organizationRepository } = createOrganizationModule(auth);
-  const useCases = createVisitsUseCases(prisma, auth, organizationRepository);
+  const useCases = createVisitsUseCases();
   const [clients, team] = await Promise.all([
     useCases.getClientList.execute({ authContext }),
     useCases.getTeamList.execute({ authContext }),

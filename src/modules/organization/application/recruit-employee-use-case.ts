@@ -32,6 +32,11 @@ export interface RecruitEmployeeInput {
   readonly lastName: string;
   readonly joinedAt: Date;
   readonly actorEmail: string;
+  /**
+   * Account id of the recruiter: `audit_event.actorId` is a FK to
+   * `UserAccount`, never to the employee.
+   */
+  readonly actorId: string;
   readonly dni: string;
   readonly email: string;
   readonly phone: string;
@@ -133,7 +138,7 @@ export class RecruitEmployeeUseCase {
 
       // 7. Record audit event
       await this.auditPort.log({
-        actorId: input.recruiterId,
+        actorId: input.actorId,
         actorEmail: input.actorEmail,
         action: AuditAction.EMPLOYEE_CREATED,
         resourceType: "Employee",

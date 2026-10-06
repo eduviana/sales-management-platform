@@ -9,11 +9,9 @@
  */
 
 import Link from "next/link";
-import { notFound } from "next/navigation";
-import { prisma } from "@/infrastructure/prisma/client";
-import { createAuthorizationService } from "@/modules/authorization/composition-root";
+import { handlePageLoadError } from "../../_lib/handle-page-load-error";
 import { createTrainingModule } from "@/modules/training/composition-root";
-import { resolveAuthContext } from "@/modules/sales/presentation/resolve-auth-context";
+import { resolveAuthContext } from "@/modules/identity/resolve-auth-context";
 import {
   Modal,
   CourseForm,
@@ -47,14 +45,13 @@ export default async function TrainingCategoryPage({
 }) {
   const { categoryId } = await params;
   const authContext = await resolveAuthContext();
-  const authorizationService = createAuthorizationService(prisma);
-  const { getCategory } = createTrainingModule(authorizationService);
+  const { getCategory } = createTrainingModule();
 
   let detail;
   try {
     detail = await getCategory.execute({ authContext, categoryId });
-  } catch {
-    notFound();
+  } catch (error) {
+    handlePageLoadError(error);
   }
 
   const isAdmin = authContext.role === "ADMIN";

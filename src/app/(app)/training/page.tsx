@@ -10,17 +10,14 @@
  */
 
 import Link from "next/link";
-import { prisma } from "@/infrastructure/prisma/client";
-import { createAuthorizationService } from "@/modules/authorization/composition-root";
 import { createTrainingModule } from "@/modules/training/composition-root";
-import { resolveAuthContext } from "@/modules/sales/presentation/resolve-auth-context";
+import { resolveAuthContext } from "@/modules/identity/resolve-auth-context";
 import { Modal, CategoryForm } from "@/modules/training/presentation/components";
 import { BookOpen } from "lucide-react";
 
 export default async function TrainingPage() {
   const authContext = await resolveAuthContext();
-  const authorizationService = createAuthorizationService(prisma);
-  const { listCategories } = createTrainingModule(authorizationService);
+  const { listCategories } = createTrainingModule();
 
   const categories = await listCategories.execute({ authContext });
   const isAdmin = authContext.role === "ADMIN";

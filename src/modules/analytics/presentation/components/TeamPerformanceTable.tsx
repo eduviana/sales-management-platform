@@ -9,6 +9,7 @@
 
 import Link from "next/link";
 import { CheckCircle, AlertTriangle, Eye } from "lucide-react";
+import { formatCurrency } from "@/shared/presentation/format";
 import type { TeamPerformanceRow } from "../../domain";
 
 interface TeamPerformanceTableProps {
@@ -96,7 +97,7 @@ export function TeamPerformanceTable({ data }: TeamPerformanceTableProps) {
                 <td className="py-3 px-4 text-center">{row.visitCount}</td>
                 <td className="py-3 px-4 text-center">{row.saleCount}</td>
                 <td className="py-3 px-4 text-center">
-                  ${row.totalAmount.toLocaleString("es-AR")}
+                  {formatCurrency(row.totalAmount)}
                 </td>
                 <td className="py-3 px-4 text-center">
                   <span className={`${status.bg} ${status.text} border ${status.border} px-2 py-1 rounded-full text-xs font-semibold inline-flex items-center gap-1`}>

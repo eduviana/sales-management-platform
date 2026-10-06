@@ -8,11 +8,9 @@
 
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { prisma } from "@/infrastructure/prisma/client";
-import { createAuthorizationService } from "@/modules/authorization/composition-root";
-import { PrismaOrganizationRepository } from "@/infrastructure/organization/prisma-organization-repository";
 import { createSalesUseCases } from "@/modules/sales/composition-root";
-import { resolveAuthContext } from "@/modules/sales/presentation/resolve-auth-context";
+import { resolveAuthContext } from "@/modules/identity/resolve-auth-context";
+import { handlePageLoadError } from "../../../_lib/handle-page-load-error";
 import { EditSaleForm } from "./edit-sale-form";
 
 export default async function EditSalePage({
@@ -22,32 +20,24 @@ export default async function EditSalePage({
 }) {
   const { id } = await params;
   const authContext = await resolveAuthContext();
-  const auth = createAuthorizationService(prisma);
-  const orgRepo = new PrismaOrganizationRepository(prisma);
-  const useCases = createSalesUseCases(prisma, auth, orgRepo);
+  const useCases = createSalesUseCases();
 
-  let saleResult;
+  let detail;
   try {
-    saleResult = await useCases.getSale.execute({
+    detail = await useCases.getSaleDetail.execute({
       authContext,
       saleId: id,
     });
-  } catch {
-    notFound();
+  } catch (error) {
+    handlePageLoadError(error);
   }
 
-  const { sale } = saleResult;
+  const { sale, items } = detail;
 
   // Only DRAFT and REJECTED sales can be edited
   if (sale.status !== "DRAFT" && sale.status !== "REJECTED") {
     notFound();
   }
-
-  // Load items with product details
-  const items = await prisma.saleItem.findMany({
-    where: { saleId: sale.id },
-    include: { product: true },
-  });
 
   // Load active products
   const productsResult = await useCases.listProducts.execute({ authContext });

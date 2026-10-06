@@ -77,6 +77,7 @@ function makeCategoryRecord(overrides?: Partial<ProductCategoryRecord>): Product
 function makeProductRepo(overrides?: Partial<ProductRepository>): ProductRepository {
   return {
     findById: vi.fn().mockResolvedValue(makeProductRecord()),
+    findByIds: vi.fn().mockResolvedValue([]),
     findByCode: vi.fn().mockResolvedValue(null),
     create: vi.fn().mockResolvedValue(makeProductRecord()),
     update: vi.fn().mockResolvedValue(makeProductRecord()),

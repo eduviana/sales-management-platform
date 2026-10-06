@@ -1,11 +1,8 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { prisma } from "@/infrastructure/prisma/client";
-import { createAuthorizationService } from "@/modules/authorization/composition-root";
-import { createOrganizationModule } from "@/modules/organization/composition-root";
 import { createVisitsUseCases } from "@/modules/visits/composition-root";
-import { resolveAuthContext } from "@/modules/sales/presentation/resolve-auth-context";
+import { resolveAuthContext } from "@/modules/identity/resolve-auth-context";
 
 function isRedirectError(error: unknown): boolean {
   return Boolean(
@@ -22,9 +19,7 @@ export async function completeVisitAndContinue(formData: FormData): Promise<void
 
   try {
     const authContext = await resolveAuthContext();
-    const auth = createAuthorizationService(prisma);
-    const { organizationRepository } = createOrganizationModule(auth);
-    const { getVisitList } = createVisitsUseCases(prisma, auth, organizationRepository);
+    const { getVisitList } = createVisitsUseCases();
     const visit = (await getVisitList.execute({ authContext })).find((item) => item.id === visitId);
     if (!visit || visit.status !== "assigned") {
       throw new Error("La visita no está disponible para registrar una venta.");
@@ -40,9 +35,7 @@ export async function completeVisitAndContinue(formData: FormData): Promise<void
 export async function recordVisitWithoutSale(formData: FormData): Promise<void> {
   try {
     const authContext = await resolveAuthContext();
-    const auth = createAuthorizationService(prisma);
-    const { organizationRepository } = createOrganizationModule(auth);
-    const { updateVisit } = createVisitsUseCases(prisma, auth, organizationRepository);
+    const { updateVisit } = createVisitsUseCases();
     const visitId = String(formData.get("visitId") ?? "");
     const notes = String(formData.get("notes") ?? "").trim();
 

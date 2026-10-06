@@ -16,6 +16,7 @@ import type {
   SupervisorHistoryRecord,
   EmployeeCommissionContext,
   CreateEmployeeData,
+  UpdateEmployeeData,
   CreateLevelHistoryData,
   CreateSupervisorHistoryData,
 } from "@/modules/organization/domain";
@@ -83,6 +84,30 @@ export class PrismaOrganizationRepository implements OrganizationRepository {
     return this.mapEmployee(employee);
   }
 
+  async updateEmployee(
+    employeeId: string,
+    data: UpdateEmployeeData,
+  ): Promise<void> {
+    await this.prisma.employee.update({
+      where: { id: employeeId },
+      data: {
+        firstName: data.firstName,
+        lastName: data.lastName,
+        dni: data.dni,
+        email: data.email,
+        phone: data.phone,
+        dateOfBirth: data.dateOfBirth,
+        street: data.street,
+        streetNumber: data.streetNumber,
+        floor: data.floor,
+        apartment: data.apartment,
+        city: data.city,
+        province: data.province,
+        postalCode: data.postalCode,
+      },
+    });
+  }
+
   async updateEmployeeLevel(
     employeeId: string,
     levelId: number,
@@ -126,6 +151,39 @@ export class PrismaOrganizationRepository implements OrganizationRepository {
   // Level History
   // =========================================================================
 
+  async findNamesByIds(
+    employeeIds: readonly string[],
+  ): Promise<Array<{
+    readonly id: string;
+    readonly firstName: string;
+    readonly lastName: string;
+  }>> {
+    if (employeeIds.length === 0) return [];
+    const rows = await this.prisma.employee.findMany({
+      where: { id: { in: [...employeeIds] } },
+      select: { id: true, firstName: true, lastName: true },
+    });
+    return rows.map((row) => ({
+      id: row.id,
+      firstName: row.firstName,
+      lastName: row.lastName,
+    }));
+  }
+
+  async findEmployeeCodesByIds(
+    employeeIds: readonly string[],
+  ): Promise<Array<{ readonly id: string; readonly employeeCode: number }>> {
+    if (employeeIds.length === 0) return [];
+    const rows = await this.prisma.employee.findMany({
+      where: { id: { in: [...employeeIds] } },
+      select: { id: true, employeeCode: true },
+    });
+    return rows.map((row) => ({
+      id: row.id,
+      employeeCode: row.employeeCode,
+    }));
+  }
+
   async findOpenLevelHistory(
     employeeId: string,
   ): Promise<LevelHistoryRecord | null> {
@@ -134,6 +192,17 @@ export class PrismaOrganizationRepository implements OrganizationRepository {
       orderBy: { startedAt: "desc" },
     });
     return record ? this.mapLevelHistory(record) : null;
+  }
+
+  async findOpenLevelHistories(
+    employeeIds: readonly string[],
+  ): Promise<LevelHistoryRecord[]> {
+    if (employeeIds.length === 0) return [];
+    const records = await this.prisma.employeeLevelHistory.findMany({
+      where: { employeeId: { in: [...employeeIds] }, endedAt: null },
+      orderBy: { startedAt: "desc" },
+    });
+    return records.map((record) => this.mapLevelHistory(record));
   }
 
   async closeLevelHistory(

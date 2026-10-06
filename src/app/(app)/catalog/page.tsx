@@ -11,18 +11,15 @@
 
 export const dynamic = "force-dynamic";
 
-import { prisma } from "@/infrastructure/prisma/client";
 import { createAuthorizationService } from "@/modules/authorization/composition-root";
-import { PrismaOrganizationRepository } from "@/infrastructure/organization/prisma-organization-repository";
 import { createSalesUseCases } from "@/modules/sales/composition-root";
-import { resolveAuthContext } from "@/modules/sales/presentation/resolve-auth-context";
+import { resolveAuthContext } from "@/modules/identity/resolve-auth-context";
 import { CatalogTable } from "./catalog-table";
 
 export default async function CatalogPage() {
   const authContext = await resolveAuthContext();
-  const auth = createAuthorizationService(prisma);
-  const orgRepo = new PrismaOrganizationRepository(prisma);
-  const useCases = createSalesUseCases(prisma, auth, orgRepo);
+  const auth = createAuthorizationService();
+  const useCases = createSalesUseCases();
 
   const [productsResult, canCreate] = await Promise.all([
     useCases.listProducts.execute({ authContext }),

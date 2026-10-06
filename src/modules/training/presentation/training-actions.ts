@@ -10,11 +10,10 @@
 
 "use server";
 
-import { createAuthorizationService } from "@/modules/authorization/composition-root";
 import { createTrainingModule } from "@/modules/training/composition-root";
-import { prisma } from "@/infrastructure/prisma/client";
-import { resolveAuthContext } from "@/modules/sales/presentation/resolve-auth-context";
+import { resolveAuthContext } from "@/modules/identity/resolve-auth-context";
 import type { ContentType, ContentStatus } from "@/modules/training/domain";
+import { toActionErrorMessage } from "@/shared/presentation/action-error";
 
 // =============================================================================
 // Read actions
@@ -29,15 +28,13 @@ export interface TrainingActionState {
 export async function queryTrainingCategories(): Promise<TrainingActionState> {
   try {
     const authContext = await resolveAuthContext();
-    const authorizationService = createAuthorizationService(prisma);
-    const { listCategories } = createTrainingModule(authorizationService);
+    const { listCategories } = createTrainingModule();
 
     const categories = await listCategories.execute({ authContext });
 
     return { data: categories, error: null, loading: false };
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
-    return { data: null, error: message, loading: false };
+    return { data: null, error: toActionErrorMessage(error), loading: false };
   }
 }
 
@@ -46,15 +43,13 @@ export async function queryTrainingCategoryDetail(
 ): Promise<TrainingActionState> {
   try {
     const authContext = await resolveAuthContext();
-    const authorizationService = createAuthorizationService(prisma);
-    const { getCategory } = createTrainingModule(authorizationService);
+    const { getCategory } = createTrainingModule();
 
     const detail = await getCategory.execute({ authContext, categoryId });
 
     return { data: detail, error: null, loading: false };
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
-    return { data: null, error: message, loading: false };
+    return { data: null, error: toActionErrorMessage(error), loading: false };
   }
 }
 
@@ -63,15 +58,13 @@ export async function queryTrainingCourseDetail(
 ): Promise<TrainingActionState> {
   try {
     const authContext = await resolveAuthContext();
-    const authorizationService = createAuthorizationService(prisma);
-    const { getCourse } = createTrainingModule(authorizationService);
+    const { getCourse } = createTrainingModule();
 
     const detail = await getCourse.execute({ authContext, courseId });
 
     return { data: detail, error: null, loading: false };
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
-    return { data: null, error: message, loading: false };
+    return { data: null, error: toActionErrorMessage(error), loading: false };
   }
 }
 
@@ -85,15 +78,13 @@ export async function createTrainingCategoryAction(
 ): Promise<TrainingActionState> {
   try {
     const authContext = await resolveAuthContext();
-    const authorizationService = createAuthorizationService(prisma);
-    const { createCategory } = createTrainingModule(authorizationService);
+    const { createCategory } = createTrainingModule();
 
     const category = await createCategory.execute({ authContext, name, description });
 
     return { data: category, error: null, loading: false };
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
-    return { data: null, error: message, loading: false };
+    return { data: null, error: toActionErrorMessage(error), loading: false };
   }
 }
 
@@ -104,15 +95,13 @@ export async function updateTrainingCategoryAction(
 ): Promise<TrainingActionState> {
   try {
     const authContext = await resolveAuthContext();
-    const authorizationService = createAuthorizationService(prisma);
-    const { updateCategory } = createTrainingModule(authorizationService);
+    const { updateCategory } = createTrainingModule();
 
     const category = await updateCategory.execute({ authContext, categoryId, name, description });
 
     return { data: category, error: null, loading: false };
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
-    return { data: null, error: message, loading: false };
+    return { data: null, error: toActionErrorMessage(error), loading: false };
   }
 }
 
@@ -121,15 +110,13 @@ export async function deleteTrainingCategoryAction(
 ): Promise<TrainingActionState> {
   try {
     const authContext = await resolveAuthContext();
-    const authorizationService = createAuthorizationService(prisma);
-    const { deleteCategory } = createTrainingModule(authorizationService);
+    const { deleteCategory } = createTrainingModule();
 
     await deleteCategory.execute({ authContext, categoryId });
 
     return { data: null, error: null, loading: false };
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
-    return { data: null, error: message, loading: false };
+    return { data: null, error: toActionErrorMessage(error), loading: false };
   }
 }
 
@@ -140,15 +127,13 @@ export async function createTrainingCourseAction(
 ): Promise<TrainingActionState> {
   try {
     const authContext = await resolveAuthContext();
-    const authorizationService = createAuthorizationService(prisma);
-    const { createCourse } = createTrainingModule(authorizationService);
+    const { createCourse } = createTrainingModule();
 
     const course = await createCourse.execute({ authContext, categoryId, name, description });
 
     return { data: course, error: null, loading: false };
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
-    return { data: null, error: message, loading: false };
+    return { data: null, error: toActionErrorMessage(error), loading: false };
   }
 }
 
@@ -160,15 +145,13 @@ export async function updateTrainingCourseAction(
 ): Promise<TrainingActionState> {
   try {
     const authContext = await resolveAuthContext();
-    const authorizationService = createAuthorizationService(prisma);
-    const { updateCourse } = createTrainingModule(authorizationService);
+    const { updateCourse } = createTrainingModule();
 
     const course = await updateCourse.execute({ authContext, courseId, name, description, status });
 
     return { data: course, error: null, loading: false };
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
-    return { data: null, error: message, loading: false };
+    return { data: null, error: toActionErrorMessage(error), loading: false };
   }
 }
 
@@ -177,15 +160,13 @@ export async function deleteTrainingCourseAction(
 ): Promise<TrainingActionState> {
   try {
     const authContext = await resolveAuthContext();
-    const authorizationService = createAuthorizationService(prisma);
-    const { deleteCourse } = createTrainingModule(authorizationService);
+    const { deleteCourse } = createTrainingModule();
 
     await deleteCourse.execute({ authContext, courseId });
 
     return { data: null, error: null, loading: false };
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
-    return { data: null, error: message, loading: false };
+    return { data: null, error: toActionErrorMessage(error), loading: false };
   }
 }
 
@@ -197,15 +178,13 @@ export async function createTrainingModuleAction(
 ): Promise<TrainingActionState> {
   try {
     const authContext = await resolveAuthContext();
-    const authorizationService = createAuthorizationService(prisma);
-    const { createModule } = createTrainingModule(authorizationService);
+    const { createModule } = createTrainingModule();
 
     const module_ = await createModule.execute({ authContext, courseId, name, description, sortOrder });
 
     return { data: module_, error: null, loading: false };
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
-    return { data: null, error: message, loading: false };
+    return { data: null, error: toActionErrorMessage(error), loading: false };
   }
 }
 
@@ -217,15 +196,13 @@ export async function updateTrainingModuleAction(
 ): Promise<TrainingActionState> {
   try {
     const authContext = await resolveAuthContext();
-    const authorizationService = createAuthorizationService(prisma);
-    const { updateModule } = createTrainingModule(authorizationService);
+    const { updateModule } = createTrainingModule();
 
     const module_ = await updateModule.execute({ authContext, moduleId, name, description, sortOrder });
 
     return { data: module_, error: null, loading: false };
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
-    return { data: null, error: message, loading: false };
+    return { data: null, error: toActionErrorMessage(error), loading: false };
   }
 }
 
@@ -234,15 +211,13 @@ export async function deleteTrainingModuleAction(
 ): Promise<TrainingActionState> {
   try {
     const authContext = await resolveAuthContext();
-    const authorizationService = createAuthorizationService(prisma);
-    const { deleteModule } = createTrainingModule(authorizationService);
+    const { deleteModule } = createTrainingModule();
 
     await deleteModule.execute({ authContext, moduleId });
 
     return { data: null, error: null, loading: false };
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
-    return { data: null, error: message, loading: false };
+    return { data: null, error: toActionErrorMessage(error), loading: false };
   }
 }
 
@@ -256,15 +231,13 @@ export async function createTrainingMaterialAction(
 ): Promise<TrainingActionState> {
   try {
     const authContext = await resolveAuthContext();
-    const authorizationService = createAuthorizationService(prisma);
-    const { createMaterial } = createTrainingModule(authorizationService);
+    const { createMaterial } = createTrainingModule();
 
     const material = await createMaterial.execute({ authContext, moduleId, name, type, description, url, levelId });
 
     return { data: material, error: null, loading: false };
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
-    return { data: null, error: message, loading: false };
+    return { data: null, error: toActionErrorMessage(error), loading: false };
   }
 }
 
@@ -279,15 +252,13 @@ export async function updateTrainingMaterialAction(
 ): Promise<TrainingActionState> {
   try {
     const authContext = await resolveAuthContext();
-    const authorizationService = createAuthorizationService(prisma);
-    const { updateMaterial } = createTrainingModule(authorizationService);
+    const { updateMaterial } = createTrainingModule();
 
     const material = await updateMaterial.execute({ authContext, materialId, name, description, type, url, levelId, status });
 
     return { data: material, error: null, loading: false };
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
-    return { data: null, error: message, loading: false };
+    return { data: null, error: toActionErrorMessage(error), loading: false };
   }
 }
 
@@ -302,15 +273,13 @@ export async function updateTrainingMaterialLevelAction(
 ): Promise<TrainingActionState> {
   try {
     const authContext = await resolveAuthContext();
-    const authorizationService = createAuthorizationService(prisma);
-    const { updateMaterial } = createTrainingModule(authorizationService);
+    const { updateMaterial } = createTrainingModule();
 
     const material = await updateMaterial.execute({ authContext, materialId, levelId });
 
     return { data: material, error: null, loading: false };
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
-    return { data: null, error: message, loading: false };
+    return { data: null, error: toActionErrorMessage(error), loading: false };
   }
 }
 
@@ -319,15 +288,13 @@ export async function deleteTrainingMaterialAction(
 ): Promise<TrainingActionState> {
   try {
     const authContext = await resolveAuthContext();
-    const authorizationService = createAuthorizationService(prisma);
-    const { deleteMaterial } = createTrainingModule(authorizationService);
+    const { deleteMaterial } = createTrainingModule();
 
     await deleteMaterial.execute({ authContext, materialId });
 
     return { data: null, error: null, loading: false };
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
-    return { data: null, error: message, loading: false };
+    return { data: null, error: toActionErrorMessage(error), loading: false };
   }
 }
 
@@ -337,15 +304,13 @@ export async function publishTrainingContentAction(
 ): Promise<TrainingActionState> {
   try {
     const authContext = await resolveAuthContext();
-    const authorizationService = createAuthorizationService(prisma);
-    const { publishContent } = createTrainingModule(authorizationService);
+    const { publishContent } = createTrainingModule();
 
     await publishContent.execute({ authContext, contentType, contentId });
 
     return { data: null, error: null, loading: false };
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
-    return { data: null, error: message, loading: false };
+    return { data: null, error: toActionErrorMessage(error), loading: false };
   }
 }
 
@@ -355,15 +320,13 @@ export async function archiveTrainingContentAction(
 ): Promise<TrainingActionState> {
   try {
     const authContext = await resolveAuthContext();
-    const authorizationService = createAuthorizationService(prisma);
-    const { archiveContent } = createTrainingModule(authorizationService);
+    const { archiveContent } = createTrainingModule();
 
     await archiveContent.execute({ authContext, contentType, contentId });
 
     return { data: null, error: null, loading: false };
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
-    return { data: null, error: message, loading: false };
+    return { data: null, error: toActionErrorMessage(error), loading: false };
   }
 }
 
@@ -377,8 +340,7 @@ export async function deleteCategoryFormData(
   const id = formData.get("id") as string;
   if (!id) return;
   const authContext = await resolveAuthContext();
-  const authorizationService = createAuthorizationService(prisma);
-  const { deleteCategory } = createTrainingModule(authorizationService);
+  const { deleteCategory } = createTrainingModule();
   await deleteCategory.execute({ authContext, categoryId: id });
 }
 
@@ -388,8 +350,7 @@ export async function deleteCourseFormData(
   const id = formData.get("id") as string;
   if (!id) return;
   const authContext = await resolveAuthContext();
-  const authorizationService = createAuthorizationService(prisma);
-  const { deleteCourse } = createTrainingModule(authorizationService);
+  const { deleteCourse } = createTrainingModule();
   await deleteCourse.execute({ authContext, courseId: id });
 }
 
@@ -399,8 +360,7 @@ export async function deleteModuleFormData(
   const id = formData.get("id") as string;
   if (!id) return;
   const authContext = await resolveAuthContext();
-  const authorizationService = createAuthorizationService(prisma);
-  const { deleteModule } = createTrainingModule(authorizationService);
+  const { deleteModule } = createTrainingModule();
   await deleteModule.execute({ authContext, moduleId: id });
 }
 
@@ -410,7 +370,6 @@ export async function deleteMaterialFormData(
   const id = formData.get("id") as string;
   if (!id) return;
   const authContext = await resolveAuthContext();
-  const authorizationService = createAuthorizationService(prisma);
-  const { deleteMaterial } = createTrainingModule(authorizationService);
+  const { deleteMaterial } = createTrainingModule();
   await deleteMaterial.execute({ authContext, materialId: id });
 }

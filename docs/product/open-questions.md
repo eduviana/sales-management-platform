@@ -298,6 +298,17 @@ Esta es una de las áreas más importantes que todavía no está definida.
 
 **94.** ¿La empresa necesita realizar búsquedas de empleados en toda la organización?
 
+**143.** ¿La edición de la ficha de un empleado (`employee.update`) es exclusiva
+del ADMIN o también puede realizarla un N3+ dentro de su equipo? La
+`permissions-matrix.md` otorga `employee.update` a N3–N7, mientras que la
+implementación actual la restringe a ADMIN.
+
+> **Estado:** ✅ RESPONDIDA — La matriz de permisos manda: `employee.update`
+> no es exclusiva del ADMIN. El ADMIN edita con alcance GLOBAL y los
+> supervisores N3+ editan dentro de su alcance (EQUIPO para N3, RAMA para
+> N4–N6, GLOBAL para N7). La validación se realiza server-side sobre el
+> empleado objetivo.
+
 ---
 
 ## 10. Auditoría e historial
@@ -606,6 +617,7 @@ Prestige: la fuente indicada identifica el tipo de resolución.
 | 134 | DESCARTADA | Assessments/quizzes quedan fuera del alcance actual. |
 | 135 | RESPONDIDA | El contenido puede dirigirse por nivel, con acceso acumulativo. |
 | 136 | DESCARTADA | No se conservará historial individual de progreso en el alcance actual. |
+| 143 | RESPONDIDA | `employee.update` no es exclusiva del ADMIN: N3 edita su equipo, N4–N6 su rama y N7 globalmente, validado en el servidor. |
 
 La tabla anterior reemplaza el carácter vigente del registro inicial de la
 sección 16.2, que se conserva únicamente como trazabilidad del estado previo.
@@ -738,3 +750,5 @@ Sí. `buyerName` se conserva por compatibilidad con datos existentes. Se agrega 
 | 03/09/2026 | 0.4     | Consolidación de comisión inicial y descarte del seguimiento individual de capacitación. |
 | 07/09/2026 | 0.5     | Confirmación de las tasas vigentes de comisión N1–N7 y resolución de las preguntas relacionadas con porcentajes y progresión mensual. |
 | 08/09/2026 | 0.6     | Resolución de Q55–Q58: objetivos de ventas confirmados (individuales y por equipo, diferenciados por nivel, con cálculo de cumplimiento). |
+| 02/10/2026 | 0.7     | Registro de Q143: alcance de `employee.update` (N3–N7 según la matriz de permisos vs. ADMIN en la implementación actual). |
+| 04/10/2026 | 0.8     | Resolución de Q143: prima la matriz de permisos; `employee.update` se valida por permiso y alcance en el servidor. |

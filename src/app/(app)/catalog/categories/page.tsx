@@ -8,18 +8,15 @@
  * Reference: business-rules.md §16.1, permissions-matrix.md §4.5
  */
 
-import { prisma } from "@/infrastructure/prisma/client";
 import { createAuthorizationService } from "@/modules/authorization/composition-root";
-import { PrismaOrganizationRepository } from "@/infrastructure/organization/prisma-organization-repository";
 import { createSalesUseCases } from "@/modules/sales/composition-root";
-import { resolveAuthContext } from "@/modules/sales/presentation/resolve-auth-context";
+import { resolveAuthContext } from "@/modules/identity/resolve-auth-context";
 import { CreateCategoryForm } from "./create-category-form";
 
 export default async function CategoriesPage() {
   const authContext = await resolveAuthContext();
-  const auth = createAuthorizationService(prisma);
-  const orgRepo = new PrismaOrganizationRepository(prisma);
-  const useCases = createSalesUseCases(prisma, auth, orgRepo);
+  const auth = createAuthorizationService();
+  const useCases = createSalesUseCases();
 
   const [categoriesResult, canCreate] = await Promise.all([
     useCases.listCategories.execute({ authContext }),

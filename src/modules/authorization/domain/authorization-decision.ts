@@ -8,7 +8,7 @@
  */
 
 import type { Permission } from "./permission";
-import type { ScopeType } from "./scope";
+import { ScopeType } from "./scope";
 
 /**
  * Result of an authorization evaluation.
@@ -64,4 +64,24 @@ export function deny(
     scope,
     reason: `Denied: ${reason}`,
   };
+}
+
+/**
+ * Whether a decision grants access to the specific resource that was checked.
+ *
+ * A denied decision that carries an organization-wide scope still grants
+ * access: GLOBAL means "the whole organization" (permissions-matrix.md §2.2),
+ * while HierarchyScopeResolver only returns ACTIVE employees. Without this,
+ * an ADMIN could neither read nor correct the record of an employee who has
+ * been deactivated.
+ *
+ * @param decision - The authorization decision to evaluate.
+ * @returns true when the resource is accessible.
+ */
+export function grantsResourceAccess(decision: AuthorizationDecision): boolean {
+  return (
+    decision.allowed ||
+    decision.scope === ScopeType.GLOBAL ||
+    decision.scope === ScopeType.SYSTEM
+  );
 }

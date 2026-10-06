@@ -18,6 +18,7 @@ import {
   ReferenceLine,
   ResponsiveContainer,
 } from "recharts";
+import { formatCurrency } from "@/shared/presentation/format";
 import type { DailySalesBar } from "../../domain";
 
 interface SalesBarChartProps {
@@ -25,7 +26,8 @@ interface SalesBarChartProps {
   targetAmount?: number;
 }
 
-function formatCurrency(value: number): string {
+/** Compact currency label for the Y axis (e.g. `$12k`, `$1.5M`). */
+function formatCompactCurrency(value: number): string {
   if (value >= 1_000_000) return `$${(value / 1_000_000).toFixed(1)}M`;
   if (value >= 1_000) return `$${(value / 1_000).toFixed(0)}k`;
   return `$${value}`;
@@ -39,7 +41,7 @@ function CustomTooltip({ active, payload }: {
 
   return (
     <div className="bg-surface-container-highest text-on-surface text-xs py-1 px-2 rounded">
-      ${payload[0].value.toLocaleString("es-AR")}
+      {formatCurrency(payload[0].value)}
     </div>
   );
 }
@@ -71,7 +73,7 @@ export function SalesBarChart({ data, targetAmount }: SalesBarChartProps) {
           tickLine={false}
           domain={[0, maxValue * 1.15]}
           allowDecimals={false}
-          tickFormatter={formatCurrency}
+          tickFormatter={formatCompactCurrency}
           width={50}
         />
         <Tooltip content={<CustomTooltip />} cursor={false} />

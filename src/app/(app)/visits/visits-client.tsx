@@ -7,7 +7,11 @@
 "use client";
 
 import type { Visit } from "@/modules/visits/domain";
-import { VISIT_STATUS_LABELS, VISIT_STATUS_COLORS, formatVisitDate } from "@/modules/visits/domain";
+import {
+  VISIT_STATUS_COLORS,
+  VISIT_STATUS_LABELS,
+} from "@/modules/visits/presentation/visit-status";
+import { formatDateOnly } from "@/shared/presentation/format";
 import Link from "next/link";
 import { ClipboardEdit, Eye } from "lucide-react";
 
@@ -54,7 +58,7 @@ export function VisitsClient({ initialVisits }: VisitsClientProps) {
                 <td className="py-3 px-4 text-center font-mono-data">VS-{String(visit.visitNumber).padStart(4, "0")}</td>
                 <td className="py-3 px-4 text-center">{visit.clientName ?? "Cliente sin nombre"}</td>
                 <td className="py-3 px-4 text-center">
-                  {formatVisitDate(visit.scheduledDate)}
+                  {formatDateOnly(visit.scheduledDate)}
                 </td>
                 <td className="py-3 px-4 text-center">
                   <span className={`${statusConfig.bg} ${statusConfig.text} border ${statusConfig.border} px-2 py-1 rounded-full text-xs font-semibold`}>

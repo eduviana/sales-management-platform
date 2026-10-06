@@ -8,11 +8,9 @@
 
 export const dynamic = "force-dynamic";
 
-import { prisma } from "@/infrastructure/prisma/client";
-import { createAuthorizationService } from "@/modules/authorization/composition-root";
 import { createSalesUseCases } from "@/modules/sales/composition-root";
-import { PrismaOrganizationRepository } from "@/infrastructure/organization/prisma-organization-repository";
-import { resolveAuthContext } from "@/modules/sales/presentation/resolve-auth-context";
+import { createCommissionUseCases } from "@/modules/commissions/composition-root";
+import { resolveAuthContext } from "@/modules/identity/resolve-auth-context";
 import { SalesDetailTable } from "../sales-detail-table";
 
 export default async function DashboardSalesAllPage({
@@ -25,9 +23,7 @@ export default async function DashboardSalesAllPage({
   const statusFilter = params.status;
 
   const authContext = await resolveAuthContext();
-  const auth = createAuthorizationService(prisma);
-  const orgRepo = new PrismaOrganizationRepository(prisma);
-  const useCases = createSalesUseCases(prisma, auth, orgRepo);
+  const useCases = createSalesUseCases();
 
   const result = await useCases.listSales.execute({
     authContext,
@@ -35,13 +31,10 @@ export default async function DashboardSalesAllPage({
     status: statusFilter as "PENDING_REVIEW" | "APPROVED" | "REJECTED" | "CANCELLED" | "DRAFT" | undefined,
   });
 
-  // Fetch commission entries for all sales
   const saleIds = result.sales.map((s) => s.id);
-  const commissionEntries = await prisma.commissionEntry.findMany({
-    where: { saleId: { in: saleIds }, type: "EARNED" },
-    select: { saleId: true, amount: true },
-  });
-  const commissionMap = new Map(commissionEntries.map((e) => [e.saleId, Number(e.amount)]));
+
+  const { getSaleAmounts } = createCommissionUseCases();
+  const commissionMap = await getSaleAmounts.execute({ saleIds });
 
   const isPending = statusFilter === "PENDING_REVIEW";
   const title = isTeam

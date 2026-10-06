@@ -20,6 +20,9 @@ export type {
   RecruitEmployeeOutput,
 } from "./recruit-employee-use-case";
 
+export { UpdateEmployeeUseCase } from "./update-employee-use-case";
+export type { UpdateEmployeeInput } from "./update-employee-use-case";
+
 export { DeactivateEmployeeUseCase } from "./deactivate-employee-use-case";
 export type {
   DeactivateEmployeeInput,
@@ -35,3 +38,9 @@ export type {
 
 export { GetEmployeeByIdUseCase } from "./get-employee-by-id-use-case";
 export type { GetEmployeeByIdInput } from "./get-employee-by-id-use-case";
+
+export { GetEmployeeLabelsUseCase } from "./get-employee-labels-use-case";
+export type { GetEmployeeLabelsInput } from "./get-employee-labels-use-case";
+
+export { GetEmployeeNamesUseCase } from "./get-employee-names-use-case";
+export type { GetEmployeeNamesInput } from "./get-employee-names-use-case";

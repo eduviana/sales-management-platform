@@ -87,6 +87,17 @@ function makeSaleRepository(overrides?: Partial<SaleRepository>): SaleRepository
       page: 1,
       pageSize: 20,
     }),
+    countApprovedSince: vi.fn().mockResolvedValue(0),
+    countApprovedInPeriod: vi.fn().mockResolvedValue(0),
+    countApprovedSinceByEmployee: vi.fn().mockResolvedValue(new Map()),
+    getMonthlyTarget: vi.fn().mockResolvedValue(0),
+    countInPeriodByEmployee: vi.fn().mockResolvedValue(new Map()),
+    countInPeriodForEmployees: vi.fn().mockResolvedValue(0),
+    findApprovedByEmployeeId: vi.fn().mockResolvedValue([]),
+    findByVisitIds: vi.fn().mockResolvedValue([]),
+    findStatusRowsByEmployeeIds: vi.fn().mockResolvedValue([]),
+    findSummariesByIds: vi.fn().mockResolvedValue([]),
+    getMonthlyTargetsByLevelIds: vi.fn().mockResolvedValue(new Map()),
     ...overrides,
   };
 }
@@ -107,6 +118,7 @@ function makeOrgRepo(overrides?: Partial<OrganizationRepository>): OrganizationR
     updateEmployeeStatus: vi.fn(),
     findLevelById: vi.fn(),
     findOpenLevelHistory: vi.fn(),
+    findOpenLevelHistories: vi.fn(),
     closeLevelHistory: vi.fn(),
     createLevelHistory: vi.fn(),
     findOpenSupervisorHistory: vi.fn(),
@@ -155,6 +167,9 @@ describe("CreateSaleUseCase", () => {
       update: vi.fn(),
       countBySellerId: vi.fn(),
       countPendingBySellerId: vi.fn(),
+      countCompletedBySellerIdSince: vi.fn().mockResolvedValue(0),
+      countCompletedBySellerIdSinceBatch: vi.fn().mockResolvedValue(new Map()),
+      countStatusBySellerIds: vi.fn().mockResolvedValue(new Map()),
     };
     const uc = new CreateSaleUseCase(auth, saleRepo, mockAuditPort, visitRepo);
 

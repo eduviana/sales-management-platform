@@ -2,7 +2,7 @@
 
 **Estado:** 🚧 DECISIÓN DE DISEÑO  
 **Versión:** 1.2  
-**Última actualización:** 2026-09-25
+**Última actualización:** 2026-10-05
 
 ---
 
@@ -833,7 +833,7 @@ de actualización ni eliminación.
 | `id` | UUID (PK) | Identificador único del evento |
 | `actorId` | UUID? (FK → UserAccount) | ID del usuario que realizó la acción. `NULL` para eventos del sistema. |
 | `actorEmail` | VARCHAR(255)? | Snapshot del email al momento del evento. Preserva legibilidad cuando la cuenta es desactivada. |
-| `action` | AuditAction (enum) | Tipo de evento (20 valores: LOGIN_SUCCESS, LOGOUT, SALE_APPROVED, etc.) |
+| `action` | AuditAction (enum) | Tipo de evento (21 valores: LOGIN_SUCCESS, LOGOUT, SALE_APPROVED, etc.) |
 | `resourceType` | VARCHAR(100) | Tipo de recurso afectado (UserAccount, Employee, Sale, etc.) |
 | `resourceId` | UUID? | ID del recurso afectado |
 | `result` | AuditResult (enum) | SUCCESS, FAILURE o DENIED |
@@ -841,12 +841,13 @@ de actualización ni eliminación.
 | `metadata` | JSONB? | Datos adicionales flexibles (cambios, contexto, etc.) |
 | `createdAt` | TIMESTAMPTZ | Timestamp del evento |
 
-**Enum AuditAction** (20 valores):
+**Enum AuditAction** (21 valores):
 
 - Identidad: LOGIN_SUCCESS, LOGIN_FAILURE, LOGOUT, PASSWORD_CHANGED, PASSWORD_RESET_REQUESTED, PASSWORD_RESET_COMPLETED
 - Organización: EMPLOYEE_CREATED, EMPLOYEE_UPDATED, EMPLOYEE_DEACTIVATED, EMPLOYEE_LEVEL_CHANGED, EMPLOYEE_SUPERVISOR_CHANGED
 - Ventas: SALE_CREATED, SALE_UPDATED, SALE_SUBMITTED, SALE_APPROVED, SALE_REJECTED, SALE_CANCELLED
 - Comisiones: COMMISSION_RULE_CREATED, COMMISSION_GENERATED, COMMISSION_REVERSED
+- Autorización: AUTHORIZATION_DENIED
 
 **Enum AuditResult:** SUCCESS, FAILURE, DENIED
 

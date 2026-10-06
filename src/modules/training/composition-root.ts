@@ -8,11 +8,11 @@
  */
 
 import { prisma } from "@/infrastructure/prisma/client";
+import { createAuthorizationService } from "@/modules/authorization/composition-root";
 import { PrismaTrainingCategoryRepository } from "@/infrastructure/prisma-training/prisma-training-category-repository";
 import { PrismaTrainingCourseRepository } from "@/infrastructure/prisma-training/prisma-training-course-repository";
 import { PrismaTrainingModuleRepository } from "@/infrastructure/prisma-training/prisma-training-module-repository";
 import { PrismaTrainingMaterialRepository } from "@/infrastructure/prisma-training/prisma-training-material-repository";
-import type { AuthorizationService } from "@/modules/authorization/domain";
 
 // Read use cases
 import { ListTrainingCategoriesUseCase } from "./application/list-training-categories-use-case";
@@ -41,7 +41,8 @@ import { ArchiveTrainingContentUseCase } from "./application/archive-training-co
  *
  * Each call creates fresh adapter instances scoped to the current request.
  */
-export function createTrainingModule(authorizationService: AuthorizationService) {
+export function createTrainingModule() {
+  const authorizationService = createAuthorizationService();
   // Infrastructure — repositories
   const categoryRepo = new PrismaTrainingCategoryRepository(prisma);
   const courseRepo = new PrismaTrainingCourseRepository(prisma);

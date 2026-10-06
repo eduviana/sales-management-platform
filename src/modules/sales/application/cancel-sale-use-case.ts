@@ -86,7 +86,7 @@ export class CancelSaleUseCase {
 
         // Record SALE_CANCELLED audit event
         await this.auditPort.log({
-          actorId: input.authContext.employeeId,
+          actorId: input.authContext.userId,
           actorEmail: input.authContext.userEmail,
           action: AuditAction.SALE_CANCELLED,
           resourceType: "Sale",
@@ -105,7 +105,7 @@ export class CancelSaleUseCase {
 
         // Record COMMISSION_REVERSED audit event (same correlationId)
         await this.auditPort.log({
-          actorId: input.authContext.employeeId,
+          actorId: input.authContext.userId,
           actorEmail: input.authContext.userEmail,
           action: AuditAction.COMMISSION_REVERSED,
           resourceType: "CommissionEntry",
@@ -161,7 +161,7 @@ export class CancelSaleUseCase {
 
     // 5. Record audit event
     await this.auditPort.log({
-      actorId: input.authContext.employeeId,
+      actorId: input.authContext.userId,
       actorEmail: input.authContext.userEmail,
       action: AuditAction.SALE_CANCELLED,
       resourceType: "Sale",
