@@ -47,7 +47,12 @@ export class HierarchyScopeResolver implements ScopeResolver {
   }
 
   /**
-   * TEAM scope: direct subordinates only (not all descendants).
+   * TEAM scope: the actor + direct subordinates (not all descendants).
+   *
+   * The actor is always included — consistent with BRANCH and GLOBAL, and
+   * with `ListSalesUseCase`'s own TEAM resolution. Excluding the actor would
+   * deny N3+ users access to their own resources on any TEAM-scoped
+   * permission (e.g. `sale.readTeam` on their own sale).
    *
    * Note: inactive subordinates are excluded. When a decision must cover them,
    * `grantsResourceAccess` treats an organization-wide scope as sufficient.
@@ -60,9 +65,12 @@ export class HierarchyScopeResolver implements ScopeResolver {
     const subordinates = await this.organizationRepo.getDirectSubordinates(
       context.employeeId,
     );
-    return subordinates
-      .filter((emp) => emp.status === "ACTIVE")
-      .map((emp) => emp.id);
+    return [
+      context.employeeId,
+      ...subordinates
+        .filter((emp) => emp.status === "ACTIVE")
+        .map((emp) => emp.id),
+    ];
   }
 
   /**

@@ -59,19 +59,34 @@ export function DashboardTeamView({ data }: { data: DashboardData }) {
         </Link>
       </div>
 
-      {/* Charts — Team */}
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
-        <div className="col-span-1 md:col-span-7 lg:col-span-8 bg-surface border border-outline-variant rounded-xl p-6">
-          <h2 className="text-lg font-semibold text-on-surface mb-4">
+      {/* Charts — Team. Same structure as the ADMIN overview, but the row
+          is ~70px shorter on lg (400 vs 470) to absorb the extra tab bar
+          ("Mi equipo | Mis ventas") so the charts still fit a 1440×810
+          viewport without scrolling, and the donut legend stays inside
+          its card. */}
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-4 lg:h-[400px]">
+        <div className="col-span-1 md:col-span-7 lg:col-span-8 bg-surface border border-outline-variant rounded-xl p-6 flex flex-col min-h-0">
+          <h2 className="text-lg font-semibold text-on-surface mb-4 shrink-0">
             Ventas del Equipo
           </h2>
-          <MonthlySalesChart data={data.teamDailySaleCounts} targetCount={data.kpis.targetTotal} />
+          <div className="h-[250px] lg:h-auto lg:flex-1 min-h-0">
+            <MonthlySalesChart
+              data={data.teamDailySaleCounts}
+              targetCount={data.kpis.targetTotal}
+              height="100%"
+            />
+          </div>
         </div>
-        <div className="col-span-1 md:col-span-5 lg:col-span-4 bg-surface border border-outline-variant rounded-xl p-6">
-          <h2 className="text-lg font-semibold text-on-surface mb-4">
+        <div className="col-span-1 md:col-span-5 lg:col-span-4 bg-surface border border-outline-variant rounded-xl p-6 flex flex-col min-h-0">
+          <h2 className="text-lg font-semibold text-on-surface mb-4 shrink-0">
             Distribución por Nivel
           </h2>
-          <LevelDistributionChart data={data.levelDistribution} />
+          <div className="h-[240px] lg:h-auto lg:flex-1 min-h-0">
+            <LevelDistributionChart
+              data={data.levelDistribution}
+              height="100%"
+            />
+          </div>
         </div>
       </div>
 

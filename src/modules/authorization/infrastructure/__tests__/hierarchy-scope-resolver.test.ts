@@ -99,7 +99,7 @@ describe("HierarchyScopeResolver", () => {
   // =========================================================================
 
   describe("TEAM scope", () => {
-    it("returns direct subordinates (active only)", async () => {
+    it("returns actor + active direct subordinates", async () => {
       const ctx = createContext({ employeeId: "supervisor-1" });
       vi.mocked(mockRepo.getDirectSubordinates).mockResolvedValue([
         makeEmployee("sub-1", { supervisorId: "supervisor-1" }),
@@ -108,16 +108,16 @@ describe("HierarchyScopeResolver", () => {
       ]);
 
       const result = await resolver.resolveScope(ctx, ScopeType.TEAM);
-      expect(result).toEqual(["sub-1", "sub-3"]);
+      expect(result).toEqual(["supervisor-1", "sub-1", "sub-3"]);
       expect(mockRepo.getDirectSubordinates).toHaveBeenCalledWith("supervisor-1");
     });
 
-    it("returns empty array when no direct subordinates", async () => {
+    it("returns only the actor when there are no direct subordinates", async () => {
       const ctx = createContext({ employeeId: "emp-solo" });
       vi.mocked(mockRepo.getDirectSubordinates).mockResolvedValue([]);
 
       const result = await resolver.resolveScope(ctx, ScopeType.TEAM);
-      expect(result).toEqual([]);
+      expect(result).toEqual(["emp-solo"]);
     });
   });
 
@@ -180,14 +180,14 @@ describe("HierarchyScopeResolver", () => {
   // =========================================================================
 
   describe("Security: IDOR prevention", () => {
-    it("TEAM scope only returns direct subordinates, not all descendants", async () => {
+    it("TEAM scope includes the actor but only direct subordinates, not all descendants", async () => {
       const ctx = createContext({ employeeId: "boss" });
       vi.mocked(mockRepo.getDirectSubordinates).mockResolvedValue([
         makeEmployee("direct-sub", { supervisorId: "boss" }),
       ]);
 
       const result = await resolver.resolveScope(ctx, ScopeType.TEAM);
-      expect(result).toEqual(["direct-sub"]);
+      expect(result).toEqual(["boss", "direct-sub"]);
       // Should NOT include indirect descendants
       expect(result).not.toContain("indirect-sub");
     });

@@ -24,6 +24,8 @@ const COLORS = [
 
 interface LevelDistributionChartProps {
   data: LevelDistribution[];
+  /** Chart height in px, or "100%" to fill a parent with definite height. */
+  height?: number | "100%";
 }
 
 function CustomTooltip({ active, payload }: {
@@ -39,42 +41,50 @@ function CustomTooltip({ active, payload }: {
   );
 }
 
-export function LevelDistributionChart({ data }: LevelDistributionChartProps) {
+export function LevelDistributionChart({
+  data,
+  height = 200,
+}: LevelDistributionChartProps) {
   if (data.length === 0) {
     return (
-      <div className="flex items-center justify-center h-[250px] text-on-surface-variant text-sm">
+      <div
+        className="flex items-center justify-center w-full text-on-surface-variant text-sm"
+        style={{ height }}
+      >
         Sin datos para el período seleccionado
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col items-center">
-      <ResponsiveContainer width="100%" height={200}>
-        <PieChart>
-          <Pie
-            data={data}
-            dataKey="amount"
-            nameKey="levelCode"
-            cx="50%"
-            cy="50%"
-            innerRadius={50}
-            outerRadius={80}
-            paddingAngle={2}
-          >
-            {data.map((_, index) => (
-              <Cell
-                key={`cell-${index}`}
-                fill={COLORS[index % COLORS.length]}
-              />
-            ))}
-          </Pie>
-          <Tooltip content={<CustomTooltip />} />
-        </PieChart>
-      </ResponsiveContainer>
+    <div className="flex flex-col items-center h-full">
+      <div className="w-full flex-1 min-h-0">
+        <ResponsiveContainer width="100%" height={height}>
+          <PieChart>
+            <Pie
+              data={data}
+              dataKey="amount"
+              nameKey="levelCode"
+              cx="50%"
+              cy="50%"
+              innerRadius={50}
+              outerRadius={80}
+              paddingAngle={2}
+            >
+              {data.map((_, index) => (
+                <Cell
+                  key={`cell-${index}`}
+                  fill={COLORS[index % COLORS.length]}
+                />
+              ))}
+            </Pie>
+            <Tooltip content={<CustomTooltip />} />
+          </PieChart>
+        </ResponsiveContainer>
+      </div>
 
       {/* Legend */}
-      <div className="flex flex-wrap gap-4 mt-4 justify-center">
+      <div className="flex flex-wrap gap-4 mt-4 justify-center shrink-0">
         {data.map((entry, index) => (
           <div key={entry.levelCode} className="flex items-center gap-2">
             <div

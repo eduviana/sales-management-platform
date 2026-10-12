@@ -10,6 +10,7 @@ import { PrismaOrganizationRepository } from "@/infrastructure/organization/pris
 import { PrismaClientRepository } from "./infrastructure/prisma-client-repository";
 import { PrismaVisitRepository } from "./infrastructure/prisma-visit-repository";
 import { GetClientListUseCase } from "./application/get-client-list-use-case";
+import { GetClientUseCase } from "./application/get-client-use-case";
 import { CreateClientUseCase } from "./application/create-client-use-case";
 import { GetVisitListUseCase } from "./application/get-visit-list-use-case";
 import { CreateVisitUseCase } from "./application/create-visit-use-case";
@@ -18,6 +19,7 @@ import { GetTeamListUseCase } from "./application/get-team-list-use-case";
 
 export interface VisitsUseCases {
   readonly getClientList: GetClientListUseCase;
+  readonly getClient: GetClientUseCase;
   readonly createClient: CreateClientUseCase;
   readonly getVisitList: GetVisitListUseCase;
   readonly createVisit: CreateVisitUseCase;
@@ -33,6 +35,7 @@ export function createVisitsUseCases(): VisitsUseCases {
 
   return {
     getClientList: new GetClientListUseCase(authorizationService, clientRepository),
+    getClient: new GetClientUseCase(authorizationService, clientRepository),
     createClient: new CreateClientUseCase(authorizationService, clientRepository),
     getVisitList: new GetVisitListUseCase(authorizationService, visitRepository, organizationRepository),
     createVisit: new CreateVisitUseCase(authorizationService, visitRepository, organizationRepository, clientRepository),

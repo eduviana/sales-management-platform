@@ -3,8 +3,8 @@
 **Proyecto:** Royal Prestige — Plataforma de Gestión de Ventas  
 **Documento:** Matriz de permisos  
 **Estado:** En definición / consolidación  
-**Versión:** 0.8  
-**Última actualización:** 29/09/2026
+**Versión:** 0.11  
+**Última actualización:** 12/10/2026
 
 ---
 
@@ -61,7 +61,8 @@ PROPIO
     Información perteneciente al usuario actual.
 
 EQUIPO
-    Información de los subordinados o miembros del equipo directo.
+    Información del actor y de los subordinados o miembros
+    del equipo directo.
 
 RAMA
     Información de toda la estructura subordinada al usuario.
@@ -1023,3 +1024,4 @@ que resulte afectado.
 | 29/09/2026 | 0.7     | Corrección de numeración de la sección 4: se elimina la duplicación de §4.6/§4.7/§4.8. Las secciones de Clientes, Visitas y Referidos (Phase 10) conservan §4.6–§4.8; las secciones posteriores se renumeran a §4.9–§4.14. Se actualizan las referencias de trazabilidad en código y documentación. |
 | 29/09/2026 | 0.8     | §4.9: se documenta el estado de implementación de los permisos de estadísticas y reporting. Comparaciones, rankings y generación/exportación de reportes quedan diferidos (Q48–Q54); la exportación CSV no se implementa por ahora. |
 | 04/10/2026 | 0.10    | §4.2: se documenta el alcance de `employee.read` (se verifica sobre el empleado solicitado, sin acceso horizontal por URL) y de `employee.update` (no exclusivo del ADMIN: EQUIPO N3, RAMA N4–N6, GLOBAL N7 y ADMIN), validado server-side (Q143). |
+| 12/10/2026 | 0.11    | §2.2: se aclara que el alcance EQUIPO incluye al actor, no sólo a sus subordinados directos. Aligera la implementación con ListSalesUseCase, RAMA y GLOBAL; corrige el 404 que un usuario N3+ obtenía al abrir sus propias ventas (`sale.readTeam`). |

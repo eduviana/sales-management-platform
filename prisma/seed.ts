@@ -386,33 +386,43 @@ async function main() {
   // =========================================================================
   console.log("Creating product categories...");
 
-  const skinCare = await prisma.productCategory.upsert({
-    where: { id: "349298ab-17ab-4c66-93d8-9436b2701690" },
+  const cookware = await prisma.productCategory.upsert({
+    where: { id: "7c4f1e2a-1001-4b8d-9e3a-2f5c6d7e8a91" },
     update: {},
     create: {
-      id: "349298ab-17ab-4c66-93d8-9436b2701690",
-      name: "Cuidado de la Piel",
-      description: "Productos para el cuidado facial y corporal",
+      id: "7c4f1e2a-1001-4b8d-9e3a-2f5c6d7e8a91",
+      name: "Sistemas de Cocina",
+      description: "Ollas, sartenes y baterías de acero quirúrgico para cocina saludable",
     },
   });
 
-  const fragrance = await prisma.productCategory.upsert({
-    where: { id: "9e292f95-36a2-49dd-837a-e7646cbbb3da" },
+  const appliances = await prisma.productCategory.upsert({
+    where: { id: "7c4f1e2a-1002-4b8d-9e3a-2f5c6d7e8a92" },
     update: {},
     create: {
-      id: "9e292f95-36a2-49dd-837a-e7646cbbb3da",
-      name: "Fragancias",
-      description: "Perfumes y fragancias para hombre y mujer",
+      id: "7c4f1e2a-1002-4b8d-9e3a-2f5c6d7e8a92",
+      name: "Electrodomésticos",
+      description: "Extractores, licuadoras y sistemas para té y café",
     },
   });
 
-  const makeup = await prisma.productCategory.upsert({
-    where: { id: "974b1b1b-d847-407a-87cd-a970d5ccedbc" },
+  const cutlery = await prisma.productCategory.upsert({
+    where: { id: "7c4f1e2a-1003-4b8d-9e3a-2f5c6d7e8a93" },
     update: {},
     create: {
-      id: "974b1b1b-d847-407a-87cd-a970d5ccedbc",
-      name: "Maquillaje",
-      description: "Productos de maquillaje y belleza",
+      id: "7c4f1e2a-1003-4b8d-9e3a-2f5c6d7e8a93",
+      name: "Cuchillería",
+      description: "Cuchillos, afiladores, bloques y tablas de corte",
+    },
+  });
+
+  const serveware = await prisma.productCategory.upsert({
+    where: { id: "7c4f1e2a-1004-4b8d-9e3a-2f5c6d7e8a94" },
+    update: {},
+    create: {
+      id: "7c4f1e2a-1004-4b8d-9e3a-2f5c6d7e8a94",
+      name: "Servir y Accesorios",
+      description: "Tazones, utensilios de servir y accesorios de acero quirúrgico",
     },
   });
 
@@ -421,89 +431,32 @@ async function main() {
   // =========================================================================
   console.log("Creating products...");
 
-  await prisma.product.upsert({
-    where: { id: "559e01bc-d819-4dce-9de7-351ab47308ad" },
-    update: {},
-    create: {
-      id: "559e01bc-d819-4dce-9de7-351ab47308ad",
-      code: "CP-001",
-      name: "Crema Hidratante Facial",
-      description: "Crema hidratante para todo tipo de piel",
-      price: 45.99,
-      categoryId: skinCare.id,
-      isActive: true,
-    },
-  });
+  const baseProducts = [
+    // Sistemas de Cocina (línea insignia — acero quirúrgico 5 capas)
+    { id: "8a3d2c1b-0101-4f6e-8d5a-3b4c5d6e7f80", code: "SC-001", name: "Sartén 5-PLY 28 cm", description: "Sartén de acero quirúrgico 5 capas; sellado uniforme sin aceite", price: 289.99, categoryId: cookware.id, isActive: true },
+    { id: "8a3d2c1b-0102-4f6e-8d5a-3b4c5d6e7f81", code: "SC-002", name: "Sartén Deluxe Easy Release 26 cm", description: "Antiadherente Deluxe Easy Release; cocina sin gotas de aceite", price: 249.99, categoryId: cookware.id, isActive: true },
+    { id: "8a3d2c1b-0103-4f6e-8d5a-3b4c5d6e7f82", code: "SC-003", name: "Olla a Presión Pressure Cooker 6 L", description: "Olla a presión de acero quirúrgico; cocinado al vapor con poca agua", price: 399.99, categoryId: cookware.id, isActive: true },
+    { id: "8a3d2c1b-0104-4f6e-8d5a-3b4c5d6e7f83", code: "SC-004", name: "Paellera MultiPan 32 cm", description: "Paellera multifunción de acero quirúrgico con tapa de cristal", price: 349.99, categoryId: cookware.id, isActive: true },
+    // Electrodomésticos y pequeños enseres
+    { id: "8a3d2c1b-0201-4f6e-8d5a-3b4c5d6e7f84", code: "EL-001", name: "Extractor de Jugo MaXtractor", description: "Extractor de jugo prensado en frío, sin oxidación", price: 899.0, categoryId: appliances.id, isActive: true },
+    { id: "8a3d2c1b-0202-4f6e-8d5a-3b4c5d6e7f85", code: "EL-002", name: "Licuadora Power Blender Go", description: "Licuadora de alta potencia inalámbrica", price: 649.0, categoryId: appliances.id, isActive: true },
+    { id: "8a3d2c1b-0203-4f6e-8d5a-3b4c5d6e7f86", code: "EL-003", name: "Sistema para Té ExperTea", description: "Sistema para té con infusor de acero quirúrgico", price: 279.99, categoryId: appliances.id, isActive: true },
+    // Cuchillería y herramientas de corte
+    { id: "8a3d2c1b-0301-4f6e-8d5a-3b4c5d6e7f87", code: "CU-001", name: "Juego de Cuchillos Santoku Damascus (5 pzas)", description: "Cuchillos de alta precisión con acabado damascus", price: 549.0, categoryId: cutlery.id, isActive: true },
+    { id: "8a3d2c1b-0302-4f6e-8d5a-3b4c5d6e7f88", code: "CU-002", name: "Cuchillo para Carne 20 cm", description: "Cuchillo de cocina para carnes de corte preciso", price: 189.99, categoryId: cutlery.id, isActive: true },
+    { id: "8a3d2c1b-0303-4f6e-8d5a-3b4c5d6e7f89", code: "CU-003", name: "Tabla de Corte de Bambú", description: "Tabla de corte de bambú natural", price: 99.99, categoryId: cutlery.id, isActive: true },
+    // Servir y accesorios
+    { id: "8a3d2c1b-0401-4f6e-8d5a-3b4c5d6e7f8a", code: "AC-001", name: "Juego de Tazones Mix (3 pzas)", description: "Tazones para mezclar de acero quirúrgico", price: 159.99, categoryId: serveware.id, isActive: true },
+    { id: "8a3d2c1b-0402-4f6e-8d5a-3b4c5d6e7f8b", code: "AC-002", name: "Set de Espátulas de Silicona (4 pzas)", description: "Espátulas de servir de silicona apta para utensilios antiadherentes", price: 79.99, categoryId: serveware.id, isActive: true },
+  ] as const;
 
-  await prisma.product.upsert({
-    where: { id: "c450c4c9-8fd8-4401-8a67-84c606d17882" },
-    update: {},
-    create: {
-      id: "c450c4c9-8fd8-4401-8a67-84c606d17882",
-      code: "CP-002",
-      name: "Serum Vitamina C",
-      description: "Serum antioxidante con vitamina C pura",
-      price: 62.50,
-      categoryId: skinCare.id,
-      isActive: true,
-    },
-  });
-
-  await prisma.product.upsert({
-    where: { id: "1749c8d0-1dee-44e2-a3e3-0846dc60adcc" },
-    update: {},
-    create: {
-      id: "1749c8d0-1dee-44e2-a3e3-0846dc60adcc",
-      code: "FR-001",
-      name: "Eau de Parfum Royal",
-      description: "Fragancia floral para mujer",
-      price: 89.00,
-      categoryId: fragrance.id,
-      isActive: true,
-    },
-  });
-
-  await prisma.product.upsert({
-    where: { id: "71afa9e3-ad27-4d6e-b1c2-4501afad9ce9" },
-    update: {},
-    create: {
-      id: "71afa9e3-ad27-4d6e-b1c2-4501afad9ce9",
-      code: "FR-002",
-      name: "Colonia Prestige",
-      description: "Fragancia cítrica para hombre",
-      price: 75.00,
-      categoryId: fragrance.id,
-      isActive: true,
-    },
-  });
-
-  await prisma.product.upsert({
-    where: { id: "8fb0f8b3-2c35-4188-9a13-cbb04105e312" },
-    update: {},
-    create: {
-      id: "8fb0f8b3-2c35-4188-9a13-cbb04105e312",
-      code: "MQ-001",
-      name: "Base de Maquillaje",
-      description: "Base líquida de cobertura media",
-      price: 38.75,
-      categoryId: makeup.id,
-      isActive: true,
-    },
-  });
-
-  await prisma.product.upsert({
-    where: { id: "495bddd0-f528-4bd6-a239-7ec66b4665c6" },
-    update: {},
-    create: {
-      id: "495bddd0-f528-4bd6-a239-7ec66b4665c6",
-      code: "CP-003",
-      name: "Protector Solar FPS 50",
-      description: "Protector solar facial de amplio espectro",
-      price: 32.00,
-      categoryId: skinCare.id,
-      isActive: false,
-    },
-  });
+  for (const product of baseProducts) {
+    await prisma.product.upsert({
+      where: { id: product.id },
+      update: {},
+      create: product,
+    });
+  }
 
   // =========================================================================
   // Training Content
@@ -528,7 +481,7 @@ async function main() {
       id: "b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e",
       categoryId: catProductos.id,
       name: "Conocimiento de Producto",
-      description: "Aprende sobre nuestra línea de productos, ingredientes y beneficios",
+      description: "Aprende sobre nuestra línea de productos, materiales y beneficios",
       status: "PUBLISHED",
     },
   });
@@ -536,8 +489,8 @@ async function main() {
   const modIngredientes = await prisma.trainingModule.create({
     data: {
       courseId: courseConocimiento.id,
-      name: "Ingredientes Activos",
-      description: "Componentes clave de nuestros productos",
+      name: "Materiales y Tecnología",
+      description: "Capas de acero quirúrgico, antiadherentes y cocina saludable",
       sortOrder: 1,
     },
   });
@@ -545,10 +498,10 @@ async function main() {
   await prisma.trainingMaterial.create({
     data: {
       moduleId: modIngredientes.id,
-      name: "Guía de Ingredientes - Crema Hidratante",
-      description: "Ingredientes principales y sus beneficios para la piel",
+      name: "Guía: Tecnología 5-PLY y Cocina sin Aceite",
+      description: "Materiales, capas y cuidados de nuestra línea de cookware",
       type: "PDF",
-      url: "https://example.com/docs/guia-ingredientes-crema.pdf",
+      url: "https://example.com/docs/guia-5ply-cocina-sin-aceite.pdf",
       levelId: null, // Global: todos los niveles
       status: "PUBLISHED",
     },
@@ -557,8 +510,8 @@ async function main() {
   await prisma.trainingMaterial.create({
     data: {
       moduleId: modIngredientes.id,
-      name: "Video: Cómo explicar ingredientes al cliente",
-      description: "Técnicas para comunicar los beneficios de los ingredientes",
+      name: "Video: Cómo explicar la tecnología al cliente",
+      description: "Técnicas para comunicar los beneficios de nuestros materiales",
       type: "VIDEO",
       url: "https://youtube.com/watch?v=example1",
       levelId: 1, // Solo N1 y superiores
@@ -815,7 +768,7 @@ async function main() {
   console.log("  seller@royalprestige.com / seller123 (N1 Vendedor, under supervisor)");
   console.log("  ana@royalprestige.com / seller123 (N1 Vendedor, independent)");
   console.log("");
-  console.log("Training content: 3 categories, 4 courses, 6 modules, 12 materials");
+  console.log("Training content: 3 categories, 4 courses, 6 modules, 11 materials");
   console.log("Monthly targets: N1=10, N2=15, N3-N7=10 per seller");
   console.log("  - Productos y Catálogo: 2 modules, 4 materials (PDF + VIDEO)");
   console.log("  - Técnicas de Venta: 3 modules, 5 materials (PDF + VIDEO + LINK)");

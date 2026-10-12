@@ -53,6 +53,10 @@ export class GetDashboardDataUseCase {
     // 2. Resolve date range from period
     const dateRange = this.resolveDateRange(period);
 
+    // Monthly charts always show the current month plus the previous five
+    // months (never future months), regardless of the KPI period.
+    const chartDateRange = this.resolveChartDateRange();
+
     // 3. Resolve employee IDs based on scope
     const { employeeIds, hasTeam } = await this.resolveScope(input.authContext);
 
@@ -78,7 +82,7 @@ export class GetDashboardDataUseCase {
       this.analyticsRepository.countPendingReviewSales(employeeIds, dateRange),
       this.analyticsRepository.countApprovedSales(employeeIds, dateRange),
       this.analyticsRepository.getDailySales(employeeIds, dateRange),
-      this.analyticsRepository.getMonthlySaleCounts(employeeIds, dateRange),
+      this.analyticsRepository.getMonthlySaleCounts(employeeIds, chartDateRange),
       this.analyticsRepository.getLevelDistribution(employeeIds, dateRange),
       hasTeam
         ? this.analyticsRepository.getTeamPerformance(input.authContext.employeeId, dateRange)
@@ -101,7 +105,10 @@ export class GetDashboardDataUseCase {
 
     // Team chart bars use the same baseline as the objective (team members only).
     const teamDailySaleCounts = hasTeam
-      ? await this.analyticsRepository.getMonthlySaleCounts(employeeIds.slice(1), dateRange)
+      ? await this.analyticsRepository.getMonthlySaleCounts(
+          employeeIds.slice(1),
+          chartDateRange,
+        )
       : [];
 
     // 6. Calculate target amount (targetTotal × average sale amount)
@@ -127,7 +134,7 @@ export class GetDashboardDataUseCase {
 
       const [personalDailySaleCounts, personalSalesAmount, personalCurrentSales] =
         await Promise.all([
-          this.analyticsRepository.getMonthlySaleCounts([employeeId], dateRange),
+          this.analyticsRepository.getMonthlySaleCounts([employeeId], chartDateRange),
           this.analyticsRepository.sumPersonalSales(employeeId, dateRange),
           this.analyticsRepository.countSales([employeeId], dateRange),
         ]);
@@ -210,6 +217,15 @@ export class GetDashboardDataUseCase {
         return { from: firstDay, to: now };
       }
     }
+  }
+
+  /** Current month + previous five months, ending now (no future months). */
+  private resolveChartDateRange(): DateRange {
+    const now = new Date();
+    return {
+      from: new Date(now.getFullYear(), now.getMonth() - 5, 1),
+      to: now,
+    };
   }
 
   private async resolveScope(

@@ -156,14 +156,26 @@ export class PrismaAnalyticsRepository implements AnalyticsReadRepository, Syste
       ORDER BY month
     `;
 
-    return rows.map((row) => {
-      const monthNum = parseInt(row.month.split("-")[1], 10);
-      return {
-        date: row.month,
-        label: MONTH_LABELS[monthNum - 1],
-        count: Number(row.sale_count),
-      };
-    });
+    const countByMonth = new Map(
+      rows.map((row) => [row.month, Number(row.sale_count)]),
+    );
+
+    // Zero-fill every month in the range so charts keep a continuous axis
+    // (months without sales render as a 0 bar instead of being omitted).
+    const counts: DailySaleCount[] = [];
+    const cursor = new Date(dateRange.from.getFullYear(), dateRange.from.getMonth(), 1);
+    const lastMonth = new Date(dateRange.to.getFullYear(), dateRange.to.getMonth(), 1);
+    while (cursor.getTime() <= lastMonth.getTime()) {
+      const monthKey = `${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, "0")}`;
+      counts.push({
+        date: monthKey,
+        label: MONTH_LABELS[cursor.getMonth()],
+        count: countByMonth.get(monthKey) ?? 0,
+      });
+      cursor.setMonth(cursor.getMonth() + 1);
+    }
+
+    return counts;
   }
 
   async getLevelDistribution(employeeIds: string[], dateRange: DateRange): Promise<LevelDistribution[]> {

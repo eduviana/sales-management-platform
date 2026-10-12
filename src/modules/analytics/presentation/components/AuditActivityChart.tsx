@@ -71,10 +71,22 @@ function CustomLegend({ payload }: {
   );
 }
 
-export function AuditActivityChart({ data }: { data: AuditActivityPoint[] }) {
+interface AuditActivityChartProps {
+  data: AuditActivityPoint[];
+  /** Chart height in px, or "100%" to fill a parent with definite height. */
+  height?: number | "100%";
+}
+
+export function AuditActivityChart({
+  data,
+  height = 250,
+}: AuditActivityChartProps) {
   if (data.length === 0) {
     return (
-      <div className="flex items-center justify-center h-[250px] text-on-surface-variant text-sm">
+      <div
+        className="flex items-center justify-center w-full text-on-surface-variant text-sm"
+        style={{ height }}
+      >
         Sin eventos en el período seleccionado
       </div>
     );
@@ -84,7 +96,7 @@ export function AuditActivityChart({ data }: { data: AuditActivityPoint[] }) {
   const yTop = Math.max(Math.ceil(maxValue / 5) * 5, 5);
 
   return (
-    <ResponsiveContainer width="100%" height={250}>
+    <ResponsiveContainer width="100%" height={height}>
       <BarChart data={data} margin={{ top: 5, right: 10, bottom: 5, left: 10 }}>
         <XAxis
           dataKey="label"

@@ -39,7 +39,10 @@ export function AuditFilters({
 
   return (
     <div className="bg-surface border border-outline-variant rounded-2xl p-4 flex flex-wrap items-end gap-3">
-      <div className="flex flex-col gap-1 w-96">
+      {/* Widths keep every control on a single row at 1440px (content area
+          is 1088px inside the p-4 bar): search 256 + selects natural +
+          dates 160 + gaps ≈ 974px, ~32px of slack with "Limpiar" visible. */}
+      <div className="flex flex-col gap-1 w-64">
         <label className="text-xs text-on-surface-variant">Buscar</label>
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface-variant" aria-hidden="true" />
@@ -92,7 +95,7 @@ export function AuditFilters({
           type="date"
           value={filterFrom}
           onChange={(e) => onFromChange(e.target.value)}
-          className={SELECT_CLASS}
+          className={`${SELECT_CLASS} w-40`}
         />
       </div>
 
@@ -102,7 +105,7 @@ export function AuditFilters({
           type="date"
           value={filterTo}
           onChange={(e) => onToChange(e.target.value)}
-          className={SELECT_CLASS}
+          className={`${SELECT_CLASS} w-40`}
         />
       </div>
 

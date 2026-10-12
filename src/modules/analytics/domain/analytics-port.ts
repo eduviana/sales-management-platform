@@ -56,6 +56,7 @@ export interface AnalyticsReadRepository {
   /**
    * Monthly sale counts for chart rendering.
    * Accepts one or more employee IDs.
+   * Months without sales are included with count 0 (continuous chart axis).
    */
   getMonthlySaleCounts(employeeIds: string[], dateRange: DateRange): Promise<DailySaleCount[]>;
 

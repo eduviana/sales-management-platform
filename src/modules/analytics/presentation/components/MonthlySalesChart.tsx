@@ -23,6 +23,8 @@ import type { DailySaleCount } from "../../domain";
 interface MonthlySalesChartProps {
   data: DailySaleCount[];
   targetCount?: number;
+  /** Chart height in px, or "100%" to fill a parent with definite height. */
+  height?: number | "100%";
 }
 
 function CustomTooltip({ active, payload }: {
@@ -39,10 +41,13 @@ function CustomTooltip({ active, payload }: {
   );
 }
 
-export function MonthlySalesChart({ data, targetCount }: MonthlySalesChartProps) {
+export function MonthlySalesChart({ data, targetCount, height = 250 }: MonthlySalesChartProps) {
   if (data.length === 0) {
     return (
-      <div className="flex items-center justify-center h-[250px] text-on-surface-variant text-sm">
+      <div
+        className="flex items-center justify-center w-full text-on-surface-variant text-sm"
+        style={{ height }}
+      >
         Sin datos para el período seleccionado
       </div>
     );
@@ -53,7 +58,7 @@ export function MonthlySalesChart({ data, targetCount }: MonthlySalesChartProps)
   const yTicks = Array.from({ length: Math.ceil(yTop / 5) + 1 }, (_, i) => i * 5);
 
   return (
-    <ResponsiveContainer width="100%" height={250}>
+    <ResponsiveContainer width="100%" height={height}>
       <BarChart data={data} margin={{ top: 5, right: 60, bottom: 5, left: 10 }}>
         <XAxis
           dataKey="label"

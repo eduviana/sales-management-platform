@@ -1,4 +1,5 @@
 export { GetClientListUseCase } from "./get-client-list-use-case";
+export { GetClientUseCase } from "./get-client-use-case";
 export { CreateClientUseCase } from "./create-client-use-case";
 export { GetVisitListUseCase } from "./get-visit-list-use-case";
 export { CreateVisitUseCase } from "./create-visit-use-case";

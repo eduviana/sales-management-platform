@@ -14,8 +14,9 @@ import { UpdateVisitUseCase } from "../update-visit-use-case";
 import { GetVisitListUseCase } from "../get-visit-list-use-case";
 import { CreateClientUseCase } from "../create-client-use-case";
 import { GetClientListUseCase } from "../get-client-list-use-case";
+import { GetClientUseCase } from "../get-client-use-case";
 import { GetTeamListUseCase } from "../get-team-list-use-case";
-import { AuthorizationError } from "@/shared/errors";
+import { AuthorizationError, NotFoundError } from "@/shared/errors";
 import type {
   AuthorizationContext,
   AuthorizationDecision,
@@ -356,6 +357,57 @@ describe("GetClientListUseCase — negative authorization", () => {
       permission: "client.view",
     });
     expect(clientRepository.findByOwnerId).not.toHaveBeenCalled();
+  });
+});
+
+// =============================================================================
+// GetClientUseCase
+// =============================================================================
+
+describe("GetClientUseCase — authorization and lookup", () => {
+  it("returns the client when authorized", async () => {
+    const { service } = makeAuthService(makeAllowDecision("client.view"));
+    const clientRepo = makeClientRepo(makeClient());
+    const useCase = new GetClientUseCase(service, clientRepo);
+
+    const client = await useCase.execute({
+      authContext: makeAuthContext(),
+      clientId: "client-1",
+    });
+
+    expect(client.id).toBe("client-1");
+    expect(client.ownerEmployeeId).toBe("emp-1");
+  });
+
+  it("throws AuthorizationError and never returns client data when denied", async () => {
+    const { service, authorize } = makeAuthService(
+      makeDenyDecision("client.view"),
+    );
+    const clientRepo = makeClientRepo(makeClient());
+    const useCase = new GetClientUseCase(service, clientRepo);
+
+    await expect(
+      useCase.execute({ authContext: makeAuthContext(), clientId: "client-1" }),
+    ).rejects.toThrow(AuthorizationError);
+
+    expect(authorize).toHaveBeenCalledWith(makeAuthContext(), {
+      permission: "client.view",
+      resource: {
+        type: "client",
+        id: "client-1",
+        ownerId: "emp-1",
+      },
+    });
+  });
+
+  it("throws NotFoundError when the client does not exist", async () => {
+    const { service } = makeAuthService(makeAllowDecision("client.view"));
+    const clientRepo = makeClientRepo(null);
+    const useCase = new GetClientUseCase(service, clientRepo);
+
+    await expect(
+      useCase.execute({ authContext: makeAuthContext(), clientId: "missing" }),
+    ).rejects.toThrow(NotFoundError);
   });
 });
 

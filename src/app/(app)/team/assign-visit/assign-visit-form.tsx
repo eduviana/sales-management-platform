@@ -3,6 +3,7 @@
 import { formatClientAddress } from "@/modules/visits/domain/client";
 import type { Client } from "@/modules/visits/domain";
 import type { TeamMember } from "@/modules/visits/application/get-team-list-use-case";
+import Link from "next/link";
 import { useMemo, useState } from "react";
 
 export function AssignVisitForm({
@@ -91,7 +92,7 @@ export function AssignVisitForm({
           )}
         </div>
         <p className="mt-1.5 text-xs text-zinc-500">Busca por nombre, DNI o número de cliente y selecciona una coincidencia.</p>
-        <a href="/clients/new" className="inline-block mt-1.5 text-xs text-sky-400 hover:text-sky-300 transition-colors">Agregar un cliente nuevo</a>
+        <Link href="/clients/new" className="inline-block mt-1.5 text-xs text-sky-400 hover:text-sky-300 transition-colors">Agregar un cliente nuevo</Link>
       </div>
 
       <div><label htmlFor="notes" className="block text-[11px] font-semibold text-zinc-400 uppercase tracking-wider mb-1.5">Notas</label><textarea id="notes" name="notes" rows={3} placeholder="Información adicional de la visita" className="w-full px-3.5 py-2.5 bg-[#1c1c1f] border border-[#2d2d32] rounded-lg text-sm text-zinc-200 placeholder:text-zinc-500 focus:border-[#00df81] focus:ring-1 focus:ring-[#00df81] outline-none" /></div>

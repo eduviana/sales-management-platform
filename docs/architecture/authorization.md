@@ -2,8 +2,8 @@
 
 **Proyecto:** Royal Prestige — Plataforma de Gestión de Ventas  
 **Estado:** 🚧 DECISIÓN DE DISEÑO  
-**Versión:** 0.3  
-**Última actualización:** 2026-10-05
+**Versión:** 0.5  
+**Última actualización:** 2026-10-12
 
 ---
 
@@ -209,7 +209,7 @@ Los scopes conceptuales definidos por el proyecto son:
 | Nombre en documentación | Nombre técnico conceptual | Significado |
 |---|---|---|
 | `PROPIO` | `OWN` | Recursos pertenecientes al usuario actual. |
-| `EQUIPO` | `TEAM` | Subordinados o miembros del equipo directo. |
+| `EQUIPO` | `TEAM` | El actor y los subordinados o miembros del equipo directo. |
 | `RAMA` | `BRANCH` | Estructura subordinada completa. |
 | `GLOBAL` | `GLOBAL` | Toda la organización. |
 | `SISTEMA` | `SYSTEM` | Configuración o información transversal. |
@@ -769,3 +769,4 @@ de la jerarquía.
 | 2026-09-03 | 0.2     | Consolidación del mecanismo inicial de autenticación y del estado de cuentas inactivas. |
 | 2026-09-03 | 0.3     | Consolidación de email + contraseña, sesiones y medida de seguridad 2FA. |
 | 2026-10-04 | 0.4     | §6: se documenta que `TEAM` y `GLOBAL` se resuelven sobre empleados activos y que un alcance de organización es suficiente para el recurso (`grantsResourceAccess`). El comportamiento con empleados inactivos en alcances limitados queda pendiente. |
+| 2026-10-12 | 0.5     | §6: se aclara que el scope `TEAM` incluye al actor además de sus subordinados directos, coherente con `RAMA`/`GLOBAL` y con `ListSalesUseCase`. Se corrige el 404 que un usuario N3+ obtenía al abrir sus propias ventas (`sale.readTeam`). |

@@ -87,10 +87,12 @@ export function AdminSystemOverview({
 
       {/* ================================================================ */}
       {/* System health — Audit charts                                       */}
+      {/* Fixed height on lg+ so the section fills the viewport cleanly     */}
+      {/* (portfolio screenshots are taken at 1440×810).                    */}
       {/* ================================================================ */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-        <div className="lg:col-span-8 bg-surface border border-outline-variant rounded-2xl p-6">
-          <div className="flex items-center justify-between mb-4">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:h-[470px]">
+        <div className="lg:col-span-8 bg-surface border border-outline-variant rounded-2xl p-6 flex flex-col min-h-0">
+          <div className="flex items-center justify-between mb-4 shrink-0">
             <h2 className="text-lg font-semibold text-on-surface">
               Actividad de Auditoría
             </h2>
@@ -98,13 +100,20 @@ export function AdminSystemOverview({
               Últimos 7 días
             </span>
           </div>
-          <AuditActivityChart data={overview.auditActivity} />
+          <div className="h-[250px] lg:h-auto lg:flex-1 min-h-0">
+            <AuditActivityChart data={overview.auditActivity} height="100%" />
+          </div>
         </div>
-        <div className="lg:col-span-4 bg-surface border border-outline-variant rounded-2xl p-6">
-          <h2 className="text-lg font-semibold text-on-surface mb-4">
+        <div className="lg:col-span-4 bg-surface border border-outline-variant rounded-2xl p-6 flex flex-col min-h-0">
+          <h2 className="text-lg font-semibold text-on-surface mb-4 shrink-0">
             Ventas por Nivel (mes)
           </h2>
-          <LevelDistributionChart data={overview.levelDistribution} />
+          <div className="h-[240px] lg:h-auto lg:flex-1 min-h-0">
+            <LevelDistributionChart
+              data={overview.levelDistribution}
+              height="100%"
+            />
+          </div>
         </div>
       </div>
 

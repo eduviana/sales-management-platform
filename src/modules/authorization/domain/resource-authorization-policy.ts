@@ -24,6 +24,7 @@ import type { Permission } from "./permission";
 export type ResourceType =
   | "employee"
   | "sale"
+  | "client"
   | "team"
   | "commission"
   | "training"
