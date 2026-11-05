@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+
+<html class="h-full bg-[#0a0a0c]" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Royal Prestige - Inicio de Sesión Corporativo</title>
+<!-- Google Fonts: Inter & Plus Jakarta Sans -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Inter:wght@300;400;500;600&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS CDN with plugins -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Configuration -->
+<script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              emerald: '#00e575',
+              emeraldDark: '#00b85e',
+              emeraldGlow: 'rgba(0, 229, 117, 0.18)',
+              surface: '#161619',
+              surfaceLight: '#1f1e24',
+              border: '#2a2a30',
+              borderHover: '#3d3d46',
+              darkBg: '#0b0b0e'
+            }
+          },
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'Inter', 'sans-serif'],
+            mono: ['ui-monospace', 'monospace']
+          },
+          boxShadow: {
+            'glow-emerald': '0 0 35px -5px rgba(0, 229, 117, 0.25)',
+            'glow-input': '0 0 0 3px rgba(0, 229, 117, 0.15)',
+            'card-elevated': '0 25px 60px -15px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.05)'
+          }
+        }
+      }
+    }
+  </script>
+<!-- Custom Styles: Visual Effects and Highlights -->
+<style data-purpose="custom-effects">
+    /* Subtle background mesh and grid */
+    .bg-mesh-pattern {
+      background-image: radial-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+      background-size: 28px 28px;
+    }
+    
+    /* Radial lighting glow */
+    .radial-glow {
+      background: radial-gradient(circle 500px at 50% 30%, rgba(0, 229, 117, 0.08), transparent 70%);
+    }
+
+    /* Glass card backdrop */
+    .glass-panel {
+      background: linear-gradient(180deg, rgba(26, 26, 31, 0.85) 0%, rgba(17, 17, 21, 0.95) 100%);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+    }
+  </style>
+</head>
+<body class="h-full text-slate-200 antialiased font-sans selection:bg-[#00e575] selection:text-black flex flex-col justify-between min-h-screen relative overflow-x-hidden bg-[#0b0b0e]">
+<!-- BEGIN: AmbientBackground -->
+<div aria-hidden="true" class="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+<!-- Ambient radial emerald glow from center-top -->
+<div class="absolute -top-40 left-1/2 -translate-x-1/2 w-[900px] h-[650px] bg-gradient-to-b from-[#00e575]/12 via-[#10b981]/5 to-transparent blur-[120px] rounded-full"></div>
+<!-- Deep subtle bottom glow -->
+<div class="absolute -bottom-48 right-1/4 w-[600px] h-[500px] bg-emerald-950/20 blur-[130px] rounded-full"></div>
+<!-- Delicate tech grid pattern overlay -->
+<div class="absolute inset-0 bg-mesh-pattern opacity-40"></div>
+</div>
+<!-- END: AmbientBackground -->
+<!-- BEGIN: MinimalTopBar -->
+<header class="relative z-10 w-full px-6 py-6 max-w-7xl mx-auto flex items-center justify-between">
+<!-- Brand monogram indicator -->
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-lg bg-[#19191d] border border-white/10 flex items-center justify-center shadow-inner">
+<span class="text-xs font-bold tracking-wider text-[#00e575]">RP</span>
+</div>
+<div class="text-[13px] font-semibold tracking-wide text-zinc-400">
+        PORTAL OFICIAL <span class="text-zinc-600 mx-1">|</span> <span class="text-zinc-300">SISTEMA INTEGRAL DE VENTAS</span>
+</div>
+</div>
+<!-- Security & Status badge -->
+<div class="hidden sm:flex items-center gap-2 bg-[#17171b]/80 border border-white/5 px-3 py-1.5 rounded-full text-xs text-zinc-400">
+<span class="inline-block w-2 h-2 rounded-full bg-[#00e575] animate-pulse"></span>
+<span class="text-[11px] font-medium tracking-wide">RED AUTENTICADA SEGURO (SSL 256-BIT)</span>
+</div>
+</header>
+<!-- END: MinimalTopBar -->
+<!-- BEGIN: MainContent -->
+<main class="relative z-10 flex-1 flex items-center justify-center px-4 py-8 sm:py-12">
+<div class="w-full max-w-[440px]">
+<!-- Brand Crest & Header -->
+<div class="text-center mb-8" data-purpose="auth-header">
+<!-- Logo Emblem -->
+<div class="inline-flex items-center justify-center mb-5 relative group">
+<div class="absolute -inset-2 bg-gradient-to-r from-[#00e575]/20 to-emerald-600/10 rounded-2xl blur-lg transition duration-500 group-hover:blur-xl"></div>
+<div class="relative w-16 h-16 rounded-2xl bg-gradient-to-b from-[#212126] to-[#141417] border border-white/10 shadow-2xl flex items-center justify-center p-3.5">
+<!-- Royal Crown & Diamond Geometric Monogram SVG -->
+<svg class="w-full h-full text-[#00e575]" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewbox="0 0 24 24">
+<path d="M4 19h16"></path>
+<path d="M4 15l2-8 5 4 1-7 1 7 5-4 2 8H4z"></path>
+<circle cx="12" cy="4" fill="currentColor" r="0.75"></circle>
+<circle cx="6" cy="7" fill="currentColor" r="0.75"></circle>
+<circle cx="18" cy="7" fill="currentColor" r="0.75"></circle>
+</svg>
+</div>
+</div>
+<h1 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+          Royal Prestige<sup class="text-xs text-[#00e575] ml-0.5 font-normal tracking-normal">®</sup>
+</h1>
+<p class="text-sm text-zinc-400 mt-2 font-normal">
+          Inicia sesión para continuar a tu portal de gestión
+        </p>
+</div>
+<!-- Login Card Container -->
+<div class="glass-panel border border-[#2a2a30] rounded-2xl p-7 sm:p-9 shadow-card-elevated relative overflow-hidden" data-purpose="login-form-card">
+<!-- Top accent highlight line -->
+<div class="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-[#00e575] to-transparent opacity-80"></div>
+<form class="space-y-5" id="login-form" onsubmit="event.preventDefault();">
+<!-- Field: Email -->
+<div class="space-y-2" data-purpose="field-email">
+<label class="block text-xs font-semibold uppercase tracking-wider text-zinc-300" for="email">
+              Email corporativo
+            </label>
+<div class="relative rounded-xl shadow-sm">
+<div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-zinc-400">
+<!-- Mail Icon -->
+<svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<path d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</div>
+<input autocomplete="username" class="block w-full rounded-xl border border-zinc-700/80 bg-[#121215] py-3 pl-10 pr-4 text-sm text-white placeholder-zinc-500 focus:border-[#00e575] focus:bg-[#15151a] focus:outline-none focus:ring-2 focus:ring-[#00e575]/25 transition duration-150" id="email" name="email" placeholder="ejemplo@royalprestige.com" required="" type="email"/>
+</div>
+</div>
+<!-- Field: Contraseña -->
+<div class="space-y-2" data-purpose="field-password">
+<label class="block text-xs font-semibold uppercase tracking-wider text-zinc-300" for="password">
+              Contraseña
+            </label>
+<div class="relative rounded-xl shadow-sm">
+<div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-zinc-400">
+<!-- Lock Icon -->
+<svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<rect height="11" rx="2" ry="2" width="18" x="3" y="11"></rect>
+<path d="M7 11V7a5 5 0 0110 0v4"></path>
+</svg>
+</div>
+<input autocomplete="current-password" class="block w-full rounded-xl border border-zinc-700/80 bg-[#121215] py-3 pl-10 pr-11 text-sm text-white placeholder-zinc-500 focus:border-[#00e575] focus:bg-[#15151a] focus:outline-none focus:ring-2 focus:ring-[#00e575]/25 transition duration-150 tracking-wider" id="password" name="password" placeholder="••••••••••••" required="" type="password"/>
+<!-- Toggle Password Visibility Button -->
+<button aria-label="Alternar visibilidad de contraseña" class="absolute inset-y-0 right-0 flex items-center pr-3.5 text-zinc-400 hover:text-zinc-200 focus:outline-none transition-colors" data-purpose="password-visibility-toggle" id="toggle-password" title="Mostrar u ocultar contraseña" type="button">
+<!-- Eye Icon -->
+<svg class="h-4 w-4" fill="none" id="eye-icon" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" stroke-linecap="round" stroke-linejoin="round"></path>
+<path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</button>
+</div>
+</div>
+<!-- Auxiliary Controls: Remember & Forgot Password -->
+<div class="flex items-center justify-between pt-1">
+<label class="flex items-center space-x-2.5 cursor-pointer select-none group">
+<input class="h-4 w-4 rounded border-zinc-700 bg-[#131317] text-[#00e575] focus:ring-[#00e575]/30 focus:ring-offset-0 focus:ring-offset-transparent cursor-pointer transition" id="remember-me" type="checkbox"/>
+<span class="text-xs text-zinc-400 group-hover:text-zinc-300 transition-colors">Recordar sesión</span>
+</label>
+<a class="text-xs font-medium text-[#00e575] hover:text-[#2bf38e] hover:underline underline-offset-4 transition-colors" href="#recuperar">
+              ¿Olvidaste tu contraseña?
+            </a>
+</div>
+<!-- Main CTA: Iniciar sesión -->
+<div class="pt-2">
+<button class="w-full py-3.5 px-4 rounded-xl font-bold text-sm tracking-wide bg-[#00e575] hover:bg-[#00f37c] active:bg-[#00c966] text-[#09150e] shadow-glow-emerald hover:shadow-[0_0_30px_rgba(0,229,117,0.4)] transform hover:-translate-y-0.5 active:translate-y-0 transition duration-200 ease-out flex items-center justify-center gap-2 cursor-pointer" type="submit">
+<span>Iniciar sesión</span>
+<!-- Forward Arrow Icon -->
+<svg class="w-4 h-4 stroke-[2.5]" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</button>
+</div>
+</form>
+<!-- Divider & Help info -->
+<div class="mt-6 pt-5 border-t border-zinc-800/80 flex items-center justify-between text-xs text-zinc-500">
+<span>¿Problemas de ingreso?</span>
+<a class="text-zinc-300 hover:text-white flex items-center gap-1 font-medium transition-colors" href="#soporte">
+            Contactar a soporte
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M9 5l7 7-7 7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+</a>
+</div>
+</div>
+<!-- Trust Note / Corporate footer within form container -->
+<div class="mt-6 text-center">
+<p class="text-[11px] text-zinc-500 tracking-wide">
+          Acceso exclusivo para distribuidores, ejecutivos y red comercial autorizada.
+        </p>
+</div>
+</div>
+</main>
+<!-- END: MainContent -->
+<!-- BEGIN: PageFooter -->
+<footer class="relative z-10 w-full px-6 py-5 border-t border-white/5 bg-[#0b0b0e]/90 text-center sm:text-left">
+<div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-zinc-500">
+<div>
+<span>© 2024 Hy Cite Enterprises, LLC. Todos los derechos reservados.</span>
+</div>
+<div class="flex items-center gap-4">
+<span class="font-mono text-[11px] bg-zinc-900 border border-zinc-800 px-2.5 py-1 rounded text-zinc-400">
+          RP LATAM v2.4.8
+        </span>
+<a class="hover:text-zinc-400 transition-colors" href="#privacidad">Políticas de Privacidad</a>
+<span class="text-zinc-700">•</span>
+<a class="hover:text-zinc-400 transition-colors" href="#terminos">Términos del Servicio</a>
+</div>
+</div>
+</footer>
+<!-- END: PageFooter -->
+<!-- Script: Password Visibility Toggle Handler -->
+<script data-purpose="event-handlers">
+    document.addEventListener('DOMContentLoaded', () => {
+      const togglePasswordBtn = document.getElementById('toggle-password');
+      const passwordInput = document.getElementById('password');
+      const eyeIcon = document.getElementById('eye-icon');
+
+      if (togglePasswordBtn && passwordInput && eyeIcon) {
+        togglePasswordBtn.addEventListener('click', () => {
+          const isPassword = passwordInput.getAttribute('type') === 'password';
+          if (isPassword) {
+            passwordInput.setAttribute('type', 'text');
+            // Slash eye icon SVG
+            eyeIcon.innerHTML = `
+              <path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />
+            `;
+          } else {
+            passwordInput.setAttribute('type', 'password');
+            // Normal eye icon SVG
+            eyeIcon.innerHTML = `
+              <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+            `;
+          }
+        });
+      }
+    });
+  </script>
+</body></html>

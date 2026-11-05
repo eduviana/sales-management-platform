@@ -12,6 +12,16 @@ Conexión de la card "Visitas Pendientes" del dashboard con la entidad Visit
 
 
 
+Cada módulo tiene siempre el mismo recorrido, en este orden:
+1. composition-root.ts   → "qué piezas se arman acá"   (empesá siempre por acá)
+2. application/          → "qué operaciones existen"   (un *-use-case.ts = una acción)
+3. domain/               → "el lenguaje: entidades, tipos, puertos"
+4. infrastructure/       → "cómo se persiste"
+5. presentation/ o app/  → "desde dónde se llama"
+Con leer el composition root de un módulo ya sabés, en 30 segundos, todo lo que ese módulo puede hacer.
+
+
+
 
 
 FASE 1 — Foundation técnica
